@@ -1,0 +1,205 @@
+# Stack independente para EasyPanel. Leia EASYPANEL.md.
+# Imagens e schema saem da MESMA release 1.50.0, sem build na VPS.
+services:
+  app:
+    mem_limit: 768m
+    image: ghcr.io/melgarafael/deskcommcrm:1.50.0
+    pull_policy: missing
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SUPABASE_DB_ADMIN_URL: ''
+      POSTGRES_PASSWORD: ''
+      OWNER_EMAIL: ''
+      OWNER_PASSWORD: ''
+      OWNER_ORG_NAME: ''
+    depends_on:
+      srh:
+        condition: service_started
+      waha:
+        condition: service_started
+      bootstrap:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+      - CMD
+      - node
+      - -e
+      - require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging: &id001
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    networks:
+    - internal
+    - supabase_private
+  worker:
+    mem_limit: 512m
+    image: ghcr.io/melgarafael/deskcomm-worker:1.50.0
+    pull_policy: missing
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WAHA_API_BASE_URL: http://waha:3000
+      SUPABASE_DB_ADMIN_URL: ''
+      POSTGRES_PASSWORD: ''
+      OWNER_EMAIL: ''
+      OWNER_PASSWORD: ''
+      OWNER_ORG_NAME: ''
+    networks:
+    - internal
+    - supabase_private
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - --quiet
+      - --tries=1
+      - --spider
+      - http://127.0.0.1:8787/healthz
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+  scheduler:
+    image: ghcr.io/melgarafael/deskcomm-scheduler:1.50.0
+    pull_policy: missing
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      TZ: UTC
+      INTERNAL_SECRET: ${INTERNAL_CRON_SECRET:-${INTERNAL_SECRET}}
+    logging: *id001
+    networks:
+    - internal
+  waha:
+    mem_limit: 1280m
+    image: ${WAHA_IMAGE:-devlikeapro/waha:latest-2026.7.2}
+    restart: unless-stopped
+    environment:
+      WAHA_API_KEY: sha512:${WAHA_API_KEY_SHA512:?Configure Environment}
+      WHATSAPP_HOOK_URL: http://app:3000/api/v1/webhooks/waha
+      WHATSAPP_HOOK_EVENTS: message.any,message.ack,message.edited,message.revoked,session.status,state.change
+      WHATSAPP_HOOK_HMAC: ${WAHA_HMAC_SECRET:?Configure Environment}
+      WHATSAPP_DEFAULT_ENGINE: ${WHATSAPP_DEFAULT_ENGINE:-NOWEB}
+      WAHA_DASHBOARD_ENABLED: 'false'
+      WHATSAPP_RESTART_ALL_SESSIONS: ${WHATSAPP_RESTART_ALL_SESSIONS:-True}
+    volumes:
+    - waha-data:/app/.sessions
+    - waha-media:/app/.media
+    logging: *id001
+    networks:
+    - internal
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+    - redis-server
+    - --save
+    - ''
+    - --appendonly
+    - 'no'
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    logging: *id001
+    networks:
+    - internal
+  srh:
+    image: hiett/serverless-redis-http@sha256:5b0bb9239fce53abf87b2018a7a0deb9ec7bd900c5360738fe5fbeeb426f9150
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${SRH_TOKEN:?Configure Environment}
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    logging: *id001
+    networks:
+    - internal
+  schema-export:
+    image: ghcr.io/melgarafael/deskcomm-worker:1.50.0
+    pull_policy: missing
+    restart: 'no'
+    network_mode: none
+    entrypoint:
+    - /bin/sh
+    - -ec
+    command:
+    - cp /app/supabase/baseline.sql /schema/baseline.sql
+    volumes:
+    - schema-artifact:/schema
+    logging: *id001
+  schema-init:
+    image: postgres:17-alpine
+    restart: 'no'
+    depends_on:
+      schema-export:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: supabase-db
+      PGPORT: '5432'
+      PGDATABASE: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Copy the Supabase database password}
+      PGCONNECT_TIMEOUT: '5'
+    entrypoint:
+    - /bin/sh
+    - /setup/init-db.sh
+    volumes:
+    - ./docker/easypanel/init-db.sh:/setup/init-db.sh:ro
+    - schema-artifact:/schema:ro
+    - setup-state:/state
+    networks:
+    - supabase_private
+    logging: *id001
+  bootstrap:
+    image: ghcr.io/melgarafael/deskcomm-worker:1.50.0
+    pull_policy: missing
+    restart: 'no'
+    depends_on:
+      schema-init:
+        condition: service_completed_successfully
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: http://supabase-envoy:8000
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?Configure Environment}
+      OWNER_EMAIL: ${OWNER_EMAIL:?Set the initial administrator email}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:?Set the initial administrator password}
+      OWNER_ORG_NAME: ${OWNER_ORG_NAME:-Minha Empresa}
+      APP_LOCALE: pt-BR
+    entrypoint:
+    - /bin/sh
+    - /setup/bootstrap.sh
+    volumes:
+    - ./docker/easypanel/bootstrap.sh:/setup/bootstrap.sh:ro
+    - setup-state:/state
+    networks:
+    - supabase_private
+    logging: *id001
+volumes:
+  waha-data: null
+  waha-media: null
+  schema-artifact: null
+  setup-state: null
+networks:
+  internal:
+    driver: bridge
+  supabase_private:
+    external: true
+    name: ${SINGLE_SERVER_NETWORK:-crmvendepay_backend}
