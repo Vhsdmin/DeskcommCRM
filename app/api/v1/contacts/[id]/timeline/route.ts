@@ -1,3 +1,8 @@
+import { z } from "zod";
+import { requireRole } from "@/lib/auth/require-role";
+import { requireSupportWrite } from "@/lib/impersonate/support";
+import { audit } from "@/lib/audit";
+import { atividadeDoClienteSchema, TIPO_ATIVIDADE } from "@/lib/contacts/atividade-schema";
 /**
  * GET /api/v1/contacts/[id]/timeline
  *
@@ -41,6 +46,8 @@ export async function GET(
 ): Promise<Response> {
   const requestId = randomUUID();
   const { id: contactId } = await ctx.params;
+  const authz = await requireRole("viewer", { requestId, resource: "contacts" });
+  if (!authz.ok) return authz.response;
 
   const supabase = await createClient();
   const {
@@ -72,6 +79,7 @@ export async function GET(
     .from("contacts")
     .select("id")
     .eq("id", contactId)
+    .eq("organization_id", authz.org.orgId)
     .maybeSingle();
   if (cErr) return fail("internal_error", cErr.message, 500, { requestId });
   if (!contactRow) return fail("not_found", t("Contato não encontrado."), 404, { requestId });
@@ -80,7 +88,8 @@ export async function GET(
   const { data: leadRows, error: lErr } = await supabase
     .from("crm_leads")
     .select("id")
-    .eq("contact_id", contactId);
+    .eq("contact_id", contactId)
+    .eq("organization_id", authz.org.orgId);
   if (lErr) return fail("internal_error", lErr.message, 500, { requestId });
 
   const leadIds = (leadRows ?? []).map((r) => (r as { id: string }).id);
@@ -93,6 +102,7 @@ export async function GET(
     let q = supabase
       .from("crm_lead_activities")
       .select(TIMELINE_COLS)
+      .eq("organization_id", authz.org.orgId)
       .order("performed_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(FETCH);
@@ -109,7 +119,9 @@ export async function GET(
 
   const directQ = buildQuery("contact_id", contactId);
   const leadQ =
-    leadIds.length > 0 ? buildQuery("lead_id", leadIds) : Promise.resolve({ data: [], error: null });
+    leadIds.length > 0
+      ? buildQuery("lead_id", leadIds)
+      : Promise.resolve({ data: [], error: null });
 
   const [directRes, leadRes] = await Promise.all([directQ, leadQ]);
 
@@ -148,12 +160,67 @@ export async function GET(
   const page = await comNomeDoAtor(supabase, pageRows);
   const last = page[page.length - 1];
   const nextCursor =
-    hasMore && last
-      ? encodeCursor({ performed_at: last.performed_at, id: last.id })
-      : null;
+    hasMore && last ? encodeCursor({ performed_at: last.performed_at, id: last.id }) : null;
 
   return ok(page, {
     requestId,
     meta: { cursor: nextCursor, has_more: hasMore },
   });
+}
+
+/** Registra relacionamento diretamente no contato, sem inventar um lead. */
+export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const supportDenied = await requireSupportWrite();
+  if (supportDenied) return supportDenied;
+  const requestId = randomUUID();
+  const authz = await requireRole("agent", { requestId, resource: "contacts" });
+  if (!authz.ok) return authz.response;
+  const { id } = await ctx.params;
+  if (!z.uuid().safeParse(id).success)
+    return fail("validation_failed", "ID inválido.", 422, { requestId });
+  const parsed = atividadeDoClienteSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return fail("validation_failed", "Dados inválidos.", 422, { requestId });
+  const supabase = await createClient();
+  const contact = await supabase
+    .from("contacts")
+    .select("id,is_anonymized,is_merged_into")
+    .eq("id", id)
+    .eq("organization_id", authz.org.orgId)
+    .maybeSingle();
+  if (contact.error)
+    return fail("internal_error", "Erro ao consultar cliente.", 500, { requestId });
+  if (!contact.data) return fail("not_found", "Cliente não encontrado.", 404, { requestId });
+  if (contact.data.is_anonymized || contact.data.is_merged_into)
+    return fail("conflict", "Cliente indisponível para novos registros.", 409, { requestId });
+  const { kind, summary, next_steps, performed_at } = parsed.data;
+  const result = await supabase
+    .from("crm_lead_activities")
+    .insert({
+      organization_id: authz.org.orgId,
+      contact_id: id,
+      lead_id: null,
+      source_module: "crm",
+      type: TIPO_ATIVIDADE[kind],
+      performed_at,
+      performed_by_user_id: authz.user.id,
+      actor_kind: "user",
+      payload: { summary, next_steps },
+    })
+    .select("id")
+    .single();
+  if (result.error)
+    return fail("internal_error", "Erro ao registrar atividade.", 500, { requestId });
+  await audit({
+    organizationId: authz.org.orgId,
+    actorUserId: authz.user.id,
+    action: "contact.updated",
+    resourceType: "contacts",
+    resourceId: id,
+    requestId,
+    metadata: { activity_id: result.data.id, activity_type: TIPO_ATIVIDADE[kind] },
+  });
+  return ok(result.data, { requestId, status: 201 });
 }

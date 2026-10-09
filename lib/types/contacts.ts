@@ -50,7 +50,7 @@ export interface TimelineItem {
    * e vira campo que ninguém sabe que existe.
    */
   organization_id: string;
-  lead_id: string;
+  lead_id: string | null;
   contact_id: string | null;
   source_module: string;
   source_id: string | null;

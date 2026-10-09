@@ -24875,6 +24875,49 @@ grant  execute on function public.fn_agenda_conexoes_google_do_dono(uuid, uuid) 
 
 notify pgrst, 'reload schema';
 
+-- 0261: histórico de relacionamento do contato sem negócio comercial.
+-- Não amplia a visibilidade de atividades vinculadas a leads.
+alter table public.crm_lead_activities alter column lead_id drop not null;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'activity_contact_or_lead' and conrelid = 'public.crm_lead_activities'::regclass) then
+    alter table public.crm_lead_activities add constraint activity_contact_or_lead check (lead_id is not null or contact_id is not null);
+  end if;
+end $$;
+drop policy if exists contact_activity_select on public.crm_lead_activities;
+create policy contact_activity_select on public.crm_lead_activities for select to authenticated using (
+  lead_id is null and exists (
+    select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id
+  )
+);
+-- Restritiva: policies permissivas existentes não podem contornar esta regra.
+drop policy if exists contact_activity_insert_guard on public.crm_lead_activities;
+create policy contact_activity_insert_guard on public.crm_lead_activities as restrictive for insert to authenticated with check (
+  lead_id is not null or (
+    public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+    and performed_by_user_id = auth.uid() and actor_kind = 'user'
+    and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+  )
+);
+create index if not exists contact_activities_performed_idx on public.crm_lead_activities (organization_id, contact_id, performed_at desc) where lead_id is null;
+-- 0262: o trigger legado também valida a âncora de contato quando não há lead.
+create or replace function public.fn_validate_activity_lead_org() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+declare v_org uuid;
+begin
+  if new.lead_id is null then
+    select organization_id into v_org from public.contacts where id = new.contact_id;
+    if v_org is null then raise exception 'contact_not_found' using errcode = '23503'; end if;
+    if v_org <> new.organization_id then raise exception 'contact_org_mismatch' using errcode = '23514'; end if;
+  else
+    select organization_id into v_org from public.crm_leads where id = new.lead_id;
+    if v_org is null then raise exception 'lead_not_found' using errcode = '23503'; end if;
+    if v_org <> new.organization_id then raise exception 'lead_org_mismatch' using errcode = '23514'; end if;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.fn_validate_activity_lead_org() from public, anon;
+grant execute on function public.fn_validate_activity_lead_org() to authenticated, service_role;
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

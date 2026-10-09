@@ -29,3 +29,13 @@ Projeto `mypaqsvyygunlqnmpvfj`: baseline existente instalado, 129 tabelas públi
 Typecheck e lint dos arquivos alterados sem erros. Testes de navegação, tradução e segurança da API de tarefas passaram (57 testes). Dois testes adicionais verificam o filtro por cliente, vínculo obrigatório na criação dentro do detalhe e manutenção da lista geral/visualização sem edição.
 
 Validação pela interface autenticada: criado `Cliente de teste CS` com endereço fictício `cliente-cs@example.invalid`; registrada tarefa `Teste CS: preparar pauta do QBR` na aba Tarefas. A tarefa permaneceu após recarregar a página. Os dois registros foram mantidos no banco de desenvolvimento como exemplos de teste. Evidência em `vendepay-clientes-tarefas.jpg`.
+
+## Registro de relacionamento
+
+A aba Histórico agora oferece Registrar atividade: Atendimento, Reunião, EBR e QBR; data/hora local convertida para UTC, resumo obrigatório e próximos passos opcionais. O autor vem da sessão autenticada. Próximos passos são anotações: tarefas com prazo continuam na aba Tarefas.
+
+Reutiliza `crm_lead_activities`, com lead opcional e contato obrigatório quando não há lead. As migrations 0261 e 0262 foram aplicadas no desenvolvimento e verificadas duas vezes para idempotência. O controle de visibilidade dos leads existentes foi preservado; atividades sem lead usam o acesso ao contato. API exige papel agent e organização ativa, recusa cliente anonimizado/mesclado e registra auditoria sem copiar o conteúdo do atendimento.
+
+Verificado pela interface: QBR fictício criado no Cliente de teste CS, lido no histórico após recarregar, com autoria e próximos passos. `tests/vendepay/atividades-rls.mjs` testa o acesso ao próprio histórico e a recusa de gravações em outra organização, por viewer e em contato anonimizado, revertendo todas as fixtures em transação. A suíte Docker do banco não pôde rodar porque Docker não está instalado.
+
+Verificação final do registro: build de produção passou; typecheck passou; lint completo terminou sem erros, com 356 avisos existentes; lint de canais e de hierarquia de papéis passou; 40 testes relacionados passaram. A suíte completa rodou com 895 arquivos: 888 passaram e 7 falharam. A falha introduzida pela ordem do apêndice no baseline foi corrigida (varredura de anon permanece por último) e seu arquivo passou no novo teste dirigido. As outras falhas foram em notificações/tema e importação de leads, áreas não alteradas nesta etapa. Não foi possível executar a suíte completa de invariantes Docker. Nenhuma alteração foi publicada na instalação oficial.

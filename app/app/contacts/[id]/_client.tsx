@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { ROLE_RANK } from "@/lib/auth/types";
+import { RegistrarAtividade } from "@/components/contacts/RegistrarAtividade";
 import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
 import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
@@ -199,7 +200,13 @@ export function ContactDetailClient({ contactId }: Props) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="timeline" className="mt-4">
+        <TabsContent value="timeline" className="mt-4 space-y-4">
+          {!contact.is_anonymized &&
+            !contact.is_merged_into &&
+            user.support?.access_mode !== "support_readonly" &&
+            Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent) && (
+              <RegistrarAtividade contactId={contactId} />
+            )}
           <TimelineView contactId={contactId} />
         </TabsContent>
 

@@ -37,6 +37,18 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Registrar atividade": { es: "Registrar actividad" },
+  "Reunião com cliente": { es: "Reunión con cliente" },
+  "Reunião EBR": { es: "Reunión EBR" },
+  "Reunião QBR": { es: "Reunión QBR" },
+  "Data e horário": { es: "Fecha y hora" },
+  "Resumo do atendimento": { es: "Resumen de la atención" },
+  "Próximos passos": { es: "Próximos pasos" },
+  "Registre o atendimento ou reunião realizada com este cliente.": { es: "Registre la atención o reunión realizada con este cliente." },
+  "Para acompanhar prazos, registre uma tarefa na aba Tarefas.": { es: "Para dar seguimiento a los plazos, registre una tarea en la pestaña Tareas." },
+  "Atividade registrada no histórico.": { es: "Actividad registrada en el historial." },
+  "Não foi possível registrar a atividade. Confira os campos e tente novamente.": { es: "No fue posible registrar la actividad. Revise los campos e inténtelo de nuevo." },
+
   "Clientes": { es: "Clientes" },
   "Acompanhe os clientes e o histórico de relacionamento com a VendePay.": { es: "Acompañe a los clientes y el historial de relación con VendePay." },
   "Cadastrar no CRM": { es: "Registrar en el CRM" },

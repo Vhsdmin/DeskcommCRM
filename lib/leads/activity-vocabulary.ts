@@ -18,6 +18,10 @@
  * aceita; quem escreve daqui é que fica preso ao vocabulário.
  */
 export type ActivityType =
+  | "customer_support"
+  | "customer_meeting"
+  | "customer_ebr"
+  | "customer_qbr"
   // Spec 17: o lead nasceu da primeira mensagem. Sem esta linha na timeline, o
   // card aparece no kanban sem que ninguém saiba de onde veio — e "apareceu
   // sozinho" é como se perde a confiança num automatismo.
@@ -160,6 +164,10 @@ export type ActivityType =
   | "contacts_merged";
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {
+  customer_support: "Atendimento",
+  customer_meeting: "Reunião com cliente",
+  customer_ebr: "Reunião EBR",
+  customer_qbr: "Reunião QBR",
   lead_created: "Entrou pelo WhatsApp",
   stage_changed: "Mudou de estágio",
   agent_move_corrected: "Correção do que o assistente tinha feito",
