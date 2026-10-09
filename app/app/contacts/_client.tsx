@@ -19,7 +19,6 @@ import { ContactsTable } from "@/components/contacts/ContactsTable";
 import { NewContactDialog } from "@/components/contacts/NewContactDialog";
 import { ImportContactsDialog } from "@/components/contacts/ImportContactsDialog";
 import { MergeDialog } from "@/components/contacts/MergeDialog";
-import { EmptyContacts } from "@/components/empty";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
 
 const SOURCE_OPTIONS = [
@@ -56,10 +55,7 @@ export function ContactsListClient() {
   );
   const q = useContactList(filters);
 
-  const allContacts = useMemo(
-    () => q.data?.pages.flatMap((p) => p.data) ?? [],
-    [q.data],
-  );
+  const allContacts = useMemo(() => q.data?.pages.flatMap((p) => p.data) ?? [], [q.data]);
 
   const tagOptions = useMemo(() => {
     const set = new Set<string>();
@@ -83,9 +79,9 @@ export function ContactsListClient() {
     <div className="space-y-4 p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("Contatos")}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("Clientes")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("Customer 360 — busque, filtre e gerencie contatos.")}
+            {t("Acompanhe os clientes e o histórico de relacionamento com a VendePay.")}
           </p>
         </div>
         {/*
@@ -110,16 +106,25 @@ export function ContactsListClient() {
           </Button>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus size={16} weight="bold" aria-hidden />
-            <span>{t("Novo contato")}</span>
+            <span>{t("Cadastrar no CRM")}</span>
           </Button>
         </div>
       </header>
+
+      <Card className="space-y-1 p-4">
+        <h2 className="text-sm font-semibold">{t("Integração com o Gestão VendePay")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t(
+            "Conexão pendente. A busca abaixo consulta os registros do CRM; os usuários do Gestão serão consultados quando a integração estiver configurada.",
+          )}
+        </p>
+      </Card>
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface p-2">
         <div className="relative w-full sm:w-72">
           <MagnifyingGlass
             size={16}
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+            className="absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
@@ -206,18 +211,20 @@ export function ContactsListClient() {
       ) : q.isError ? (
         <Card className="p-6 text-center">
           <p className="text-sm text-error-fg">{t("Erro ao carregar contatos.")}</p>
-          <Button
-            size="sm"
-            variant="outline"
-            className="mt-2"
-            onClick={() => q.refetch()}
-          >
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => q.refetch()}>
             {t("Tentar novamente")}
           </Button>
         </Card>
       ) : allContacts.length === 0 ? (
         <Card className="p-2">
-          <EmptyContacts />
+          <div className="space-y-2 p-6 text-center">
+            <h2 className="font-semibold">{t("Nenhum cliente encontrado")}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t(
+                "Ajuste os filtros ou cadastre um registro no CRM. Os dados do Gestão ainda não estão conectados.",
+              )}
+            </p>
+          </div>
         </Card>
       ) : (
         <>

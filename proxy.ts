@@ -3,7 +3,6 @@ import { cookieSecure } from "@/lib/supabase/cookie-secure";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { isPublicPath } from "@/lib/auth/public-paths";
-import { isDevelopmentCsPreview } from "@/lib/customer-success/preview";
 import {
   verifyImpersonateCookieEdge,
   IMPERSONATE_COOKIE_NAME_EDGE,
@@ -29,9 +28,6 @@ export async function proxy(request: NextRequest) {
   // exists as documentation of the intended deploy topology.
   const host = request.headers.get("host") ?? "";
   const isAdminSurface = host.startsWith("admin.") || pathname.startsWith("/admin");
-
-  // Isolated fixture preview: never bypass authentication for app routes or production.
-  if (isDevelopmentCsPreview(pathname, process.env.NODE_ENV)) return response;
 
   if (isPublicPath(pathname)) {
     return response;

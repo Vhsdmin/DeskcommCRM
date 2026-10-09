@@ -103,15 +103,6 @@ export const GRUPO_NO_RODAPE: NavGroupId = "organizacao";
  * fechada e por isso não vira `minRole`.
  */
 export const NAV_CATALOG = [
-  {
-    href: "/app/cs",
-    label: "Sucesso do cliente",
-    description: "Carteira, visão da conta e jornada de atendimento VendePay (demonstração).",
-    icon: "Users",
-    group: "crm",
-    section: "Relacionamento",
-    sidebar: true,
-  },
   // ---- Atendimento — onde o operador passa o dia ----
   {
     href: "/app/inbox",
@@ -183,8 +174,8 @@ export const NAV_CATALOG = [
   },
   {
     href: "/app/contacts",
-    label: "Contatos",
-    description: "As pessoas do outro lado da conversa e seu histórico.",
+    label: "Clientes",
+    description: "Clientes e histórico de relacionamento com a VendePay.",
     icon: "Users",
     group: "crm",
     section: "O dia a dia da venda",

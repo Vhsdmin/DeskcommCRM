@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { ROLE_RANK } from "@/lib/auth/types";
+import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
 import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
@@ -52,14 +53,17 @@ export function ContactDetailClient({ contactId }: Props) {
   if (q.isError || !q.data) {
     return (
       <div className="p-6">
-        <Card className="p-6 text-center text-sm text-error-fg">{t("Erro ao carregar contato.")}</Card>
+        <Card className="p-6 text-center text-sm text-error-fg">
+          {t("Erro ao carregar contato.")}
+        </Card>
       </div>
     );
   }
 
   const contact = q.data.data;
   const isAdmin =
-    (user.is_platform_admin && !user.support) || (activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin);
+    (user.is_platform_admin && !user.support) ||
+    (activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.admin);
 
   // Uma decisão, um lugar (lib/contacts/rotulo-do-contato.ts). Esta tela era
   // uma das DUAS que ignoravam o telefone: contato com número e sem nome
@@ -71,7 +75,7 @@ export function ContactDetailClient({ contactId }: Props) {
       {contact.is_anonymized && (
         <div
           role="alert"
-          className="border-error-fg/30 sticky top-0 z-20 flex items-center gap-3 rounded-md border bg-error-bg p-3 text-sm text-error-fg"
+          className="sticky top-0 z-20 flex items-center gap-3 rounded-md border border-error-fg/30 bg-error-bg p-3 text-sm text-error-fg"
         >
           <ShieldCheck size={18} weight="duotone" aria-hidden />
           <span>
@@ -88,7 +92,7 @@ export function ContactDetailClient({ contactId }: Props) {
           {/* Sem truncar: nome é dado que a tela existe pra mostrar, e cortar
               com reticências sem um jeito de ver o resto violaria o princípio
               de nunca esconder informação crítica. Deixa quebrar linha. */}
-          <h1 className="break-words text-2xl font-semibold tracking-tight">{displayName}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight break-words">{displayName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {contact.email && <span>{contact.email}</span>}
             {contact.email && contact.phone_number && <span>•</span>}
@@ -132,7 +136,9 @@ export function ContactDetailClient({ contactId }: Props) {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">{t("Visão geral")}</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="timeline">{t("Histórico")}</TabsTrigger>
+          <TabsTrigger value="tasks">{t("Tarefas")}</TabsTrigger>
+          <TabsTrigger value="gestao">{t("Dados do Gestão")}</TabsTrigger>
           {isAdmin && <TabsTrigger value="lgpd">LGPD</TabsTrigger>}
         </TabsList>
 
@@ -140,29 +146,29 @@ export function ContactDetailClient({ contactId }: Props) {
           <Card className="p-4">
             <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Nome")}</dt>
+                <dt className="text-xs text-muted-foreground uppercase">{t("Nome")}</dt>
                 <dd className="mt-1">{contact.name ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">Display name</dt>
+                <dt className="text-xs text-muted-foreground uppercase">Display name</dt>
                 <dd className="mt-1">{contact.display_name ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">Email</dt>
+                <dt className="text-xs text-muted-foreground uppercase">Email</dt>
                 <dd className="mt-1">{contact.email ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Telefone")}</dt>
+                <dt className="text-xs text-muted-foreground uppercase">{t("Telefone")}</dt>
                 <dd className="mt-1">
                   {contact.phone_number ? phoneForDisplay(contact.phone_number) : "—"}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Origem")}</dt>
+                <dt className="text-xs text-muted-foreground uppercase">{t("Origem")}</dt>
                 <dd className="mt-1">{contact.source}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Última atividade")}</dt>
+                <dt className="text-xs text-muted-foreground uppercase">{t("Última atividade")}</dt>
                 <dd className="mt-1">
                   {contact.last_activity_at
                     ? format(new Date(contact.last_activity_at), "dd/MM/yyyy HH:mm", {
@@ -172,13 +178,13 @@ export function ContactDetailClient({ contactId }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Criado em")}</dt>
+                <dt className="text-xs text-muted-foreground uppercase">{t("Criado em")}</dt>
                 <dd className="mt-1">
                   {format(new Date(contact.created_at), "dd/MM/yyyy", { locale: localeDaData })}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">Tags</dt>
+                <dt className="text-xs text-muted-foreground uppercase">Tags</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {contact.tags.length === 0
                     ? "—"
@@ -195,6 +201,27 @@ export function ContactDetailClient({ contactId }: Props) {
 
         <TabsContent value="timeline" className="mt-4">
           <TimelineView contactId={contactId} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="mt-4">
+          <TarefasClient
+            contactId={contactId}
+            podeEditar={
+              !contact.is_anonymized &&
+              user.support?.access_mode !== "support_readonly" &&
+              Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent)
+            }
+          />
+        </TabsContent>
+        <TabsContent value="gestao" className="mt-4">
+          <Card className="space-y-2 p-4">
+            <h2 className="font-semibold">{t("Integração com o Gestão VendePay")}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t(
+                "Os dados cadastrais e financeiros serão consultados no Gestão. A conexão ainda não está configurada.",
+              )}
+            </p>
+          </Card>
         </TabsContent>
 
         {isAdmin && (
