@@ -13,12 +13,20 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import type { TimelineItemView } from "@/lib/types/contacts";
+import { TIPO_ATIVIDADE } from "@/lib/contacts/atividade-schema";
 import { apiClient } from "@/lib/api/client";
-function agoraLocal() {
-  const date = new Date();
+function agoraLocal(value?: string) {
+  const date = value ? new Date(value) : new Date();
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
-export function RegistrarAtividade({ contactId }: { contactId: string }) {
+export function RegistrarAtividade({
+  contactId,
+  activity,
+}: {
+  contactId: string;
+  activity?: TimelineItemView;
+}) {
   const t = useT();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -31,12 +39,18 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
     setBusy(true);
     setError("");
     try {
-      await apiClient.post(`/api/v1/contacts/${contactId}/timeline`, {
+      const body = {
         kind: form.get("kind"),
         summary: form.get("summary"),
         next_steps: form.get("next_steps"),
         performed_at: new Date(String(form.get("date"))).toISOString(),
-      });
+      };
+      if (activity)
+        await apiClient.patch(`/api/v1/contacts/${contactId}/timeline/${activity.id}`, {
+          ...body,
+          revision: activity.revision ?? 0,
+        });
+      else await apiClient.post(`/api/v1/contacts/${contactId}/timeline`, body);
       await client.invalidateQueries({ queryKey: ["timeline", contactId] });
       setOpen(false);
       setSaved(true);
@@ -63,11 +77,11 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
             setOpen(true);
           }}
         >
-          {t("Registrar atividade")}
+          {activity ? t("Editar atividade") : t("Registrar atividade")}
         </Button>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("Registrar atividade")}</DialogTitle>
+            <DialogTitle>{activity ? t("Editar atividade") : t("Registrar atividade")}</DialogTitle>
             <DialogDescription>
               {t("Registre o atendimento ou reunião realizada com este cliente.")}
             </DialogDescription>
@@ -78,6 +92,13 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
               <select
                 id="activity-kind"
                 name="kind"
+                defaultValue={
+                  activity
+                    ? Object.entries(TIPO_ATIVIDADE).find(
+                        ([, value]) => value === activity.type,
+                      )?.[0]
+                    : "support"
+                }
                 className="mt-1 w-full rounded-md border border-input bg-background p-2"
                 disabled={busy}
               >
@@ -93,7 +114,7 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
                 id="activity-date"
                 name="date"
                 type="datetime-local"
-                defaultValue={agoraLocal()}
+                defaultValue={agoraLocal(activity?.performed_at)}
                 max={agoraLocal()}
                 required
                 disabled={busy}
@@ -104,6 +125,9 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
               <Textarea
                 id="activity-summary"
                 name="summary"
+                defaultValue={
+                  typeof activity?.payload.summary === "string" ? activity.payload.summary : ""
+                }
                 maxLength={4000}
                 required
                 disabled={busy}
@@ -111,7 +135,17 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
             </div>
             <div>
               <Label htmlFor="activity-next">{t("Próximos passos")}</Label>
-              <Textarea id="activity-next" name="next_steps" maxLength={2000} disabled={busy} />
+              <Textarea
+                id="activity-next"
+                name="next_steps"
+                maxLength={2000}
+                disabled={busy}
+                defaultValue={
+                  typeof activity?.payload.next_steps === "string"
+                    ? activity.payload.next_steps
+                    : ""
+                }
+              />
               <p className="mt-1 text-xs text-muted-foreground">
                 {t("Para acompanhar prazos, registre uma tarefa na aba Tarefas.")}
               </p>
@@ -129,7 +163,7 @@ export function RegistrarAtividade({ contactId }: { contactId: string }) {
       </Dialog>
       {saved && (
         <p role="status" className="text-sm text-muted-foreground">
-          {t("Atividade registrada no histórico.")}
+          {activity ? t("Atividade atualizada.") : t("Atividade registrada no histórico.")}
         </p>
       )}
     </div>

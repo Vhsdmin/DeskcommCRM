@@ -27,6 +27,12 @@ import assert from 'node:assert/strict';
     }
     await denied([org, foreign.rows[0].id, actor]);
     await denied([otherOrg.rows[0].id, foreign.rows[0].id, actor]);
+    const activityId = saved.rows[0].id;
+    assert.equal((await db.query('select public.fn_delete_customer_activity($1,$2,$3,0) as deleted', [activityId,own.rows[0].id,otherOrg.rows[0].id])).rows[0].deleted, false);
+    assert.equal((await db.query("update public.crm_lead_activities set payload='{\"summary\":\"Corrigido\"}',revision=1,edited_by_user_id=$2 where id=$1 and revision=0", [activityId,actor])).rowCount, 1);
+    assert.equal((await db.query("update public.crm_lead_activities set revision=2 where id=$1 and revision=0", [activityId])).rowCount, 0);
+    assert.equal((await db.query("select public.fn_delete_customer_activity($1,$2,$3,1) as deleted", [activityId,own.rows[0].id,org])).rows[0].deleted, true);
+    assert.equal((await db.query('select id from public.crm_lead_activities where id=$1', [activityId])).rowCount, 0);
     await db.query('reset role');
     await db.query("update public.user_organizations set role='viewer' where user_id=$1 and organization_id=$2", [actor, org]);
     await db.query('set local role authenticated'); await denied([org, own.rows[0].id, actor]);

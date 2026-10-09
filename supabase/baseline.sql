@@ -24918,6 +24918,76 @@ end $$;
 revoke execute on function public.fn_validate_activity_lead_org() from public, anon;
 grant execute on function public.fn_validate_activity_lead_org() to authenticated, service_role;
 
+-- 0263: correção de registros manuais de CS. Exclusão lógica preserva o registro.
+alter table public.crm_lead_activities add column if not exists revision integer not null default 0;
+alter table public.crm_lead_activities add column if not exists deleted_at timestamptz;
+alter table public.crm_lead_activities add column if not exists edited_at timestamptz;
+alter table public.crm_lead_activities add column if not exists edited_by_user_id uuid references auth.users(id);
+revoke update on public.crm_lead_activities from authenticated;
+grant update (payload, type, performed_at, revision, deleted_at, edited_at, edited_by_user_id) on public.crm_lead_activities to authenticated;
+drop policy if exists contact_activity_visible on public.crm_lead_activities;
+create policy contact_activity_visible on public.crm_lead_activities as restrictive for select to authenticated using (deleted_at is null);
+drop policy if exists contact_activity_update on public.crm_lead_activities;
+create policy contact_activity_update on public.crm_lead_activities for update to authenticated using (
+  lead_id is null and source_module = 'crm' and actor_kind = 'user'
+  and type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+  and deleted_at is null
+  and public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+  and (performed_by_user_id = auth.uid() or public.fn_user_role_in_org(organization_id) in ('manager','admin'))
+  and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+) with check (
+  lead_id is null and source_module = 'crm' and actor_kind = 'user'
+  and type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+  and public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+  and (performed_by_user_id = auth.uid() or public.fn_user_role_in_org(organization_id) in ('manager','admin'))
+  and edited_by_user_id = auth.uid()
+  and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+);
+
+-- 0264: exclusão lógica restrita, preservando a política de visibilidade.
+create or replace function public.fn_delete_customer_activity(p_id uuid, p_contact uuid, p_org uuid, p_revision integer)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
+declare changed integer;
+begin
+  if auth.uid() is null or public.fn_user_role_in_org(p_org) not in ('agent','manager','admin') then
+    return false;
+  end if;
+  update public.crm_lead_activities a set deleted_at=now(), edited_at=now(), edited_by_user_id=auth.uid(), revision=a.revision+1
+  where a.id=p_id and a.contact_id=p_contact and a.organization_id=p_org
+    and a.revision=p_revision and a.deleted_at is null and a.lead_id is null
+    and a.source_module='crm' and a.actor_kind='user'
+    and a.type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+    and (a.performed_by_user_id=auth.uid() or public.fn_user_role_in_org(p_org) in ('manager','admin'))
+    and exists(select 1 from public.contacts c where c.id=p_contact and c.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null);
+  get diagnostics changed = row_count;
+  return changed = 1;
+end;
+$$;
+revoke all on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) from public, anon;
+grant execute on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) to authenticated;
+
+-- 0265: exclusão lógica restrita, preservando a política de visibilidade.
+create or replace function public.fn_delete_customer_activity(p_id uuid, p_contact uuid, p_org uuid, p_revision integer)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
+declare changed integer;
+begin
+  if auth.uid() is null or coalesce(public.fn_user_role_in_org(p_org), '') not in ('agent','manager','admin') then
+    return false;
+  end if;
+  update public.crm_lead_activities a set deleted_at=now(), edited_at=now(), edited_by_user_id=auth.uid(), revision=a.revision+1
+  where a.id=p_id and a.contact_id=p_contact and a.organization_id=p_org
+    and a.revision=p_revision and a.deleted_at is null and a.lead_id is null
+    and a.source_module='crm' and a.actor_kind='user'
+    and a.type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+    and (a.performed_by_user_id=auth.uid() or public.fn_user_role_in_org(p_org) in ('manager','admin'))
+    and exists(select 1 from public.contacts c where c.id=p_contact and c.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null);
+  get diagnostics changed = row_count;
+  return changed = 1;
+end;
+$$;
+revoke all on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) from public, anon;
+grant execute on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) to authenticated;
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

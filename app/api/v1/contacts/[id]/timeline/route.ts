@@ -102,6 +102,7 @@ export async function GET(
     let q = supabase
       .from("crm_lead_activities")
       .select(TIMELINE_COLS)
+      .is("deleted_at", null)
       .eq("organization_id", authz.org.orgId)
       .order("performed_at", { ascending: false })
       .order("id", { ascending: false })

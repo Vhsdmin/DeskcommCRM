@@ -39,3 +39,12 @@ Reutiliza `crm_lead_activities`, com lead opcional e contato obrigatório quando
 Verificado pela interface: QBR fictício criado no Cliente de teste CS, lido no histórico após recarregar, com autoria e próximos passos. `tests/vendepay/atividades-rls.mjs` testa o acesso ao próprio histórico e a recusa de gravações em outra organização, por viewer e em contato anonimizado, revertendo todas as fixtures em transação. A suíte Docker do banco não pôde rodar porque Docker não está instalado.
 
 Verificação final do registro: build de produção passou; typecheck passou; lint completo terminou sem erros, com 356 avisos existentes; lint de canais e de hierarquia de papéis passou; 40 testes relacionados passaram. A suíte completa rodou com 895 arquivos: 888 passaram e 7 falharam. A falha introduzida pela ordem do apêndice no baseline foi corrigida (varredura de anon permanece por último) e seu arquivo passou no novo teste dirigido. As outras falhas foram em notificações/tema e importação de leads, áreas não alteradas nesta etapa. Não foi possível executar a suíte completa de invariantes Docker. Nenhuma alteração foi publicada na instalação oficial.
+
+### Correções de atividades (09/10/2026)
+- Histórico permite editar tipo, data, resumo e próximos passos dos registros manuais de CS sem lead.
+- Autor pode corrigir seus registros; manager/admin pode corrigir os da equipe. Modo de acompanhamento somente leitura não permite alterações.
+- Exclusão pede confirmação e é lógica: registro preservado, oculto do histórico e com auditoria. Não há interface de restauração nesta etapa.
+- Revisão impede sobrescrever silenciosamente uma alteração concorrente. Organização, cliente e autoria são validados no servidor e no banco.
+- Migrações 0263–0265 aplicadas somente ao Supabase de desenvolvimento. A função restrita de exclusão preserva a política que oculta registros excluídos.
+- Atalho Marcar compromisso reutiliza a agenda nativa e pré-seleciona o cliente. A agenda ainda precisa de horários de atendimento publicados; sincronização Google não configurada no desenvolvimento.
+- Validação: edição e exclusão de registro descartável pela interface; testes de rota e RLS em transação com rollback, TypeScript e lint dos arquivos alterados.

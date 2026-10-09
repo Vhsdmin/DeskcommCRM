@@ -4,6 +4,7 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 
 import { useT } from "@/hooks/i18n/useT";
 import { useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { ShieldCheck, PencilSimple } from "@/lib/ui/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -205,9 +206,24 @@ export function ContactDetailClient({ contactId }: Props) {
             !contact.is_merged_into &&
             user.support?.access_mode !== "support_readonly" &&
             Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent) && (
-              <RegistrarAtividade contactId={contactId} />
+              <div className="flex flex-wrap items-center gap-2">
+                <RegistrarAtividade contactId={contactId} />
+                <Button asChild variant="outline">
+                  <Link href={`/app/agenda?contato=${contactId}`}>{t("Marcar compromisso")}</Link>
+                </Button>
+              </div>
             )}
-          <TimelineView contactId={contactId} />
+          <TimelineView
+            contactId={contactId}
+            actorUserId={user.id}
+            manager={Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager)}
+            canEdit={
+              !contact.is_anonymized &&
+              !contact.is_merged_into &&
+              user.support?.access_mode !== "support_readonly" &&
+              Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent)
+            }
+          />
         </TabsContent>
 
         <TabsContent value="tasks" className="mt-4">

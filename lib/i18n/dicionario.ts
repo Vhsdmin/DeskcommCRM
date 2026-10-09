@@ -37,6 +37,13 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Editar atividade": { es: "Editar actividad" },
+  "Atividade atualizada.": { es: "Actividad actualizada." },
+  "Excluir atividade": { es: "Eliminar actividad" },
+  "Excluir atividade?": { es: "¿Eliminar actividad?" },
+  "Este registro será retirado do histórico do cliente. A exclusão ficará registrada na auditoria.": { es: "Este registro se retirará del historial del cliente. La eliminación quedará registrada en la auditoría." },
+  "Não foi possível excluir a atividade. Atualize o histórico e tente novamente.": { es: "No fue posible eliminar la actividad. Actualice el historial e inténtelo de nuevo." },
+
   "Registrar atividade": { es: "Registrar actividad" },
   "Reunião com cliente": { es: "Reunión con cliente" },
   "Reunião EBR": { es: "Reunión EBR" },

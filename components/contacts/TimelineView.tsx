@@ -1,5 +1,8 @@
 "use client";
 
+import { RegistrarAtividade } from "./RegistrarAtividade";
+import { ExcluirAtividade } from "./ExcluirAtividade";
+import { TIPO_ATIVIDADE } from "@/lib/contacts/atividade-schema";
 import type { Locale } from "date-fns";
 
 import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
@@ -19,6 +22,9 @@ import { activityLabel, actorName, actorShape } from "@/lib/leads/activity-vocab
 interface Props {
   contactId: string;
   types?: string[];
+  canEdit?: boolean;
+  actorUserId?: string;
+  manager?: boolean;
 }
 
 const ICON_MAP: Record<string, PhosphorIcon> = {
@@ -55,7 +61,7 @@ function summarizePayload(p: Record<string, unknown>): string {
   return "";
 }
 
-export function TimelineView({ contactId, types }: Props) {
+export function TimelineView({ contactId, types, canEdit, actorUserId, manager }: Props) {
   const localeDaData = useLocaleDeData();
   const t = useT();
   const q = useTimeline(contactId, types);
@@ -179,6 +185,27 @@ export function TimelineView({ contactId, types }: Props) {
                             <strong>{t("Próximos passos")}: </strong>
                             {it.payload.next_steps}
                           </p>
+                        )}
+                      {canEdit &&
+                        it.lead_id === null &&
+                        it.source_module === "crm" &&
+                        it.actor_kind === "user" &&
+                        Object.values(TIPO_ATIVIDADE).includes(
+                          it.type as (typeof TIPO_ATIVIDADE)[keyof typeof TIPO_ATIVIDADE],
+                        ) &&
+                        (manager || it.performed_by_user_id === actorUserId) && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <RegistrarAtividade
+                              key={`${it.id}-${it.revision}`}
+                              contactId={contactId}
+                              activity={it}
+                            />
+                            <ExcluirAtividade
+                              contactId={contactId}
+                              activityId={it.id}
+                              revision={it.revision ?? 0}
+                            />
+                          </div>
                         )}
                     </div>
                   </li>

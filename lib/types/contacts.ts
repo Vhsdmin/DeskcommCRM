@@ -43,6 +43,7 @@ export interface Contact {
  * `source_module` is text (whatsapp | crm | nuvemshop | ai | system | ...).
  */
 export interface TimelineItem {
+  revision?: number;
   id: string;
   /**
    * Declarado porque a rota SEMPRE pediu esta coluna. O tipo é que omitia — e
