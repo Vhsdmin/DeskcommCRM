@@ -34,7 +34,8 @@
     "gov:verify": "pnpm typecheck && pnpm lint && pnpm lint:channels && pnpm lint:role-rank && pnpm test:unit",
     "worker": "tsx --env-file=.env --env-file=.env.local workers/agent-worker/main.ts",
     "dev:crons": "tsx --env-file=.env --env-file=.env.local scripts/dev-crons.ts",
-    "flywheel:judge": "tsx --env-file=.env --env-file=.env.local scripts/flywheel-judge-live.ts"
+    "flywheel:judge": "tsx --env-file=.env --env-file=.env.local scripts/flywheel-judge-live.ts",
+    "dev:cs": "SENTRY_DSN=off NEXT_PUBLIC_SENTRY_DSN= SUPABASE_SERVICE_ROLE_KEY=local-demo-placeholder NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=local-demo-placeholder next dev --hostname 127.0.0.1"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.16",
