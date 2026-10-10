@@ -4,6 +4,7 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 
 import { useT } from "@/hooks/i18n/useT";
 import { useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ShieldCheck, PencilSimple } from "@/lib/ui/icons";
@@ -17,6 +18,7 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { ROLE_RANK } from "@/lib/auth/types";
+import { NpsDoCliente } from "@/components/contacts/NpsDoCliente";
 import { JornadaDoCliente } from "@/components/contacts/JornadaDoCliente";
 import { RegistrarAtividade } from "@/components/contacts/RegistrarAtividade";
 import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
@@ -41,7 +43,15 @@ export function ContactDetailClient({ contactId }: Props) {
   // As DEFINIÇÕES continuam no funil (`crm_pipelines.settings.fields[]`) — só o
   // VALOR mora no contato. `camposDoFunil` é o mesmo leitor que o Kanban usa.
   const pipelineQuery = useDefaultPipeline(Boolean(activeOrg));
-  const [tab, setTab] = useState("overview");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const tab = searchParams.get("aba") ?? "overview";
+  const setTab = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("aba", value);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
 
@@ -142,6 +152,7 @@ export function ContactDetailClient({ contactId }: Props) {
           <TabsTrigger value="overview">{t("Visão geral")}</TabsTrigger>
           <TabsTrigger value="timeline">{t("Histórico")}</TabsTrigger>
           <TabsTrigger value="tasks">{t("Tarefas")}</TabsTrigger>
+          <TabsTrigger value="nps">NPS</TabsTrigger>
           <TabsTrigger value="gestao">{t("Dados do Gestão")}</TabsTrigger>
           {isAdmin && <TabsTrigger value="lgpd">LGPD</TabsTrigger>}
         </TabsList>
@@ -246,6 +257,19 @@ export function ContactDetailClient({ contactId }: Props) {
             contactId={contactId}
             podeEditar={
               !contact.is_anonymized &&
+              user.support?.access_mode !== "support_readonly" &&
+              Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent)
+            }
+          />
+        </TabsContent>
+        <TabsContent value="nps" className="mt-4">
+          <NpsDoCliente
+            contactId={contactId}
+            actorId={user.id}
+            manager={Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager)}
+            canEdit={
+              !contact.is_anonymized &&
+              !contact.is_merged_into &&
               user.support?.access_mode !== "support_readonly" &&
               Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent)
             }

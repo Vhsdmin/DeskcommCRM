@@ -1,4 +1,5 @@
 "use client";
+import { npsClass } from "@/lib/contacts/nps";
 import { FASES_JORNADA_CS } from "@/lib/types/contacts";
 
 import Link from "next/link";
@@ -181,6 +182,19 @@ export function TimelineView({ contactId, types, canEdit, actorUserId, manager }
                           {corpo}
                         </p>
                       )}
+                      {it.type === "customer_nps_answered" &&
+                        typeof it.payload.score === "number" && (
+                          <div className="mt-2">
+                            <p className="text-sm font-semibold">
+                              NPS: {it.payload.score}/10 · {t(npsClass(it.payload.score))}
+                            </p>
+                            <Button asChild size="sm" variant="outline" className="mt-2">
+                              <Link href={`/app/contacts/${contactId}?aba=nps`}>
+                                {t("Ver resposta NPS")}
+                              </Link>
+                            </Button>
+                          </div>
+                        )}
                       {it.type === "customer_journey_updated" && (
                         <p className="mt-2 text-sm">
                           {t("Fase da jornada")}:{" "}

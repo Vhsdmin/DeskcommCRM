@@ -3,6 +3,9 @@
  * Match precedence: array order. First match wins.
  */
 export const PUBLIC_PATHS: RegExp[] = [
+  // Pesquisa por token opaco: validação dentro da rota; não expõe dados cadastrais.
+  /^\/pesquisa\/nps$/,
+  /^\/api\/v1\/public\/nps$/,
   /^\/$/,
   /^\/login(\/.*)?$/,
   /^\/signup$/,

@@ -18,6 +18,9 @@
  * aceita; quem escreve daqui é que fica preso ao vocabulário.
  */
 export type ActivityType =
+  | "customer_nps_requested"
+  | "customer_nps_cancelled"
+  | "customer_nps_answered"
   | "customer_support"
   | "customer_meeting"
   | "customer_ebr"
@@ -170,6 +173,9 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   customer_ebr: "Reunião EBR",
   customer_journey_updated: "Jornada de atendimento atualizada",
   customer_qbr: "Reunião QBR",
+  customer_nps_requested: "Link NPS criado",
+  customer_nps_cancelled: "Pesquisa NPS cancelada",
+  customer_nps_answered: "Cliente respondeu ao NPS",
   lead_created: "Entrou pelo WhatsApp",
   stage_changed: "Mudou de estágio",
   agent_move_corrected: "Correção do que o assistente tinha feito",

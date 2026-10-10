@@ -259,3 +259,7 @@ construídas.
 4. Existe branch protection exigindo os dois checks do CI verdes no merge? (não é visível
    no checkout)
 5. Há intenção de pedir pentest externo antes de divulgar a v1.0.0 mais amplamente?
+
+### Pesquisa pública NPS — adaptação VendePay
+
+`/pesquisa/nps` e `POST /api/v1/public/nps` dispensam cookie e exigem token opaco de 256 bits no fragmento do link/body. O banco guarda apenas SHA-256. A RPC restrita ao serviço resolve tenant/contato pelo hash, aplica validade/cancelamento, recusa mesclado/anonimizado, bloqueia resposta repetida e retorna apenas estado. Rate limit reaproveita contador de autenticação por IP e identificador hasheado; sem Redis, limite fica por processo. Lista e emissão/cancelamento internos usam sessão, papel mínimo, organização ativa e RLS/grants de coluna (hash não exposto). Comentário não entra na atividade/auditoria e é limpo na anonimização. O token autoriza quem possui o link; não verifica identidade por login do respondente. Não deve haver envio automático ou divulgação pública do link individual. A sanitização de telemetria remove o fragmento dessa rota e URLs de navegação.

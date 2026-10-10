@@ -329,3 +329,7 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261009220000` | `0266_jornada_cs_do_cliente` | Fase e responsável internos no contato; alteração atômica com histórico, revisão, RLS e validação de membro ativo. |
 
 | `20261009223000` | `0267_fases_jornada_cs` | Fases Entrada, Onboarding, Ativação, Adoção, Expansão e Renovação |
+
+| `20261009230000` | `0268_pesquisa_nps_cliente` | Pesquisa com token opaco, resposta única, RLS, histórico e anonimização. |
+
+| `20261009233000` | `0269_nps_substituicao_autorizada` | Substituir convite ativo exige seu autor ou gestor, igual ao cancelamento. |
