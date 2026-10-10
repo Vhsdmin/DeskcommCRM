@@ -235,8 +235,8 @@ export function TiposDeAgendamentoClient({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4" data-testid="tipos-de-agendamento-config">
       {podeConfigurarGoogle && <AgendasConectadas />}
-      <PrazosDePresenca podeEditar={podeEditar}/>
-      <DiasBloqueados podeEditar={podeEditar}/>
+      <PrazosDePresenca podeEditar={podeEditar} />
+      <DiasBloqueados podeEditar={podeEditar} />
       {podeEditar ? (
         <div>
           {criando ? (
@@ -260,7 +260,7 @@ export function TiposDeAgendamentoClient({
                 );
                 if (feito) {
                   setCriando(false);
-                  setRascunho(VAZIO);
+                  setRascunho({ ...VAZIO, default_owner_user_id: usuarioAtualId });
                 }
               }}
             >
@@ -352,17 +352,53 @@ export function TiposDeAgendamentoClient({
               </div>
             </form>
           ) : (
-            <Button size="sm" data-testid="abrir-novo-tipo" onClick={() => setCriando(true)}>
-              {t("Novo tipo de agendamento")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                data-testid="abrir-novo-tipo"
+                onClick={() => {
+                  setRascunho({ ...VAZIO, default_owner_user_id: usuarioAtualId });
+                  setCriando(true);
+                }}
+              >
+                {t("Novo tipo de agendamento")}
+              </Button>
+              {(["EBR", "QBR"] as const).map((nome) => (
+                <Button
+                  key={nome}
+                  size="sm"
+                  variant="outline"
+                  disabled={tiposIniciais.some(
+                    (tipo) => tipo.name.toLowerCase() === `reunião ${nome.toLowerCase()}`,
+                  )}
+                  onClick={() => {
+                    setRascunho({
+                      name: `Reunião ${nome}`,
+                      category: "reuniao",
+                      duration_minutes: nome === "EBR" ? 30 : 60,
+                      location_kind: "video_link",
+                      default_owner_user_id: usuarioAtualId,
+                    });
+                    setCriando(true);
+                  }}
+                >
+                  {t(nome === "EBR" ? "Preparar EBR" : "Preparar QBR")}
+                </Button>
+              ))}
+            </div>
           )}
         </div>
       ) : null}
 
       <ul className="flex flex-col gap-2" data-testid="lista-de-tipos">
         {tiposIniciais.length === 0 ? (
-          <li data-testid="sem-tipos" className="rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">
-            {t("Nenhum tipo de agendamento ainda. Crie o primeiro para que a Agenda tenha o que oferecer.")}
+          <li
+            data-testid="sem-tipos"
+            className="rounded-lg border border-border bg-surface p-4 text-sm text-text-muted"
+          >
+            {t(
+              "Nenhum tipo de agendamento ainda. Crie o primeiro para que a Agenda tenha o que oferecer.",
+            )}
           </li>
         ) : null}
         {tiposIniciais.map((tipo) => (
@@ -379,8 +415,12 @@ export function TiposDeAgendamentoClient({
               <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-muted">
                 {t(rotuloDe(CATEGORIAS, tipo.category))}
               </span>
-              <span className="text-xs tabular-nums text-text-muted">{tipo.duration_minutes} min</span>
-              <span className="text-xs text-text-muted">{t(rotuloDe(LOCAIS, tipo.location_kind))}</span>
+              <span className="text-xs text-text-muted tabular-nums">
+                {tipo.duration_minutes} min
+              </span>
+              <span className="text-xs text-text-muted">
+                {t(rotuloDe(LOCAIS, tipo.location_kind))}
+              </span>
               {!tipo.default_owner_user_id ? (
                 // O aviso existe porque o sintoma é MUDO: sem dono, a tela de
                 // marcar simplesmente não mostra horário, sem dizer por quê.
@@ -415,7 +455,7 @@ export function TiposDeAgendamentoClient({
                 // pode viver escondida atrás de um clique em "Editar".
                 <span
                   data-testid={`lembrete-ligado-${tipo.id}`}
-                  className="text-xs tabular-nums text-text-muted"
+                  className="text-xs text-text-muted tabular-nums"
                 >
                   {t("avisa o cliente")}{" "}
                   {[tipo.reminder_minutes_before, ...(tipo.reminder_extra_offsets_minutes ?? [])]
@@ -424,7 +464,9 @@ export function TiposDeAgendamentoClient({
                   min {t("antes")}
                 </span>
               ) : null}
-              {!tipo.is_active ? <span className="text-xs text-text-subtle">{t("desativado")}</span> : null}
+              {!tipo.is_active ? (
+                <span className="text-xs text-text-subtle">{t("desativado")}</span>
+              ) : null}
               {podeEditar ? (
                 <span className="ml-auto flex gap-1">
                   <Button
@@ -491,7 +533,9 @@ export function TiposDeAgendamentoClient({
                         id: tipo.id,
                         name: String(dados.get("name") ?? "").trim(),
                         category: String(dados.get("category") ?? tipo.category),
-                        duration_minutes: Number(dados.get("duration_minutes") ?? tipo.duration_minutes),
+                        duration_minutes: Number(
+                          dados.get("duration_minutes") ?? tipo.duration_minutes,
+                        ),
                         // `|| null`, e NÃO omitir quando vazio.
                         //
                         // A tela oferece `<option value="">{t("Sem responsável")}</option>`
@@ -525,9 +569,7 @@ export function TiposDeAgendamentoClient({
                           : {}),
                         ...(dados.get("reminder_minutes_before")
                           ? {
-                              reminder_minutes_before: Number(
-                                dados.get("reminder_minutes_before"),
-                              ),
+                              reminder_minutes_before: Number(dados.get("reminder_minutes_before")),
                             }
                           : {}),
                       }),
@@ -575,7 +617,12 @@ export function TiposDeAgendamentoClient({
                 </label>
                 <LembreteDoCompromisso tipo={tipo} />
                 <div className="flex justify-end sm:col-span-3">
-                  <Button type="submit" size="sm" data-testid={`salvar-${tipo.id}`} disabled={salvando}>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    data-testid={`salvar-${tipo.id}`}
+                    disabled={salvando}
+                  >
                     {salvando ? t("Salvando…") : t("Salvar")}
                   </Button>
                 </div>

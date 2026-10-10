@@ -48,3 +48,11 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 - Migrações 0263–0265 aplicadas somente ao Supabase de desenvolvimento. A função restrita de exclusão preserva a política que oculta registros excluídos.
 - Atalho Marcar compromisso reutiliza a agenda nativa e pré-seleciona o cliente. A agenda ainda precisa de horários de atendimento publicados; sincronização Google não configurada no desenvolvimento.
 - Validação: edição e exclusão de registro descartável pela interface; testes de rota e RLS em transação com rollback, TypeScript e lint dos arquivos alterados.
+
+### Agenda CS — EBR e QBR (09/10/2026)
+- Adaptada a configuração existente de tipos de agendamento, com modelos editáveis: EBR 30 minutos, QBR 60 minutos, categoria reunião, responsável inicial quem está criando e local link de vídeo.
+- Criar continua passando pela API nativa, suas permissões e auditoria. Os tipos foram criados no desenvolvimento pela interface. Não liga lembretes automaticamente.
+- Agenda oferece acesso a Tipos de agendamento; Histórico do cliente continua abrindo a marcação com cliente pré-selecionado.
+- Diagnóstico: não havia disponibilidade em attendant_availability para o responsável. O aviso agora mostra a orientação de configuração recebida em respostas 422, sem expor erros internos do banco.
+- Usuário escolheu definir horários manualmente. Disponibilidade permanece sem configuração; nenhuma reunião foi marcada nesta etapa. Para liberar horários: Equipe → Atendimento → Horários de atendimento → escolher dias, janelas e fuso → salvar.
+- Validação: criação EBR/QBR pela interface, presença dos tipos no diálogo de marcação e cliente vinculado; 90 testes direcionados, TypeScript sem erros e lint sem erros (avisos preexistentes). Sem prova de agendamento completo até a publicação manual dos horários. Não houve alteração de schema nesta etapa.

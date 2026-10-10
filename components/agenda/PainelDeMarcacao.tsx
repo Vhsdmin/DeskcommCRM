@@ -4,7 +4,15 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 
 import { useT } from "@/hooks/i18n/useT";
 
-import { addDays, format, isSameDay, isSameMonth, startOfDay, startOfMonth, startOfWeek } from "date-fns";
+import {
+  addDays,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import Link from "next/link";
 import * as React from "react";
 
@@ -44,6 +52,7 @@ export function PainelDeMarcacao({
   horariosPorDia,
   publicouHorarios = true,
   erroAoCarregar = false,
+  mensagemDeErro,
   fusoSuposto = false,
   fontesDefasadas,
   googleCoberturaParcial,
@@ -104,6 +113,7 @@ export function PainelDeMarcacao({
    * 422 porque ninguém está em `attendant_availability`.
    */
   erroAoCarregar?: boolean;
+  mensagemDeErro?: string;
   /** O fuso veio do padrão, ninguém escolheu — e o agente oferece horário com ele. */
   fusoSuposto?: boolean;
   /** Agenda conectada que parou de atualizar: o horário fica bloqueado, e a tela diz desde quando. */
@@ -395,7 +405,9 @@ export function PainelDeMarcacao({
               </Button>
             </div>
             <p id="ajuda-do-encaixe" className="text-[11px] leading-4 text-text-subtle">
-              {t("Vale fora dos horários publicados. A agenda só recusa se o horário já estiver ocupado.")}
+              {t(
+                "Vale fora dos horários publicados. A agenda só recusa se o horário já estiver ocupado.",
+              )}
             </p>
           </div>
         )}
@@ -416,7 +428,9 @@ export function PainelDeMarcacao({
               também. */}
           <h3 className="mt-3 text-base font-semibold">{t("Marcado.")}</h3>
           <p className="mt-1 text-sm text-text-muted">
-            {format(new Date(marcado.instante), t("EEEE, d 'de' MMMM 'às' HH:mm"), { locale: localeDaData })}
+            {format(new Date(marcado.instante), t("EEEE, d 'de' MMMM 'às' HH:mm"), {
+              locale: localeDaData,
+            })}
           </p>
           <p className="mt-0.5 text-xs text-text-subtle">
             {t(tipo)} · {duracaoMin} {t("min · com")} {responsavel.nome}
@@ -426,7 +440,8 @@ export function PainelDeMarcacao({
             // tela junto com o formulário, e quem fecha o painel agora não tem
             // como saber que aquele agendamento não terá lembrete.
             <p data-testid="aviso-sem-lembrete-no-resumo" className="mt-2 text-xs text-warning">
-              {t("Sem lembrete automático —")} {quemSeraAtendido.nome} {t("pediu para não receber mensagens.")}
+              {t("Sem lembrete automático —")} {quemSeraAtendido.nome}{" "}
+              {t("pediu para não receber mensagens.")}
             </p>
           )}
           <div className="mt-5 flex gap-2">
@@ -513,13 +528,13 @@ export function PainelDeMarcacao({
           formulário cego: a pessoa escolhe um horário sem lembrar de quê. */}
       <aside
         data-testid="contexto-da-marcacao"
-        className="shrink-0 border-b border-border bg-surface-elevated/50 p-4 lg:w-[280px] lg:border-b-0 lg:border-r"
+        className="shrink-0 border-b border-border bg-surface-elevated/50 p-4 lg:w-[280px] lg:border-r lg:border-b-0"
       >
         <div className="flex items-center gap-2">
           <AvatarDaPessoa pessoa={responsavel} tamanho="sm" />
           <span className="truncate text-sm font-semibold">{responsavel.nome}</span>
         </div>
-        <h3 className="mt-3 text-base font-semibold leading-tight">{tipo}</h3>
+        <h3 className="mt-3 text-base leading-tight font-semibold">{tipo}</h3>
         <dl className="mt-3 space-y-2 text-xs text-text-muted">
           <div className="flex items-center gap-1.5">
             <Clock size={14} aria-hidden />
@@ -624,7 +639,7 @@ export function PainelDeMarcacao({
             <Link
               href="/app/team?aba=atendimento"
               data-testid="ir-configurar-horarios"
-              className="mt-2 inline-block text-xs font-medium text-accent underline underline-offset-2 hover:text-accent-strong"
+              className="hover:text-accent-strong mt-2 inline-block text-xs font-medium text-accent underline underline-offset-2"
             >
               {t("Configurar meus horários de atendimento")}
             </Link>
@@ -644,14 +659,19 @@ export function PainelDeMarcacao({
             data-motivo="erro"
             className="mb-3 rounded-sm border border-warning/40 bg-warning-bg p-3"
           >
-            <p className="text-sm font-semibold text-text">{t("Não consegui carregar os horários")}</p>
+            <p className="text-sm font-semibold text-text">
+              {t("Não consegui carregar os horários")}
+            </p>
             <p className="mt-1 text-xs leading-4 text-text-muted">
-              {t("Os dias ficam bloqueados até eu conseguir — é mais seguro que oferecer um horário que talvez não exista. Numa instalação nova, isso costuma ser a jornada de atendimento que ainda não foi publicada.")}
+              {mensagemDeErro ??
+                t(
+                  "Os dias ficam bloqueados até eu conseguir — é mais seguro que oferecer um horário que talvez não exista. Numa instalação nova, isso costuma ser a jornada de atendimento que ainda não foi publicada.",
+                )}
             </p>
             <Link
               href="/app/team?aba=atendimento"
               data-testid="ir-configurar-horarios"
-              className="mt-2 inline-block text-xs font-medium text-accent underline underline-offset-2 hover:text-accent-strong"
+              className="hover:text-accent-strong mt-2 inline-block text-xs font-medium text-accent underline underline-offset-2"
             >
               {t("Configurar meus horários de atendimento")}
             </Link>
@@ -662,7 +682,7 @@ export function PainelDeMarcacao({
           <div
             data-testid="motivo-do-bloqueio"
             data-motivo="sem-vaga"
-            className="mb-3 rounded-sm border border-border bg-surface-sunken p-3"
+            className="bg-surface-sunken mb-3 rounded-sm border border-border p-3"
           >
             <p className="text-sm font-semibold text-text">
               {t("Nenhum horário livre em")} {format(mes, "MMMM", { locale: localeDaData })}
@@ -675,10 +695,16 @@ export function PainelDeMarcacao({
           </div>
         )}
 
-        {googleCoberturaParcial && <p role="status" className="mb-2 text-xs text-warning">{t("Ocupação do Google ainda não verificada neste período.")}</p>}
+        {googleCoberturaParcial && (
+          <p role="status" className="mb-2 text-xs text-warning">
+            {t("Ocupação do Google ainda não verificada neste período.")}
+          </p>
+        )}
         {fusoSuposto && (
           <p data-testid="fuso-suposto" className="mb-2 text-[11px] leading-4 text-text-subtle">
-            {t("Estamos supondo o fuso")} <span className="font-mono">{(fuso ?? "").replace("_", " ")}</span> {t("— ninguém escolheu ainda. O agente oferece horário usando ele.")}
+            {t("Estamos supondo o fuso")}{" "}
+            <span className="font-mono">{(fuso ?? "").replace("_", " ")}</span>{" "}
+            {t("— ninguém escolheu ainda. O agente oferece horário usando ele.")}
           </p>
         )}
 
@@ -695,7 +721,10 @@ export function PainelDeMarcacao({
 
         <div className="grid grid-cols-7 gap-1 text-center">
           {semanas[0]?.map((d) => (
-            <span key={`c-${d.toISOString()}`} className="pb-1 text-[10px] font-semibold uppercase text-text-subtle">
+            <span
+              key={`c-${d.toISOString()}`}
+              className="pb-1 text-[10px] font-semibold text-text-subtle uppercase"
+            >
               {format(d, "EEEEEE", { locale: localeDaData }).replace(".", "")}
             </span>
           ))}
@@ -735,16 +764,21 @@ export function PainelDeMarcacao({
                       : `${format(d, t("d 'de' MMMM"), { locale: localeDaData })} — ${razaoDoDia(isSameMonth(d, mes))}`
                 }
                 title={clicavel ? undefined : razaoDoDia(isSameMonth(d, mes))}
-                onClick={() => { setDia(d); setHorario(null); }}
+                onClick={() => {
+                  setDia(d);
+                  setHorario(null);
+                }}
                 className={cn(
                   "flex h-9 items-center justify-center rounded-sm text-sm tabular-nums transition-colors duration-fast ease-out",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500",
                   !isSameMonth(d, mes) && "text-text-subtle",
-                  disponivel && !escolhido && "bg-accent-soft text-text hover:bg-accent hover:text-accent-foreground",
+                  disponivel &&
+                    !escolhido &&
+                    "bg-accent-soft text-text hover:bg-accent hover:text-accent-foreground",
                   soEncaixe && !escolhido && "text-text hover:bg-accent-soft",
                   escolhido && "bg-accent font-semibold text-accent-foreground",
                   !clicavel && "cursor-default text-text-subtle",
-                  isSameDay(d, agora) && !escolhido && "ring-1 ring-inset ring-border-strong",
+                  isSameDay(d, agora) && !escolhido && "ring-1 ring-border-strong ring-inset",
                 )}
               >
                 {format(d, "d")}
@@ -754,11 +788,17 @@ export function PainelDeMarcacao({
         </div>
 
         {tempo === "confirmando" && horario && (
-          <div ref={confirmacaoRef} className="mt-4 border-t border-border pt-4" data-testid="confirmacao">
+          <div
+            ref={confirmacaoRef}
+            className="mt-4 border-t border-border pt-4"
+            data-testid="confirmacao"
+          >
             <p className="text-sm">
               <span className="text-text-muted">{t("Confirmar")} </span>
               <span className="font-semibold">
-                {format(new Date(horario.instante), t("EEEE, d 'de' MMMM 'às' HH:mm"), { locale: localeDaData })}
+                {format(new Date(horario.instante), t("EEEE, d 'de' MMMM 'às' HH:mm"), {
+                  locale: localeDaData,
+                })}
               </span>
             </p>
 
@@ -777,7 +817,12 @@ export function PainelDeMarcacao({
                 role="alert"
                 className="mt-3 flex gap-2 rounded-sm border border-warning/40 bg-warning-bg p-2.5 lg:w-0 lg:min-w-full"
               >
-                <Warning size={16} weight="fill" className="mt-0.5 shrink-0 text-warning" aria-hidden />
+                <Warning
+                  size={16}
+                  weight="fill"
+                  className="mt-0.5 shrink-0 text-warning"
+                  aria-hidden
+                />
                 <p className="text-xs leading-4 text-text">{recusa.mensagem}</p>
               </div>
             )}
@@ -792,9 +837,16 @@ export function PainelDeMarcacao({
                 role="status"
                 className="mt-3 flex gap-2 rounded-sm border border-warning/40 bg-warning-bg p-2.5"
               >
-                <Warning size={16} weight="fill" className="mt-0.5 shrink-0 text-warning" aria-hidden />
+                <Warning
+                  size={16}
+                  weight="fill"
+                  className="mt-0.5 shrink-0 text-warning"
+                  aria-hidden
+                />
                 <p className="text-xs leading-4 text-text">
-                  <span className="font-semibold">{quemSeraAtendido.nome} {t("pediu para não receber mensagens.")}</span>{" "}
+                  <span className="font-semibold">
+                    {quemSeraAtendido.nome} {t("pediu para não receber mensagens.")}
+                  </span>{" "}
                   {t("O lembrete não será enviado — combine por telefone.")}
                 </p>
               </div>

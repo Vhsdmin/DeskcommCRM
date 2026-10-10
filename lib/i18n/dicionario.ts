@@ -46,6 +46,8 @@ export const DICIONARIO: Traducoes = {
 
   "Registrar atividade": { es: "Registrar actividad" },
   "Reunião com cliente": { es: "Reunión con cliente" },
+  "Preparar EBR": { es: "Preparar EBR" },
+  "Preparar QBR": { es: "Preparar QBR" },
   "Reunião EBR": { es: "Reunión EBR" },
   "Reunião QBR": { es: "Reunión QBR" },
   "Data e horário": { es: "Fecha y hora" },
