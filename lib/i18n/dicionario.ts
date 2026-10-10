@@ -37,6 +37,27 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Renovação": { es: "Renovación" },
+  "Adoção": { es: "Adopción" },
+  "Ativação": { es: "Activación" },
+  "Entrada": { es: "Entrada" },
+  "Jornada de atendimento": { es: "Jornada de atención" },
+  "Jornada de atendimento atualizada": { es: "Jornada de atención actualizada" },
+  "Acompanhamento interno do cliente. Os próximos passos ficam nas tarefas vinculadas.": { es: "Seguimiento interno del cliente. Los próximos pasos están en las tareas vinculadas." },
+  "Fase da jornada": { es: "Etapa de la jornada" },
+  "Responsável pelo acompanhamento": { es: "Responsable del seguimiento" },
+  "Responsável pelo acompanhamento alterado.": { es: "Responsable del seguimiento modificado." },
+  "Ver próximas tarefas": { es: "Ver próximas tareas" },
+  "Editar jornada": { es: "Editar jornada" },
+  "Defina a fase e quem acompanha este cliente. A alteração será registrada no histórico.": { es: "Defina la etapa y quién acompaña a este cliente. El cambio se registrará en el historial." },
+  "Não foi possível salvar a jornada.": { es: "No fue posible guardar la jornada." },
+  "Responsável atual": { es: "Responsable actual" },
+  "Não definida": { es: "Sin definir" },
+  "Acompanhamento": { es: "Seguimiento" },
+  "Expansão": { es: "Expansión" },
+  "Membro da equipe": { es: "Miembro del equipo" },
+  "Não foi possível carregar a equipe. Tente novamente.": { es: "No fue posible cargar el equipo. Inténtelo de nuevo." },
+
   "Editar atividade": { es: "Editar actividad" },
   "Atividade atualizada.": { es: "Actividad actualizada." },
   "Excluir atividade": { es: "Eliminar actividad" },

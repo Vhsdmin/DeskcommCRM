@@ -1,4 +1,5 @@
 "use client";
+import { FASES_JORNADA_CS } from "@/lib/types/contacts";
 
 import Link from "next/link";
 import { RegistrarAtividade } from "./RegistrarAtividade";
@@ -178,6 +179,31 @@ export function TimelineView({ contactId, types, canEdit, actorUserId, manager }
                           title={corpo}
                         >
                           {corpo}
+                        </p>
+                      )}
+                      {it.type === "customer_journey_updated" && (
+                        <p className="mt-2 text-sm">
+                          {t("Fase da jornada")}:{" "}
+                          {t(
+                            FASES_JORNADA_CS[
+                              it.payload.previous_phase as keyof typeof FASES_JORNADA_CS
+                            ] ??
+                              (it.payload.previous_phase === "acompanhamento"
+                                ? "Acompanhamento"
+                                : "Não definida"),
+                          )}{" "}
+                          →{" "}
+                          {t(
+                            FASES_JORNADA_CS[it.payload.phase as keyof typeof FASES_JORNADA_CS] ??
+                              (it.payload.phase === "acompanhamento"
+                                ? "Acompanhamento"
+                                : "Não definida"),
+                          )}
+                          {it.payload.previous_owner_user_id !== it.payload.owner_user_id && (
+                            <span className="block">
+                              {t("Responsável pelo acompanhamento alterado.")}
+                            </span>
+                          )}
                         </p>
                       )}
                       {typeof it.payload.next_steps === "string" &&

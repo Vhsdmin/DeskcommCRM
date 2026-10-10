@@ -21,6 +21,7 @@ export type ActivityType =
   | "customer_support"
   | "customer_meeting"
   | "customer_ebr"
+  | "customer_journey_updated"
   | "customer_qbr"
   // Spec 17: o lead nasceu da primeira mensagem. Sem esta linha na timeline, o
   // card aparece no kanban sem que ninguém saiba de onde veio — e "apareceu
@@ -167,6 +168,7 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   customer_support: "Atendimento",
   customer_meeting: "Reunião com cliente",
   customer_ebr: "Reunião EBR",
+  customer_journey_updated: "Jornada de atendimento atualizada",
   customer_qbr: "Reunião QBR",
   lead_created: "Entrou pelo WhatsApp",
   stage_changed: "Mudou de estágio",

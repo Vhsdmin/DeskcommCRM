@@ -3190,6 +3190,9 @@ export type Database = {
           blocked_reason: string | null
           consent: Json
           cpf_encrypted: string | null
+          cs_phase: string | null
+          cs_owner_user_id: string | null
+          cs_revision: number
           custom_fields: Json
           cpf_hash: string | null
           created_at: string
@@ -3227,6 +3230,9 @@ export type Database = {
           blocked_reason?: string | null
           consent?: Json
           cpf_encrypted?: string | null
+          cs_phase?: string | null
+          cs_owner_user_id?: string | null
+          cs_revision?: number
           custom_fields?: Json
           cpf_hash?: string | null
           created_at?: string
@@ -3264,6 +3270,9 @@ export type Database = {
           blocked_reason?: string | null
           consent?: Json
           cpf_encrypted?: string | null
+          cs_phase?: string | null
+          cs_owner_user_id?: string | null
+          cs_revision?: number
           custom_fields?: Json
           cpf_hash?: string | null
           created_at?: string
@@ -7668,6 +7677,10 @@ export type Database = {
       }
     }
     Functions: {
+      fn_update_contact_cs: {
+        Args: { p_org: string; p_contact: string; p_phase: string | null; p_owner: string | null; p_revision: number }
+        Returns: Json
+      }
       fn_channel_routing_claim: {
         Args: {
           p_channel: string

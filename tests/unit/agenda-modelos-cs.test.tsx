@@ -45,7 +45,7 @@ it("prepara QBR editável e grava apenas ao confirmar, com dono correto", async 
       }),
     ),
   );
-  expect(m.post.mock.calls[0][1]).not.toHaveProperty("reminder_enabled");
+  expect(m.post.mock.calls[0]?.[1]).not.toHaveProperty("reminder_enabled");
 });
 it("oferece modelo EBR sem gravar ao cancelar e mantém dono na próxima criação", () => {
   mount();

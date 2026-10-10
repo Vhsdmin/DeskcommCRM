@@ -325,3 +325,7 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261009211000` | `0264_exclusao_logica_atividade` | Exclusão lógica por função restrita ao autor ou gestor, com organização, contato e revisão validados; mantém RLS de visibilidade. |
 
 | `20261009212000` | `0265_exclusao_sem_vinculo` | Recusa exclusão quando papel na organização é NULL (sem vínculo). |
+
+| `20261009220000` | `0266_jornada_cs_do_cliente` | Fase e responsável internos no contato; alteração atômica com histórico, revisão, RLS e validação de membro ativo. |
+
+| `20261009223000` | `0267_fases_jornada_cs` | Fases Entrada, Onboarding, Ativação, Adoção, Expansão e Renovação |

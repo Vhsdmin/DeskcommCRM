@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { ROLE_RANK } from "@/lib/auth/types";
+import { JornadaDoCliente } from "@/components/contacts/JornadaDoCliente";
 import { RegistrarAtividade } from "@/components/contacts/RegistrarAtividade";
 import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
 import { TimelineView } from "@/components/contacts/TimelineView";
@@ -40,6 +41,7 @@ export function ContactDetailClient({ contactId }: Props) {
   // As DEFINIÇÕES continuam no funil (`crm_pipelines.settings.fields[]`) — só o
   // VALOR mora no contato. `camposDoFunil` é o mesmo leitor que o Kanban usa.
   const pipelineQuery = useDefaultPipeline(Boolean(activeOrg));
+  const [tab, setTab] = useState("overview");
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
 
@@ -135,7 +137,7 @@ export function ContactDetailClient({ contactId }: Props) {
         />
       )}
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="overview">{t("Visão geral")}</TabsTrigger>
           <TabsTrigger value="timeline">{t("Histórico")}</TabsTrigger>
@@ -145,6 +147,19 @@ export function ContactDetailClient({ contactId }: Props) {
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
+          <JornadaDoCliente
+            contact={contact}
+            actorId={user.id}
+            actorName={user.full_name ?? "Você"}
+            manager={Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager)}
+            canEdit={
+              !contact.is_anonymized &&
+              !contact.is_merged_into &&
+              user.support?.access_mode !== "support_readonly" &&
+              Boolean(activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent)
+            }
+            onTasks={() => setTab("tasks")}
+          />
           <Card className="p-4">
             <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>

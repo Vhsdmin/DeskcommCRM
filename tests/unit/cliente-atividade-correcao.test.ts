@@ -70,7 +70,7 @@ it("preserva autor e registra estado anterior na auditoria", async () => {
     expect.objectContaining({ revision: 1, edited_by_user_id: "actor" }),
     { count: "exact" },
   );
-  expect(q.update.mock.calls[0][0]).not.toHaveProperty("performed_by_user_id");
+  expect(q.update.mock.calls[0]?.[0]).not.toHaveProperty("performed_by_user_id");
   expect(m.audit).toHaveBeenCalledWith(
     expect.objectContaining({
       metadata: expect.objectContaining({
