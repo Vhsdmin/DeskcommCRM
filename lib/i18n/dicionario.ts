@@ -37,6 +37,12 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Não foi possível carregar a jornada.": { es: "No fue posible cargar la jornada." },
+  "Carregar mais clientes": { es: "Cargar más clientes" },
+  "Abrir ficha do cliente": { es: "Abrir ficha del cliente" },
+  "Nenhum cliente nesta fase.": { es: "Ningún cliente en esta etapa." },
+  "Definir jornada de outros clientes": { es: "Definir jornada de otros clientes" },
+  "Clientes na fase definida em sua ficha. Alterações no quadro também ficam no Histórico.": { es: "Clientes en la etapa definida en su ficha. Los cambios del tablero también quedan en el historial." },
   "Renovação": { es: "Renovación" },
   "Adoção": { es: "Adopción" },
   "Ativação": { es: "Activación" },

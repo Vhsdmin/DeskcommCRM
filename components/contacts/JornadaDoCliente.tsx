@@ -73,6 +73,7 @@ export function JornadaDoCliente({
       await Promise.all([
         cache.invalidateQueries({ queryKey: ["contact", contact.id] }),
         cache.invalidateQueries({ queryKey: ["contacts"] }),
+        cache.invalidateQueries({ queryKey: ["cs", "board"] }),
         cache.invalidateQueries({ queryKey: ["timeline", contact.id] }),
       ]);
       setOpen(false);
