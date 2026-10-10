@@ -42,6 +42,7 @@ import { ApiError } from "@/lib/api/types";
 import type { Actor, HandlerCtx } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
 import { resolveActiveLeadForContact, type LeadCandidate } from "@/lib/leads/active-lead";
+import { activityLabel, type ActivityType } from "@/lib/leads/activity-vocabulary";
 import { emitLeadActivity } from "@/lib/leads/activity-emitter";
 import { registraFalhaDeAtividade } from "@/lib/leads/activity-write-failure";
 import { moverLeadParaEtapaDeAgendamento } from "@/lib/leads/appointment-stage-move";
@@ -693,9 +694,8 @@ function autorParaCriacao(actor: Actor): string {
  * vem da revisão publicável persistida. Só o vínculo e nada aparece na tela; só
  * a atividade e o dossiê não acha o compromisso.
  *
- * ⚠️ `crm_lead_activities.lead_id` é NOT NULL: agendamento de contato que ainda
- * não virou lead não tem onde ancorar, e o rastro vira `event_log` por
- * `registraFalhaDeAtividade` em vez de sumir. Não se inventa um terceiro caminho.
+ * Agendamentos de clientes sem negócio comercial ancoram a atividade no
+ * contato (migration 0261), preservando o histórico de relacionamento de CS.
  */
 async function fecharOLaco(
   supabase: SB,
@@ -790,14 +790,23 @@ async function fecharOLaco(
 
   if (!leadId) {
     if (args.contactId) {
-      await registraFalhaDeAtividade(supabase, {
+      const result = await emitLeadActivity(supabase, {
         organizationId: ctx.organization_id,
-        // Sem negócio não há âncora; o contato é o que se sabe, e vai no lugar
-        // do id para o alerta não sair mudo sobre QUEM ficou sem rastro.
+        leadId: null,
+        contactId: args.contactId,
+        type: args.atividade as ActivityType,
+        sourceModule: "agenda",
+        sourceId: args.appointmentId,
+        actor: ctx.actor,
+        reason: `${args.nomeDoTipo} — ${activityLabel(args.atividade)}`,
+        payload: args.outcome ? { outcome: args.outcome } : {},
+      });
+      if (!result.ok) await registraFalhaDeAtividade(supabase, {
+        organizationId: ctx.organization_id,
         leadId: args.contactId,
         tipo: args.atividade,
-        origem: "agenda (sem negócio aberto para ancorar)",
-        erro: undefined,
+        origem: "agenda (histórico do cliente)",
+        erro: result.error,
       });
     }
     return;
@@ -832,8 +841,8 @@ async function fecharOLaco(
  *
  * `resolveActiveLeadForContact` distingue três desfechos que um `limit(2)` não
  * distingue: roteou, `no_open_lead` e `ambiguous_open_leads`. Os dois últimos
- * NÃO são erro: o agendamento existe e a atividade não nasce, porque não há
- * negócio a que ancorar.
+ * NÃO são erro: o agendamento e a atividade ficam vinculados ao contato,
+ * sem criar vínculo artificial com um negócio comercial.
  */
 async function leadAtivoDoContato(
   supabase: SB,

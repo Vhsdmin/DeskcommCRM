@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { RegistrarAtividade } from "./RegistrarAtividade";
 import { ExcluirAtividade } from "./ExcluirAtividade";
 import { TIPO_ATIVIDADE } from "@/lib/contacts/atividade-schema";
@@ -186,6 +187,15 @@ export function TimelineView({ contactId, types, canEdit, actorUserId, manager }
                             {it.payload.next_steps}
                           </p>
                         )}
+                      {it.source_module === "agenda" && it.source_id && (
+                        <Button asChild variant="outline" size="sm" className="mt-2">
+                          <Link
+                            href={`/app/agenda?compromisso=${encodeURIComponent(it.source_id)}`}
+                          >
+                            {t("Ver agendamento")}
+                          </Link>
+                        </Button>
+                      )}
                       {canEdit &&
                         it.lead_id === null &&
                         it.source_module === "crm" &&

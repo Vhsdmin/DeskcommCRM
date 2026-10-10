@@ -2123,3 +2123,9 @@ Validação integral do mesmo produto: 733 arquivos unitários / 7.911 casos apr
 - Configuração de tipos → Preparar EBR/QBR → Criar: ambos persistidos e disponíveis na agenda; duração/responsável editáveis e lembretes não habilitados automaticamente.
 - Sem disponibilidade publicada: aviso específico aponta Equipe → Atendimento. Usuário optou por publicação manual; agendamento completo permanece pendente dessa configuração.
 - Evidência: docs/vendepay-agenda-ebr-qbr.jpg; testes: tests/unit/agenda-modelos-cs.test.tsx e lib/agenda/erro-de-horarios.test.ts.
+
+### VendePay — horários publicados e agendamento completo (09/10/2026)
+- Usuário publicou segunda a sexta, 08h–18h no fuso de São Paulo.
+- QBR 13/10 10h–11h: criação pela tela, confirmação e bloqueio do slot na agenda.
+- Achado corrigido: agendamento de contato sem lead não emitia atividade. Agora ancora no contato e preserva autoria; EBR 14/10 10h–10h30 criada pela tela e verificada no Histórico.
+- Histórico → Ver agendamento: acesso à reunião pela agenda existente. Evidência: docs/vendepay-agenda-historico.jpg.

@@ -56,3 +56,12 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 - Diagnóstico: não havia disponibilidade em attendant_availability para o responsável. O aviso agora mostra a orientação de configuração recebida em respostas 422, sem expor erros internos do banco.
 - Usuário escolheu definir horários manualmente. Disponibilidade permanece sem configuração; nenhuma reunião foi marcada nesta etapa. Para liberar horários: Equipe → Atendimento → Horários de atendimento → escolher dias, janelas e fuso → salvar.
 - Validação: criação EBR/QBR pela interface, presença dos tipos no diálogo de marcação e cliente vinculado; 90 testes direcionados, TypeScript sem erros e lint sem erros (avisos preexistentes). Sem prova de agendamento completo até a publicação manual dos horários. Não houve alteração de schema nesta etapa.
+
+### Prova de agendamento completo (09/10/2026)
+- Horários publicados pelo usuário: segunda a sexta, 08h–18h, America/Sao_Paulo.
+- QBR de teste marcada pela interface para 13/10/2026, 10h–11h. Confirmada na agenda, com os blocos ocupados.
+- A prova identificou uma dependência comercial: o handler só emitia histórico quando havia lead aberto. Corrigido para ancorar no contato quando não houver lead, usando a mesma tabela, autor e isolamento existentes. Agendamento sem contato continua sem inventar atividade; com lead mantém vínculo original.
+- EBR de teste marcada após a correção para 14/10/2026, 10h–10h30; atividade automática visível no Histórico e botão Ver agendamento leva à agenda nativa.
+- Registros de agendamento são alterados/remarcados/cancelados pela agenda; edição/exclusão do Histórico continua exclusiva para os registros manuais de CS.
+- Os dois compromissos são do Cliente de teste CS e não enviaram convites por e-mail. A QBR anterior à correção não recebeu backfill do evento de criação.
+- Testes direcionados do handler, transições, vínculos e eixo da timeline; TypeScript e lint dos arquivos alterados. Sem alteração de schema.
