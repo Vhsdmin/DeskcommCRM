@@ -1,3 +1,4 @@
+import { supabaseFetch } from "@/lib/supabase/fetch";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookieSecure } from "@/lib/supabase/cookie-secure";
 import { NextResponse, type NextRequest } from "next/server";
@@ -37,6 +38,7 @@ export async function proxy(request: NextRequest) {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      global: { fetch: supabaseFetch },
       cookies: {
         getAll() {
           return request.cookies.getAll();

@@ -17,7 +17,12 @@ import {
 
 export type SignInResult = {
   ok: false;
-  error: "invalid_credentials" | "rate_limited" | "validation_error" | "mfa_required";
+  error:
+    | "invalid_credentials"
+    | "rate_limited"
+    | "validation_error"
+    | "mfa_required"
+    | "service_unavailable";
   details?: Record<string, unknown>;
   challengeId?: string;
 };
@@ -71,6 +76,13 @@ export async function signInWithPassword(input: LoginInput, next?: string): Prom
   });
 
   if (error || !data.user) {
+    // Falha de rede não é senha errada e não deve bloquear a conta.
+    if (
+      error &&
+      (error.name === "AuthRetryableFetchError" || error.status === 0 || (error.status ?? 0) >= 500)
+    ) {
+      return { ok: false, error: "service_unavailable" };
+    }
     // Só senha errada gasta o orçamento da conta.
     await registrarFalhaDeLogin(parsed.data.email, AUTH_LIMITS.login);
     await audit({

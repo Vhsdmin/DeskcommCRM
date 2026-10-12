@@ -53,11 +53,16 @@ const nextConfig: NextConfig = {
       "./node_modules/.pnpm/@napi-rs+canvas-*/node_modules/@napi-rs/*/*.node",
     ],
   },
+  // Next dev imprime argumentos das Server Actions; login contém credenciais.
+  // Mantém auditoria do app, omitindo apenas o log HTTP/argumentos deste caminho.
+  logging: { incomingRequests: { ignore: [/^\/login(?:[/?]|$)/] } },
   reactStrictMode: true,
   poweredByHeader: false,
   // typedRoutes moved out of experimental in Next 15.5+
   typedRoutes: true,
   experimental: {
+    // Sessão/dados de autenticação precisam ser consultados novamente após HMR.
+    serverComponentsHmrCache: false,
     optimizePackageImports: ["@phosphor-icons/react", "lucide-react", "date-fns"],
   },
   images: {

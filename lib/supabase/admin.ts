@@ -1,3 +1,4 @@
+import { supabaseFetch } from "@/lib/supabase/fetch";
 /**
  * Supabase admin client (service role). BYPASSA RLS.
  *
@@ -31,6 +32,7 @@ export function createAdminClient(): SupabaseClient {
       detectSessionInUrl: false,
     },
     global: {
+      fetch: supabaseFetch,
       headers: {
         "X-Client-Info": "deskcomm-crm/admin",
       },

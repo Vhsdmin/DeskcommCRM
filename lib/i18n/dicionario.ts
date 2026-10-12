@@ -37,6 +37,7 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Não foi possível conectar ao serviço de login. Tente novamente em instantes.": { es: "No se pudo conectar al servicio de acceso. Inténtalo de nuevo en unos instantes." },
   "Fase": { es: "Fase" },
   "Próximo passo": { es: "Próximo paso" },
   "Atendimentos": { es: "Atenciones" },
