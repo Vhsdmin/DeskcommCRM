@@ -333,3 +333,5 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261009230000` | `0268_pesquisa_nps_cliente` | Pesquisa com token opaco, resposta única, RLS, histórico e anonimização. |
 
 | `20261009233000` | `0269_nps_substituicao_autorizada` | Substituir convite ativo exige seu autor ou gestor, igual ao cancelamento. |
+
+| `20261012180000` | `0270_paineis_cs_nps` | Painéis agregados por sessão/RLS, NPS paginado e desempenho CS sem duplicar fontes. |

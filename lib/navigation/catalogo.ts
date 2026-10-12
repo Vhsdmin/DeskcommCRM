@@ -152,7 +152,15 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
 
-  // ---- CRM — o funil ----
+  // ---- CRM — relacionamento ----
+  {
+    href: "/app/nps",
+    label: "Dashboard NPS",
+    description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",
+    icon: "Gauge",
+    group: "crm",
+    section: "Relacionamento e sucesso do cliente",
+  },
   {
     // ⚠️ ERA "Kanban", e a URL continua sendo. O nome saiu da interface porque o
     // produto tinha CINCO vocabulários para a mesma coisa — "Kanban" no menu,
@@ -482,7 +490,7 @@ export const NAV_CATALOG = [
   {
     href: "/app/metrics",
     label: "Desempenho",
-    description: "Funil e performance por atendente nos últimos 30 dias.",
+    description: "Atendimentos, reuniões e clientes para acompanhar por responsável.",
     icon: "ChartBar",
     group: "analise",
     section: "Os números do período",

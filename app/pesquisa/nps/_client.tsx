@@ -1,5 +1,6 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
+import { useT } from "@/hooks/i18n/useT";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/types";
@@ -22,6 +23,7 @@ export function NpsPublico() {
   return <NpsForm key={token} token={token} />;
 }
 function NpsForm({ token }: { token: string }) {
+  const t = useT();
   const [score, setScore] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
@@ -69,33 +71,36 @@ function NpsForm({ token }: { token: string }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl items-center p-4">
       <Card className="w-full space-y-5 p-6">
-        <h1 className="text-2xl font-semibold">Pesquisa NPS VendePay</h1>
+        <h1 className="text-2xl font-semibold">{t("Pesquisa NPS VendePay")}</h1>
         {sent || query.data === "answered" ? (
           <div role="status">
-            <h2 className="font-semibold">Obrigado pela sua resposta!</h2>
+            <h2 className="font-semibold">{t("Obrigado pela sua resposta!")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Sua avaliação foi registrada e ajudará a melhorar nossa experiência.
+              {t("Sua avaliação foi registrada e ajudará a melhorar nossa experiência.")}
             </p>
           </div>
         ) : query.isPending ? (
-          <p>Carregando pesquisa…</p>
+          <p>{t("Carregando pesquisa…")}</p>
         ) : query.isError ? (
           <div role="alert">
-            <p>Não foi possível carregar a pesquisa.</p>
+            <p>{t("Não foi possível carregar a pesquisa.")}</p>
             <Button variant="outline" onClick={() => void query.refetch()}>
-              Tentar novamente
+              {t("Tentar novamente")}
             </Button>
           </div>
         ) : query.data !== "ready" ? (
           <p role="alert">
-            Este link não está mais disponível. Solicite uma nova pesquisa ao seu contato na
-            VendePay.
+            {t(
+              "Este link não está mais disponível. Solicite uma nova pesquisa ao seu contato na VendePay.",
+            )}
           </p>
         ) : (
           <form className="space-y-5" onSubmit={submit}>
             <fieldset disabled={busy}>
               <legend className="mb-3 font-medium">
-                De 0 a 10, qual a probabilidade de você recomendar a VendePay a um amigo ou colega?
+                {t(
+                  "De 0 a 10, qual a probabilidade de você recomendar a VendePay a um amigo ou colega?",
+                )}
               </legend>
               <div className="flex flex-wrap gap-2">
                 {Array.from({ length: 11 }, (_, n) => (
@@ -111,19 +116,19 @@ function NpsForm({ token }: { token: string }) {
                       checked={score === n}
                       onChange={() => setScore(n)}
                       required
-                      aria-label={`Nota ${n}`}
+                      aria-label={`${t("Nota")} ${n}`}
                     />
                     <span>{n}</span>
                   </label>
                 ))}
               </div>
               <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                <span>Nada provável</span>
-                <span>Extremamente provável</span>
+                <span>{t("Nada provável")}</span>
+                <span>{t("Extremamente provável")}</span>
               </div>
             </fieldset>
             <label className="block text-sm">
-              O que motivou sua nota? (opcional)
+              {t("O que motivou sua nota? (opcional)")}
               <textarea
                 className="mt-2 w-full rounded-md border bg-background p-3"
                 maxLength={2000}
@@ -134,8 +139,9 @@ function NpsForm({ token }: { token: string }) {
               />
             </label>
             <p className="text-xs text-muted-foreground">
-              A resposta será vinculada à sua conta para acompanhamento pela equipe VendePay. Evite
-              incluir senhas ou dados de pagamento no comentário.
+              {t(
+                "A resposta será vinculada à sua conta para acompanhamento pela equipe VendePay. Evite incluir senhas ou dados de pagamento no comentário.",
+              )}
             </p>
             {error && (
               <p role="alert" className="text-sm text-error-fg">
@@ -143,7 +149,7 @@ function NpsForm({ token }: { token: string }) {
               </p>
             )}
             <Button disabled={score === null || busy} type="submit">
-              {busy ? "Enviando…" : "Enviar resposta"}
+              {busy ? t("Enviando…") : t("Enviar resposta")}
             </Button>
           </form>
         )}

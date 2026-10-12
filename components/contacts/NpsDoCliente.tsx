@@ -1,4 +1,6 @@
 "use client";
+import { copyToClipboard } from "@/lib/clipboard";
+import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
@@ -19,6 +21,7 @@ export function NpsDoCliente({
   actorId: string;
 }) {
   const t = useT();
+  const locale = useTagDeIdioma();
   const cache = useQueryClient();
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,9 +64,7 @@ export function NpsDoCliente({
     }
   }
   const date = (s: string) =>
-    new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
-      new Date(s),
-    );
+    new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(new Date(s));
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
@@ -101,8 +102,8 @@ export function NpsDoCliente({
               variant="outline"
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(url);
-                  setCopied(true);
+                  if (await copyToClipboard(url)) setCopied(true);
+                  else setError(t("Selecione e copie o link acima."));
                 } catch {
                   setError(t("Selecione e copie o link acima."));
                 }

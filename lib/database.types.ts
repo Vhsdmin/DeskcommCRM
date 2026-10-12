@@ -7683,6 +7683,8 @@ export type Database = {
       }
     }
     Functions: {
+      fn_cs_nps_dashboard: { Args: { p_org: string; p_from: string; p_to: string; p_status?: string; p_class?: string; p_offset?: number; p_owner?: string | null }; Returns: Json }
+      fn_cs_performance: { Args: { p_org: string; p_from: string; p_to: string; p_owner?: string | null; p_silence?: number; p_focus?: string; p_offset?: number }; Returns: Json }
       fn_manage_customer_nps: { Args: { p_org: string; p_contact: string; p_action: string; p_hash?: string | null; p_survey?: string | null }; Returns: Json }
       fn_public_customer_nps: { Args: { p_hash: string; p_score?: number | null; p_comment?: string | null }; Returns: Json }
       fn_redact_customer_nps: { Args: Record<PropertyKey, never>; Returns: unknown }
