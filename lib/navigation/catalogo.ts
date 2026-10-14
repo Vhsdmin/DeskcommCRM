@@ -304,16 +304,6 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
   {
-    href: "/app/ai/routers",
-    label: "Roteadores",
-    description: "Qual agente pega qual conversa, e quando o humano assume.",
-    icon: "Signpost",
-    group: "ia",
-    section: "Montar o agente",
-    minRole: "manager",
-    sidebar: true,
-  },
-  {
     href: "/app/ai/credentials",
     label: "Credenciais",
     description: "A chave do provedor de IA que os agentes usam para pensar.",
@@ -602,24 +592,6 @@ export const NAV_CATALOG = [
     minRole: "admin",
   },
   {
-    // Mora em Organização e não em Canais de propósito: o que se configura aqui
-    // é a CONTA DE ANÚNCIOS da empresa — dinheiro e identidade comercial, ao lado
-    // de billing e API tokens. Canais é por onde se FALA com o cliente, e os dois
-    // eixos são independentes (dá para receber lead de anúncio num número servido
-    // por qualquer transporte). Ver `lib/plataformas-de-anuncio/types.ts`.
-    href: "/app/settings/conversoes",
-    label: "Conversões",
-    description:
-      "Devolver ao anúncio as vendas que ele trouxe, para ele aprender a procurar mais clientes parecidos.",
-    icon: "ChartLineUp",
-    group: "organizacao",
-    section: "Sua empresa",
-    // `admin` pelo mesmo critério das vizinhas: o token grava na conta de
-    // anúncios da empresa, e quem o troca decide para onde vai o dinheiro de
-    // mídia. Um `manager` ficaria acima de billing na mesma prancheta.
-    minRole: "admin",
-  },
-  {
     // Vizinha de Conversões, e SEPARADA dela de propósito. As duas conectam "a
     // Meta" e a tentação de fundi-las é real — mas são credenciais de escopos
     // diferentes, em tabelas diferentes (0214), com consequências opostas
@@ -652,15 +624,6 @@ export const NAV_CATALOG = [
     // SEM `sidebar`: fica só no hub. Trocar a marca é tarefa de uma vez, e
     // agrupar o menu já o fez crescer — duas telas a mais estouraram a dobra em
     // 900px, medido pelo e2e `navegacao.spec.ts`.
-  },
-  {
-    href: "/app/settings/billing",
-    label: "Billing",
-    description: "Plano e cobrança.",
-    icon: "Receipt",
-    group: "organizacao",
-    section: "Sua empresa",
-    minRole: "admin",
   },
   {
     href: "/app/lgpd/requests",

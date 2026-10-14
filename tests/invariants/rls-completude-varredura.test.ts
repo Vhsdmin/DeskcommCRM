@@ -217,7 +217,8 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "tests/invariants/credencial-de-anuncios-e-server-side.test.ts — mesmo " +
       "`describe.each`. Não guarda segredo, mas é o livro-razão de quais leads " +
       "da organização viraram venda, e quem o lê é o servidor com o admin client " +
-      "filtrando organization_id à mão (a tela `/app/settings/conversoes`).",
+      "filtrando organization_id à mão. A tela de Conversões foi retirada na " +
+      "adaptação VendePay; a tabela permanece sem consumidor.",
   },
 ];
 

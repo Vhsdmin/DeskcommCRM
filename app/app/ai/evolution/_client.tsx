@@ -504,7 +504,6 @@ function Conteudo({ payload }: { payload: NonNullable<ReturnType<typeof useEvolu
                 texto={t(
                   "Nenhuma conversa foi encaminhada. Isso só acontece em números que têm um roteador configurado — sem ele, tudo cai no atendimento padrão.",
                 )}
-                acoes={[{ href: "/app/ai/routers", label: t("Configurar um roteador") }]}
               />
             }
           />
@@ -548,7 +547,6 @@ function Conteudo({ payload }: { payload: NonNullable<ReturnType<typeof useEvolu
                 texto={t(
                   "Nenhuma conversa foi classificada por assunto. Os assuntos são os que você cadastra no roteador do seu número.",
                 )}
-                acoes={[{ href: "/app/ai/routers", label: t("Cadastrar assuntos") }]}
               />
             }
           />

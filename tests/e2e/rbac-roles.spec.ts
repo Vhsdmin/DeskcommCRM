@@ -1,8 +1,8 @@
 /**
  * G2-04 — E2E da matriz role×recurso (spec 13 §4) com usuários seed reais.
  *
- * Papéis: agent bloqueado em /app/settings/api-tokens e /app/settings/billing;
- * admin (com MFA TOTP — secret conhecido do seed) acessa ambas; agent vê inbox
+ * Papéis: agent bloqueado em /app/settings/api-tokens;
+ * admin (com MFA TOTP — secret conhecido do seed) acessa a tela; agent vê inbox
  * e kanban; viewer não consegue enviar mensagem (403 server-side).
  *
  * Pré-requisito: `npx tsx scripts/seed-e2e-credentials.ts` (o spec roda o seed
@@ -45,9 +45,9 @@ const creds = loadCreds();
 // faria mais estrago: uma regressão de RBAC ficaria invisível na spec que existe
 // para pegá-la.
 //
-// ⚠️ MEDIDO antes de afirmar: as duas telas do caso do admin
-// (`app/app/settings/api-tokens/page.tsx:12` e `.../billing/page.tsx:20`)
-// gateiam em `ROLE_RANK[activeOrg.role] < ROLE_RANK.admin` **sem** escape de
+// ⚠️ MEDIDO antes de afirmar: a tela do caso do admin
+// (`app/app/settings/api-tokens/page.tsx:12`)
+// gateia em `ROLE_RANK[activeOrg.role] < ROLE_RANK.admin` **sem** escape de
 // `is_platform_admin`, e `requireRole` só bypassa com `allowPlatformAdmin: true`
 // explícito. Hoje a promoção NÃO muda o desfecho deste arquivo. A precondição
 // fica porque é aqui que a próxima asserção de papel vai nascer.
@@ -101,30 +101,22 @@ async function expectNoBlockingA11y(page: Page, excludeSelector?: string): Promi
 }
 
 test.describe("rbac role matrix (spec 13 §4)", () => {
-  test("agent é bloqueado em api-tokens e billing (403)", async ({ page }) => {
+  test("agent é bloqueado em api-tokens (403)", async ({ page }) => {
     await login(page, creds.users.agent!.email);
 
     await page.goto("/app/settings/api-tokens");
     await page.waitForURL(/\/403/);
     await expect(page.getByRole("heading", { name: /403 — Sem permissão/ })).toBeVisible();
 
-    await page.goto("/app/settings/billing");
-    await page.waitForURL(/\/403/);
-    await expect(page.getByRole("heading", { name: /403 — Sem permissão/ })).toBeVisible();
-
     await expectNoBlockingA11y(page);
   });
 
-  test("admin acessa api-tokens e billing (login com MFA TOTP)", async ({ page }) => {
+  test("admin acessa api-tokens (login com MFA TOTP)", async ({ page }) => {
     expect(creds.admin_totp?.secret, "seed deve gravar admin_totp em .e2e-creds.json").toBeTruthy();
     await loginWithTotp(page, creds.users.admin!.email, creds.admin_totp!.secret);
 
     await page.goto("/app/settings/api-tokens");
     await expect(page.getByRole("heading", { name: "API Tokens" })).toBeVisible();
-    await expectNoBlockingA11y(page);
-
-    await page.goto("/app/settings/billing");
-    await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
     await expectNoBlockingA11y(page);
   });
 

@@ -68,7 +68,7 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
   const readOnly = ROLE_RANK[activeOrg.role] < ROLE_RANK.admin;
 
   // mcp_agent: busca versions + lookups.
-  const [versionsRes, credentialsRes, channelSessions, routerMemberRes, funisRes, acervoRes] =
+  const [versionsRes, credentialsRes, channelSessions, funisRes, acervoRes] =
     await Promise.all([
       supabase
         .from("ai_agent_versions")
@@ -81,13 +81,6 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
         .select(CREDENTIAL_COLUMNS)
         .eq("organization_id", activeOrg.orgId),
       listSelectableChannels(supabase, activeOrg.orgId),
-      supabase
-        .from("ai_router_members")
-        .select("router_id, ai_routers(name)")
-        .eq("organization_id", activeOrg.orgId)
-        .eq("agent_id", id)
-        .limit(1)
-        .maybeSingle(),
       // Os funis vêm com a página, não por fetch no cliente: a marcação usa
       // "nenhum funil" para dizer algo importante, e uma lista que chega vazia no
       // primeiro render diria isso por engano.
@@ -131,16 +124,6 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
     cobertura[f.id] = { traduzidos: c.traduzidos, total: c.total, mudo: c.mudo };
   }
   const credentials = (credentialsRes.data ?? []) as unknown as CredentialRow[];
-  const routerMemberRow = routerMemberRes.data as {
-    router_id: string;
-    ai_routers: { name: string } | null;
-  } | null;
-  const routerMembership = routerMemberRow
-    ? {
-        routerId: routerMemberRow.router_id,
-        routerName: routerMemberRow.ai_routers?.name ?? "roteador",
-      }
-    : null;
 
   // A regra mora em `lib/ai/agents/versoes-da-tela.ts` (pura e testada): rascunho
   // VIGENTE > publicada > última versão que existiu. Antes, o rascunho vencia
@@ -177,7 +160,6 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
         funis={funis}
         cobertura={cobertura}
         materiais={materiais}
-        routerMembership={routerMembership}
         readOnly={readOnly}
       />
     </div>

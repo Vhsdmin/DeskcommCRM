@@ -122,18 +122,6 @@ export function montaLacunas(gaps: EvolutionPayload["gaps"]): Lacuna[] {
     });
   }
 
-  if (gaps.router_no_match > 0) {
-    out.push({
-      chave: "router-no-match",
-      texto:
-        `Em ${gaps.router_no_match} ${plural(gaps.router_no_match, "conversa", "conversas")} o agente não soube para qual ` +
-        `atendimento encaminhar e usou o atendimento padrão. Se isso se repete, falta cadastrar esse assunto no roteador ` +
-        `do seu número.`,
-      href: "/app/ai/routers",
-      cta: "Abrir os roteadores",
-    });
-  }
-
   if (gaps.router_failed > 0) {
     out.push({
       chave: "router-failed",
