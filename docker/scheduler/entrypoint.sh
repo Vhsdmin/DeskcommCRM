@@ -82,6 +82,7 @@ CRONS="
 */5 * * * *|45|api/v1/cron/agenda-reminder
 */15 * * * *|45|api/v1/cron/agenda-expira-pendentes
 */15 * * * *|60|api/v1/cron/risk-watcher
+7 * * * *|120|api/v1/cron/cs-sinais
 # O CASO PARADO. De hora em hora, e não a cada 5 minutos: o prazo é de 24h, e
 # uma varredura mais frequente só gastaria consulta para descobrir o mesmo nada.
 7 * * * *|60|api/v1/cron/case-stale-watcher
