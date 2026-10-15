@@ -130,11 +130,8 @@ test("agent abre contexto, volta ainda aberto, resolve e reabre; RLS e menu ocul
     await expect(row(page, `${prefix} própria`).getByRole("link")).toBeVisible();
     for (const suffix of ["sem responsável", "outro atendente", "outra organização"]) await expect(row(page, `${prefix} ${suffix}`).getByRole("link")).toHaveCount(0);
   }
-  const idioma = await db.auth.admin.updateUserById(users[0]!.id, { user_metadata: { locale: "es" } });
-  if (idioma.error) throw idioma.error;
-  await page.reload();
-  await expect(row(page, "Conversa própria").getByRole("link", { name: "Abrir conversación" })).toBeVisible();
-  await expect(row(page, "Referência removida")).toContainText("Este contexto no está disponible para ti");
+  await expect(row(page, "Conversa própria").getByRole("link", { name: "Abrir conversa" })).toBeVisible();
+  await expect(row(page, "Referência removida")).toContainText("Este contexto não está disponível para você");
   await page.setViewportSize({ width: 390, height: 844 });
   await evidence(page, info, "mobile");
 });

@@ -249,15 +249,12 @@ test("fechar canal preserva demanda, desfecho explícito e nova entrada volta à
     await page.screenshot({ path: `${evidence}/task4-caso-obsoleto-aviso.png`, fullPage: true });
     await abrirConversa(page, conversation);
     await expect(page.getByTestId("inbox-memoria")).toContainText("Histórico encerrado");
-    const language = await db.auth.admin.updateUserById(user, { user_metadata: { locale: "es" } });
-    if (language.error) throw language.error;
-    await page.reload();
-    await expect(page.getByTestId("inbox-memoria")).toContainText("Historial cerrado — sin tareas pendientes");
-    await expect(page.getByTestId("inbox-memoria")).toContainText("Resuelta");
-    await page.screenshot({ path: `${evidence}/task4-historico-es.png`, fullPage: true });
+    await expect(page.getByTestId("inbox-memoria")).toContainText("Histórico encerrado — sem tarefas pendentes");
+    await expect(page.getByTestId("inbox-memoria")).toContainText("Resolvida");
+    await page.screenshot({ path: `${evidence}/task4-historico.png`, fullPage: true });
     await page.getByRole("button", { name: "Reabrir", exact: true }).click();
     await expect.poll(async () => (await db.from("conversations").select("status").eq("organization_id",org).eq("id",conversation).single()).data?.status).toBe("open");
-    await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+    await page.getByRole("button", { name: "Fechar", exact: true }).click();
     await expect.poll(async () => (await db.from("conversations").select("status").eq("organization_id",org).eq("id",conversation).single()).data?.status).toBe("closed");
     expect(hits.filter((url) => url.includes("sendText"))).toHaveLength(1);
 

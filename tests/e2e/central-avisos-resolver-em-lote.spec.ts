@@ -1,10 +1,10 @@
 /**
  * "MARCAR TODOS RESOLVIDOS" PELA TELA, COMO O OPERADOR FAZ.
  *
- * Prova três coisas que o unitário não prova, porque as três moram entre o
- * clique e o banco: que o botão está lá e é alcançável; que o lote fecha os
- * abertos DAQUELA organização e só dela; e que o título do aviso continua
- * saindo como foi gravado quando a interface está em espanhol (issue #603).
+ * Prova duas coisas que o unitário não prova, porque as duas moram entre o
+ * clique e o banco: que o botão está lá e é alcançável; e que o lote fecha os
+ * abertos DAQUELA organização e só dela. (O caso em espanhol, issue #603, saiu
+ * no VendePay, que usa só PT-BR.)
  *
  * Trabalho original de @rafaelbatistazz no PR #622.
  */
@@ -136,27 +136,4 @@ test("um clique fecha os abertos da minha organização e não encosta na vizinh
     .eq("organization_id", orgs[1]);
   if (vizinha.error) throw vizinha.error;
   expect(vizinha.data.map((l) => l.status)).toEqual(["open"]);
-});
-
-test("em espanhol, o título do aviso continua o que foi gravado (issue #603)", async ({
-  page,
-}) => {
-  test.setTimeout(120_000);
-  const reabre = await db
-    .from("agent_inbox_items")
-    .update({ status: "open" })
-    .eq("organization_id", orgs[0]);
-  if (reabre.error) throw reabre.error;
-  const idioma = await db.auth.admin.updateUserById(usuario.id, {
-    user_metadata: { locale: "es" },
-  });
-  if (idioma.error) throw idioma.error;
-
-  await login(page);
-  await page.goto("/app/ai/inbox");
-
-  // O rótulo NOSSO traduz…
-  await expect(page.getByRole("button", { name: "Marcar todos como resueltos" })).toBeVisible();
-  // …e o dado sai como veio.
-  await expect(linha(page, TITULO(0))).toBeVisible();
 });

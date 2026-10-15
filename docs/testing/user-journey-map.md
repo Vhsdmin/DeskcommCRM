@@ -1737,7 +1737,9 @@ lido por ninguém**.
 **Como foi provado.** Supabase local pg17 com o `baseline.sql` (o que o
 `install.sh` aplica, não a cadeia de migrations, que não sobe do zero), `next
 build` + `next start` de produção, login com conta de teste real, cinco telas
-percorridas pelo browser. Spec: `tests/e2e/i18n-espanhol-na-tela.spec.ts`.
+percorridas pelo browser. Spec: `tests/e2e/i18n-espanhol-na-tela.spec.ts`
+(removida no VendePay em 2026-10-15: o CRM usa só PT-BR, com a escolha de
+idioma desligada em `lib/i18n/idiomas.ts`).
 Evidência: `evidence/i18n-es/01-inbox-em-espanhol.png` e
 `evidence/i18n-es/02-inbox-de-volta-em-portugues.png`.
 
