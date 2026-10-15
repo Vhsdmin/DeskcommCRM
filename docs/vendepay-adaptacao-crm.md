@@ -158,3 +158,7 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 - Chave de cifra de segredos ativada no DEV (`.env.local` + `private.app_secrets`, como o `ensure_encryption_key` do kit).
 - Prova no DEV: conexão criada pela tela; seis envios assinados: conta nova (200 criado, fase Entrada, telefone normalizado), reenvio (200 duplicado), atualização (200, nome trocado), assinatura inválida (401), conflito de e-mail com o Cliente de teste CS (409) e tipo fora do contrato (400); tela lista processados e recusados com motivo. Isolamento de `gestao_conexoes` medido sob `set role` no DEV. Teste de invariante `conexao-gestao-e-server-side.test.ts` escrito, não executado (Docker indisponível). Suíte unitária: 8 arquivos falhando, os mesmos preexistentes.
 - Dados de teste mantidos no DEV: cliente "Conta Teste Gestão (renomeada)" e a conexão criada (o segredo dela apareceu na sessão de teste — trocar antes de qualquer uso real).
+
+### Somente português (14/10/2026)
+- `ESCOLHA_DE_IDIOMA_ATIVA = false` em `lib/i18n/idiomas.ts`; `idiomaDaInterface` devolve PT-BR e substitui `normalizarIdioma` em todo ponto que decide o idioma de quem olha (`lib/auth/server.ts`, páginas públicas, admin, onboarding, e-mails da agenda e Meet). `normalizarIdioma` segue pura, com os testes de espanhol preservados.
+- Seletor "PT/ES" do topo e campo Idioma em Perfil e Organização ocultos. Verificado na tela; suíte unitária com os 8 arquivos preexistentes falhando e nenhum novo.

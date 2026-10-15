@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import { ESCOLHA_DE_IDIOMA_ATIVA } from "@/lib/i18n/idiomas";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -116,21 +117,23 @@ export function TenantForm({ initial }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="locale">{t("Idioma")}</Label>
-            <Select
-              value={form.locale}
-              onValueChange={(v) => set("locale", v as Locale)}
-            >
-              <SelectTrigger id="locale">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pt-BR">Português (BR)</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {ESCOLHA_DE_IDIOMA_ATIVA && (
+            <div className="space-y-2">
+              <Label htmlFor="locale">{t("Idioma")}</Label>
+              <Select
+                value={form.locale}
+                onValueChange={(v) => set("locale", v as Locale)}
+              >
+                <SelectTrigger id="locale">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pt-BR">Português (BR)</SelectItem>
+                  <SelectItem value="es">Español</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="currency">{t("Moeda")}</Label>
             <Select

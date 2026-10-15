@@ -51,6 +51,15 @@ export type Idioma = (typeof IDIOMAS)[number];
 export const IDIOMA_PADRAO: Idioma = "pt-BR";
 
 /**
+ * O CRM da VendePay usa SÓ português (decisão de 14/10/2026). Com `false`, os
+ * seletores de idioma somem (topo, Perfil, Organização) e `idiomaDaInterface`
+ * devolve `IDIOMA_PADRAO` para todo mundo, mesmo para quem já tinha escolhido
+ * espanhol. `normalizarIdioma` continua pura — o dicionário, as traduções e os
+ * testes delas seguem no código; para reativar, troque para `true`.
+ */
+export const ESCOLHA_DE_IDIOMA_ATIVA = false;
+
+/**
  * O que veio do perfil é um idioma que sabemos servir?
  *
  * Fecha para o padrão em vez de confiar: o campo aceita qualquer string desde
@@ -61,4 +70,13 @@ export function normalizarIdioma(bruto: string | null | undefined): Idioma {
   return (IDIOMAS as readonly string[]).includes(bruto ?? "")
     ? (bruto as Idioma)
     : IDIOMA_PADRAO;
+}
+
+/**
+ * O idioma em que a INTERFACE fala com a pessoa. É `normalizarIdioma` sob a
+ * decisão de produto acima: com a escolha desligada, sempre `IDIOMA_PADRAO`.
+ * Todo ponto que decide o idioma de quem está olhando passa por aqui.
+ */
+export function idiomaDaInterface(bruto: string | null | undefined): Idioma {
+  return ESCOLHA_DE_IDIOMA_ATIVA ? normalizarIdioma(bruto) : IDIOMA_PADRAO;
 }

@@ -3,6 +3,7 @@ import { marcaEhADoProduto } from "@/lib/branding";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 
 /**
  * A casca das telas de acesso — login, cadastro, recuperação, MFA.
@@ -50,7 +51,7 @@ export default async function PublicLayout({ children }: { children: React.React
   const locale = (user?.user_metadata?.locale as string | undefined) ?? null;
 
   return (
-    <IdiomaProvider locale={locale}>
+    <IdiomaProvider locale={idiomaDaInterface(locale)}>
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm space-y-6">
           {marca.logoUrl ? (

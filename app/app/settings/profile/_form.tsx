@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import { ESCOLHA_DE_IDIOMA_ATIVA } from "@/lib/i18n/idiomas";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -91,26 +92,28 @@ export function ProfileForm({
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="locale">{t("Idioma")}</Label>
-            <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
-              <SelectTrigger id="locale">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SEM_PREFERENCIA_DE_IDIOMA}>
-                  {t("Seguir o idioma da empresa")}
-                </SelectItem>
-                <SelectItem value="pt-BR">Português (BR)</SelectItem>
-                {/* Espanhol entrou quando passou a MUDAR alguma coisa. Enquanto
-                    o campo era guardado e ninguém o lia, oferecer um idioma a
-                    mais era prometer o que a tela não cumpre — e o operador
-                    conclui que o sistema está quebrado.
-                    `en-US` saiu pela mesma razão: nunca teve tradução. */}
-                <SelectItem value="es">Español</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {ESCOLHA_DE_IDIOMA_ATIVA && (
+            <div className="space-y-2">
+              <Label htmlFor="locale">{t("Idioma")}</Label>
+              <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
+                <SelectTrigger id="locale">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_PREFERENCIA_DE_IDIOMA}>
+                    {t("Seguir o idioma da empresa")}
+                  </SelectItem>
+                  <SelectItem value="pt-BR">Português (BR)</SelectItem>
+                  {/* Espanhol entrou quando passou a MUDAR alguma coisa. Enquanto
+                      o campo era guardado e ninguém o lia, oferecer um idioma a
+                      mais era prometer o que a tela não cumpre — e o operador
+                      conclui que o sistema está quebrado.
+                      `en-US` saiu pela mesma razão: nunca teve tradução. */}
+                  <SelectItem value="es">Español</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="timezone">{t("Fuso horário")}</Label>
             <Select value={timezone} onValueChange={setTimezone}>

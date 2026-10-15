@@ -6,7 +6,7 @@ import { REGUA_DO_PRODUTO } from "@/lib/branding/regua-do-produto";
 import { camadaDaInstalacao, camadaDoAmbiente, resolverMarca } from "@/lib/branding/resolve";
 import { env } from "@/lib/env";
 import { tagDeIdioma } from "@/lib/i18n/datas";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 import { FormularioDaMarca } from "./_form";
@@ -57,7 +57,7 @@ function instanteLegivel(iso: string | null, idioma: string): string | null {
 export default async function Page() {
   const usuario = await loadAuthUser();
   if (!usuario?.is_platform_admin) notFound();
-  const idioma = normalizarIdioma(usuario.locale);
+  const idioma = idiomaDaInterface(usuario.locale);
 
   const linha = await marcaDaInstalacao();
   // A MESMA pilha do `app/layout.tsx` — banco acima, arquivo de instalação

@@ -167,3 +167,15 @@ describe("o dicionário acompanha o registro de navegação", () => {
     expect(semTraducao.map((g) => g.label)).toEqual([]);
   });
 });
+
+describe("CRM da VendePay: interface só em português", () => {
+  it("com a escolha de idioma desligada, a interface resolve PT-BR para qualquer preferência", async () => {
+    const { ESCOLHA_DE_IDIOMA_ATIVA, idiomaDaInterface, normalizarIdioma } = await import("@/lib/i18n/idiomas");
+    expect(ESCOLHA_DE_IDIOMA_ATIVA).toBe(false);
+    for (const preferencia of ["es", "pt-BR", "en-US", null, undefined]) {
+      expect(idiomaDaInterface(preferencia)).toBe("pt-BR");
+    }
+    // As traduções continuam vivas para quando a escolha voltar.
+    expect(normalizarIdioma("es")).toBe("es");
+  });
+});

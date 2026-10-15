@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { ESCOLHA_DE_IDIOMA_ATIVA } from "@/lib/i18n/idiomas";
 import { ProfileForm } from "./_form";
 
 /**
@@ -34,7 +35,12 @@ function renderForm(locale: "pt-BR" | "es", initialLocale: "pt-BR" | "es") {
 }
 
 describe("ProfileForm em espanhol", () => {
-  it("hidrata o idioma salvo — não nasce em pt-BR", () => {
+  it("com a escolha de idioma desligada (CRM da VendePay), o campo Idioma não aparece", () => {
+    renderForm("pt-BR", "pt-BR");
+    expect(screen.queryByRole("combobox", { name: "Idioma" })).toBeNull();
+  });
+
+  it.skipIf(!ESCOLHA_DE_IDIOMA_ATIVA)("hidrata o idioma salvo — não nasce em pt-BR", () => {
     renderForm("es", "es");
     // O Radix Select também espelha as opções num <select> nativo oculto (por
     // acessibilidade), então "Español" aparece nele mesmo sem ser o valor

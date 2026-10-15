@@ -6,6 +6,7 @@ import { branding } from "@/lib/branding";
 import { RecoverOrganizationForm } from "@/components/auth/RecoverOrganizationForm";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 
 /**
  * A saída do beco: quem confirmou o e-mail e ficou sem organização termina o
@@ -43,7 +44,7 @@ export default async function GetStartedPage() {
   const t = (texto: string) => traduzir(texto, user.idioma);
 
   return (
-    <IdiomaProvider locale={user.locale}>
+    <IdiomaProvider locale={idiomaDaInterface(user.locale)}>
       <main className="bg-muted/40 flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-md space-y-6 rounded-lg border bg-background p-6 shadow-sm">
           <div className="space-y-2">
