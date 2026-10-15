@@ -142,3 +142,9 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 - Marca: `DEFAULT_APP_NAME` = "VendePay CRM"; logo por tema e símbolo embutidos em `lib/branding/arte-vendepay.ts`; favicon com o símbolo. `lib/branding/desenho.ts` removido. Marca por banco/`.env` continua funcionando por cima.
 - Testes: os testes do algoritmo de marca própria passam a medir contra `tests/fixtures/branding/globals-sage.css` (paleta original, onde os números foram calibrados); novo teste verifica que a paleta VendePay cumpre os pisos de contraste; `regua-do-produto.ts` regenerado. Suíte unitária: 8 arquivos falhando, todos preexistentes. TypeScript e lint sem erros. Verificado na tela: login, lista e ficha de cliente, Dashboard NPS e menu, nos temas claro e escuro, em celular e desktop.
 - Custo conhecido: sincronizar com o DeskcommCRM original passa a conflitar em `globals.css`, `lib/branding*` e na casca.
+
+### Funil, tarefas e chamada de voz (14/10/2026)
+- Funil da jornada: arrastar e soltar entre fases com `@hello-pangea/dnd` (mouse e teclado), atualização otimista e recarga após gravar ou falhar. Usa o mesmo PATCH da jornada, com revisão, histórico e auditoria. O seletor de fase continua no card. Provado no DEV: Adoção → Ativação → Adoção, persistido após recarregar.
+- Tarefas: "Nova tarefa" é o primeiro botão da barra; título e descrição ficam acima e a barra ocupa a linha inteira, sem quebrar, em `/app/tasks` e na aba Tarefas do cliente.
+- Chamada de voz oculta via `CHAMADA_DE_VOZ_VISIVEL = false` (`lib/voice/visibilidade.ts`): botão de discar na ficha, aba de Conexões (inclusive por `?aba=voz`), painel em Segurança e avisos de chamada. Código e APIs preservados.
+- WhatsApp por QR: indisponível no DEV porque o serviço WAHA não está configurado (`WAHA_API_BASE_URL`/`WAHA_API_KEY`) e o Docker não está instalado nesta máquina.

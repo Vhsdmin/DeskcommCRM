@@ -3,6 +3,7 @@ import { createContext, useContext, useRef, type ReactNode } from "react";
 
 import { useVoiceCallSession } from "@/hooks/voice/useVoiceCallSession";
 import { IncomingCallBanner } from "@/components/voice/IncomingCallBanner";
+import { CHAMADA_DE_VOZ_VISIVEL } from "@/lib/voice/visibilidade";
 import { ActiveCallPanel } from "@/components/voice/ActiveCallPanel";
 
 type VoiceCallSession = ReturnType<typeof useVoiceCallSession>;
@@ -37,7 +38,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
           O painel de chamada em andamento (§5.3) é o oposto: só de quem está na
           linha. Ele aparecia para o escritório inteiro assim que alguém discava,
           com botão de desligar ativo sobre a ligação alheia. */}
-      {call?.direction === "inbound" && call.status === "ringing" && !call.owner_user_id ? (
+      {!CHAMADA_DE_VOZ_VISIVEL ? null : call?.direction === "inbound" &&
+        call.status === "ringing" &&
+        !call.owner_user_id ? (
         <IncomingCallBanner />
       ) : minha && call && call.status !== "ended" ? (
         <ActiveCallPanel />

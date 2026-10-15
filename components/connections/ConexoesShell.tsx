@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CanalOficialClient } from "./CanalOficialClient";
 import { CanalParceiroClient } from "./CanalParceiroClient";
 import { CanalVozClient } from "./CanalVozClient";
+import { CHAMADA_DE_VOZ_VISIVEL } from "@/lib/voice/visibilidade";
 import { ConnectionsClient } from "./ConnectionsClient";
 import { TemplatesClient } from "./TemplatesClient";
 import { TemplatesParceiroClient } from "./TemplatesParceiroClient";
@@ -50,7 +51,7 @@ export function ConexoesShell({
       ? "oficial"
       : abaParam === "parceiro"
         ? "parceiro"
-        : abaParam === "voz"
+        : abaParam === "voz" && CHAMADA_DE_VOZ_VISIVEL
           ? "voz"
           : "numeros";
   const sub = params.get("sub") === "templates" ? "templates" : "conexao";
@@ -85,16 +86,18 @@ export function ConexoesShell({
             porque no dia em que houver um segundo parceiro esta aba não muda.
             Aqui fica o CONCEITO; lá dentro o cartão diz de quem se trata. */}
         <TabsTrigger value="parceiro">{t("Provedor parceiro")}</TabsTrigger>
-        <TabsTrigger value="voz">{t("Chamada de voz")}</TabsTrigger>
+        {CHAMADA_DE_VOZ_VISIVEL && <TabsTrigger value="voz">{t("Chamada de voz")}</TabsTrigger>}
       </TabsList>
 
       <TabsContent value="numeros" className="mt-0">
         <ConnectionsClient wahaConfigured={wahaConfigured} />
       </TabsContent>
 
-      <TabsContent value="voz" className="mt-0">
-        <CanalVozClient wacallsConfigured={wacallsConfigured} />
-      </TabsContent>
+      {CHAMADA_DE_VOZ_VISIVEL && (
+        <TabsContent value="voz" className="mt-0">
+          <CanalVozClient wacallsConfigured={wacallsConfigured} />
+        </TabsContent>
+      )}
 
       <TabsContent value="parceiro" className="mt-0">
         {/* Sub-abas como no canal oficial, e pelo mesmo motivo: conectar e

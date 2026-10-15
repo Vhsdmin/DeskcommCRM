@@ -78,7 +78,7 @@ export function TarefasClient({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4">
         <div>
           {contactId ? (
             <h2 className="text-xl font-semibold tracking-tight">{t("Tarefas")}</h2>
@@ -95,6 +95,13 @@ export function TarefasClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {podeEditar && (
+            <Button size="sm" className="h-9 gap-1.5 text-xs" onClick={() => abrirNova()}>
+              <Plus size={14} aria-hidden />
+              {t("Nova tarefa")}
+            </Button>
+          )}
+
           <Select value={situacao} onValueChange={(v) => setSituacao(v as FiltroDeSituacao)}>
             <SelectTrigger className="h-9 w-[168px] text-xs">
               <SelectValue />
@@ -149,13 +156,6 @@ export function TarefasClient({
             <ArrowsClockwise size={14} className={cn(carregando && "animate-spin")} aria-hidden />
             {t("Atualizar")}
           </Button>
-
-          {podeEditar && (
-            <Button size="sm" className="h-9 gap-1.5 text-xs" onClick={() => abrirNova()}>
-              <Plus size={14} aria-hidden />
-              {t("Nova tarefa")}
-            </Button>
-          )}
         </div>
       </div>
 
