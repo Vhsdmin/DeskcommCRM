@@ -7,7 +7,6 @@ import { PISOS, extrairRegua, melhorFrenteSobre, razaoDeContraste } from "@/lib/
 import type { Fonte, TemaDaRegua } from "@/lib/branding/contraste";
 import { cssDaMarca } from "@/lib/branding/css";
 import { GRAUS, compor, normalizarHex, rgbParaHex } from "@/lib/branding/rampa";
-import { REGUA_DO_PRODUTO } from "@/lib/branding/regua-do-produto";
 import { camadaDoAmbiente, resolverMarca, type CorResolvida } from "@/lib/branding/resolve";
 
 /**
@@ -36,7 +35,12 @@ import { camadaDoAmbiente, resolverMarca, type CorResolvida } from "@/lib/brandi
  */
 
 const RAIZ = process.cwd();
-const CSS = fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8");
+// A calibração deste arquivo foi medida na paleta Sage do produto original.
+// Desde a adaptação VendePay o `app/globals.css` usa a paleta VendePay, então o
+// algoritmo de marca própria é medido contra a cópia congelada da Sage — os
+// números abaixo continuam valendo para ela. A paleta em vigor é medida contra
+// os pisos em `branding-contraste.test.ts` ("a paleta VendePay ... cabe nos pisos").
+const CSS = fs.readFileSync(path.join(RAIZ, "tests/fixtures/branding/globals-sage.css"), "utf8");
 const REGUA = extrairRegua(CSS);
 
 /** A mesma fixture adversarial versionada de `branding-contraste.test.ts`. */
@@ -55,7 +59,7 @@ const TEMAS = [
 ];
 
 const corDe = (hex: string): CorResolvida => {
-  const cor = resolverMarca([camadaDoAmbiente({ APP_ACCENT_HEX: hex })], REGUA_DO_PRODUTO).cor;
+  const cor = resolverMarca([camadaDoAmbiente({ APP_ACCENT_HEX: hex })], REGUA).cor;
   if (!cor) throw new Error(`fixture ${hex} não resolveu — o teste mediria nada`);
   return cor;
 };

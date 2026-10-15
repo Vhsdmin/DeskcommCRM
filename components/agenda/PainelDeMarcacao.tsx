@@ -774,7 +774,7 @@ export function PainelDeMarcacao({
                   !isSameMonth(d, mes) && "text-text-subtle",
                   disponivel &&
                     !escolhido &&
-                    "bg-accent-soft text-text hover:bg-accent hover:text-accent-foreground",
+                    "bg-accent-soft text-text hover:bg-accent-soft hover:text-accent-foreground",
                   soEncaixe && !escolhido && "text-text hover:bg-accent-soft",
                   escolhido && "bg-accent font-semibold text-accent-foreground",
                   !clicavel && "cursor-default text-text-subtle",

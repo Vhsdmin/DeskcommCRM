@@ -175,7 +175,7 @@ function RadarRow({ lead }: { lead: AtRiskLead }) {
     <li
       data-testid="radar-item"
       data-risk={lead.risk}
-      className="flex items-start gap-2 pr-3 transition-colors hover:bg-accent/50"
+      className="flex items-start gap-2 pr-3 transition-colors hover:bg-accent-soft"
     >
       <Link href={href} className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3">
         <Badge variant={meta.variant} className="mt-0.5 shrink-0">

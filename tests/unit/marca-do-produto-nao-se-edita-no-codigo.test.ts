@@ -44,6 +44,13 @@
  * no `.env` é a semente que o `install.sh` pergunta. Uma imagem Docker serve
  * todas as marcas — é por isso que a constante daqui é o PADRÃO do produto, e
  * não o lugar de configurar a sua.
+ *
+ * ADAPTAÇÃO VENDEPAY (14/10/2026): este repositório deixou de ser uma instalação
+ * do DeskcommCRM e virou o CRM interno da VendePay — paleta, fontes, moldura e
+ * logo por tema mudaram no código, coisa que a marca por banco/`.env` não
+ * cobre. A troca de `DEFAULT_APP_NAME` é deliberada e está aqui, no diff, como
+ * este arquivo pede. Custo conhecido: sincronizar com o DeskcommCRM original
+ * passa a conflitar nestes arquivos.
  */
 import { describe, expect, it } from "vitest";
 
@@ -54,7 +61,7 @@ import { DEFAULT_APP_NAME, resolveBranding } from "@/lib/branding";
  * importado de `lib/branding`, de propósito: um teste que compara a constante
  * com ela mesma passa sempre.
  */
-const MARCA_DO_PRODUTO = "DeskcommCRM";
+const MARCA_DO_PRODUTO = "VendePay CRM";
 
 const COMO_PERSONALIZAR =
   "Para personalizar a marca da SUA instalação, não edite esta constante: " +
@@ -64,7 +71,7 @@ const COMO_PERSONALIZAR =
   "e some com a sua marca no próximo `git pull`.";
 
 describe("a marca padrão do produto", () => {
-  it("é DeskcommCRM — e trocá-la aqui é mudar o produto, não a sua instalação", () => {
+  it("é VendePay CRM — e trocá-la aqui é mudar o produto, não a sua instalação", () => {
     expect(DEFAULT_APP_NAME, COMO_PERSONALIZAR).toBe(MARCA_DO_PRODUTO);
   });
 
@@ -76,7 +83,7 @@ describe("a marca padrão do produto", () => {
     expect(resolveBranding(undefined, undefined), COMO_PERSONALIZAR).toEqual({
       name: MARCA_DO_PRODUTO,
       logoUrl: null,
-      initial: "D",
+      initial: "V",
     });
   });
 });

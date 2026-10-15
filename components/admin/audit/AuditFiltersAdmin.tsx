@@ -88,7 +88,7 @@ function MultiSelectPopover({
           {selected.length > 0 && (
             <button
               onClick={() => { onClear(); setSearch(""); }}
-              className="w-full rounded-md px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent"
+              className="w-full rounded-md px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent-soft"
             >
               {t("Limpar seleção")} ({selected.length})
             </button>
@@ -106,7 +106,7 @@ function MultiSelectPopover({
                 className={`w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                   selected.includes(o.value)
                     ? "bg-accent font-medium"
-                    : "hover:bg-accent/50"
+                    : "hover:bg-accent-soft"
                 }`}
               >
                 {o.label}

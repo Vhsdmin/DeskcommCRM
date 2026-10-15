@@ -178,7 +178,7 @@ export function InboxList() {
               type="button"
               onClick={() => handleSelect(row.id)}
               className={cn(
-                "group flex w-full flex-col gap-1 border-b border-border px-3 py-2.5 text-left transition-colors hover:bg-accent/40",
+                "group flex w-full flex-col gap-1 border-b border-border px-3 py-2.5 text-left transition-colors hover:bg-accent-soft",
                 isSelected && "bg-accent/60",
               )}
               aria-current={isSelected ? "true" : undefined}

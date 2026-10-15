@@ -21,7 +21,12 @@ import {
 } from "@/lib/branding/rampa";
 
 const RAIZ = process.cwd();
-const CSS = fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8");
+// A calibração deste arquivo foi medida na paleta Sage do produto original.
+// Desde a adaptação VendePay o `app/globals.css` usa a paleta VendePay, então o
+// algoritmo de marca própria é medido contra a cópia congelada da Sage — os
+// números abaixo continuam valendo para ela. A paleta em vigor é medida contra
+// os pisos em `branding-contraste.test.ts` ("a paleta VendePay ... cabe nos pisos").
+const CSS = fs.readFileSync(path.join(RAIZ, "tests/fixtures/branding/globals-sage.css"), "utf8");
 
 /**
  * Os stops esperados saem do CSS, NÃO de uma cópia colada aqui.

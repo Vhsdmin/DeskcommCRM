@@ -119,7 +119,7 @@ export function SidebarContent({
     <>
       <div
         className={cn(
-          "flex h-14 items-center border-b px-4",
+          "flex h-14 items-center px-4",
           collapsed ? "justify-center" : "justify-start",
         )}
       >
@@ -154,7 +154,7 @@ export function SidebarContent({
           collapsed ? (
             <SimboloDoProduto nome={nome} className="h-8 w-8" />
           ) : (
-            <LogotipoDoProduto nome={nome} className="h-8 w-auto" />
+            <LogotipoDoProduto nome={nome} className="h-6 w-auto" />
           )
         ) : (
           <span className={cn("font-semibold tracking-tight", collapsed && "sr-only")}>{nome}</span>
@@ -232,7 +232,7 @@ export function SidebarContent({
                     type="button"
                     onClick={() => toggleGrupo(group.id)}
                     aria-expanded={aberto}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+                    className="flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent-soft hover:text-foreground"
                   >
                     {t(group.label)}
                     <CaretDown
@@ -266,8 +266,8 @@ export function SidebarContent({
                           className={cn(
                             "relative flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
                             isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                              ? "bg-accent-soft font-semibold text-accent"
+                              : "text-muted-foreground hover:bg-accent-soft hover:text-foreground",
                             collapsed && "justify-center px-2",
                           )}
                         >
@@ -292,8 +292,8 @@ export function SidebarContent({
                         className={cn(
                           "flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
                           pathname === group.hub.href
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                            ? "bg-accent-soft font-semibold text-accent"
+                            : "text-muted-foreground hover:bg-accent-soft hover:text-foreground",
                           collapsed && "justify-center px-2",
                         )}
                       >
@@ -308,7 +308,7 @@ export function SidebarContent({
           );
         })}
       </nav>
-      <div className="border-t p-2">
+      <div className="p-2">
         {rodape && (
           <Link
             href={rodape.href}
@@ -318,8 +318,8 @@ export function SidebarContent({
             className={cn(
               "mb-1 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
               pathname.startsWith(rodape.href)
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                ? "bg-accent-soft font-semibold text-accent"
+                : "text-muted-foreground hover:bg-accent-soft hover:text-foreground",
               collapsed && "justify-center px-2",
             )}
           >
@@ -334,7 +334,7 @@ export function SidebarContent({
             onClick={() => startTransition(() => toggleSidebar(collapsed))}
             disabled={isPending}
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-accent-soft hover:text-foreground",
               collapsed && "justify-center px-2",
             )}
             aria-label={collapsed ? t("Expandir sidebar") : t("Recolher sidebar")}
@@ -375,7 +375,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         //
         // `shrink-0` porque item de flex encolhe por padrão, e uma barra de 60
         // espremida para caber é o mesmo defeito por outro caminho.
-        "sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r bg-card transition-[width] duration-200",
+        "sticky top-0 z-30 flex h-screen shrink-0 flex-col bg-transparent transition-[width] duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >

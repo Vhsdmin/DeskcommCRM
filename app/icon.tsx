@@ -1,9 +1,9 @@
 import { ImageResponse } from "next/og";
 
 import { marcaEhADoProduto } from "@/lib/branding";
-import { CORES_DA_MARCA, SIMBOLO } from "@/lib/branding/desenho";
+import { SIMBOLO_VENDEPAY } from "@/lib/branding/arte-vendepay";
 import { letraDoIcone } from "@/lib/branding/icone";
-import { marcaDaSaida, NEUTROS_DE_SAIDA } from "@/lib/branding/saida";
+import { marcaDaSaida } from "@/lib/branding/saida";
 
 /**
  * O ícone da aba, DESENHADO em runtime com a marca da instalação.
@@ -38,12 +38,10 @@ import { marcaDaSaida, NEUTROS_DE_SAIDA } from "@/lib/branding/saida";
  * ─── O símbolo do produto, quando a marca é a do produto ────────────────────
  *
  * Sem nome nem logo configurados (`marcaEhADoProduto`), o ladrilho é o símbolo
- * de `lib/branding/desenho.ts` sobre o creme da régua — o mesmo desenho que a
- * barra lateral e a fachada mostram, para a aba e a tela contarem a mesma
- * marca. O satori aceita `<svg>` inline (medido: 1.135 bytes de PNG válido com
- * o símbolo, em 2026-09-08), então continua sem rede e sem arquivo em `public/`.
- * Quem configurou um nome próprio segue com cor + inicial: o símbolo soletra
- * "D", e um "D" na aba de quem se chama "Acme" seria a nossa marca vazando.
+ * VendePay (`lib/branding/arte-vendepay.ts`, PNG embutido como `data:` URI)
+ * sobre fundo quase preto — o mesmo símbolo que a barra lateral recolhida
+ * mostra. Continua sem rede e sem arquivo em `public/`. Quem configurou um nome
+ * próprio segue com cor + inicial.
  *
  * ─── `force-dynamic` não é zelo ─────────────────────────────────────────────
  *
@@ -79,9 +77,10 @@ export default async function Icon() {
   const marca = await marcaDaSaida(null);
 
   if (marcaEhADoProduto({ name: marca.nome, logoUrl: marca.logoUrl })) {
-    // 78% da aresta: o D ocupa ~75% do próprio viewBox, então sobra o mesmo
-    // respiro que a letra tem no ramo de baixo.
-    const lado = Math.round(size.width * 0.78);
+    // O símbolo VendePay sobre o fundo quase preto do Gestão, com cantos
+    // arredondados: o "check" verde precisa de fundo escuro para ter contraste
+    // na aba clara e na escura.
+    const lado = Math.round(size.width * 0.72);
     return new ImageResponse(
       (
         <div
@@ -91,15 +90,12 @@ export default async function Icon() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: NEUTROS_DE_SAIDA.fundo,
+            background: "#070707",
+            borderRadius: 14,
           }}
         >
-          <svg viewBox={SIMBOLO.viewBox} width={lado} height={lado}>
-            <g fill={CORES_DA_MARCA.claro.simbolo} transform={SIMBOLO.transform}>
-              <path d={SIMBOLO.d} />
-              <rect {...SIMBOLO.modulo} />
-            </g>
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={SIMBOLO_VENDEPAY} width={lado} height={lado} alt="" />
         </div>
       ),
       { ...size, headers: CACHE },
