@@ -14,6 +14,7 @@ import { RunsTable } from "./RunsTable";
 import { UsoDasCapacidades } from "./UsoDasCapacidades";
 import { VersionHistory } from "./VersionHistory";
 import { ProposalsPanel } from "./ProposalsPanel";
+import { ASSISTENTE_CS } from "@/lib/ai/agents/assistente-cs";
 import type { AgentRow } from "@/hooks/ai/useAgent";
 import type { AgentVersionRow } from "@/hooks/ai/useAgentVersions";
 import type { CredentialRow } from "@/hooks/ai/useCredentials";
@@ -54,13 +55,19 @@ export function AgentTabs(props: Props) {
     >
       <TabsList>
         <TabsTrigger value="configuration">{t("Configuração")}</TabsTrigger>
-        <TabsTrigger value="test" disabled={!hasVersion}>
-          {t("Teste")}
-        </TabsTrigger>
-        <TabsTrigger value="capacidades">{t("Capacidades")}</TabsTrigger>
-        <TabsTrigger value="runs">{t("Execuções")}</TabsTrigger>
+        {/* Assistente dos CSMs: o teste é a própria conversa em /app/assistente;
+            capacidades, execuções e propostas são do atendente de WhatsApp. */}
+        {!ASSISTENTE_CS && (
+          <>
+            <TabsTrigger value="test" disabled={!hasVersion}>
+              {t("Teste")}
+            </TabsTrigger>
+            <TabsTrigger value="capacidades">{t("Capacidades")}</TabsTrigger>
+            <TabsTrigger value="runs">{t("Execuções")}</TabsTrigger>
+          </>
+        )}
         <TabsTrigger value="history">{t("Histórico")}</TabsTrigger>
-        <TabsTrigger value="proposals">{t("Propostas")}</TabsTrigger>
+        {!ASSISTENTE_CS && <TabsTrigger value="proposals">{t("Propostas")}</TabsTrigger>}
       </TabsList>
 
       <TabsContent value="configuration" className="m-0">

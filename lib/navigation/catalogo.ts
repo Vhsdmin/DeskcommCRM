@@ -284,9 +284,20 @@ export const NAV_CATALOG = [
 
   // ---- Agente de IA — montar, ensinar, acompanhar ----
   {
+    // A conversa do CSM com o assistente interno (lib/ai/agents/assistente-cs.ts).
+    href: "/app/assistente",
+    label: "Assistente",
+    description: "Pergunte sobre produto, processos, empresa e clientes; ele consulta os documentos e o CRM.",
+    icon: "Lightbulb",
+    group: "ia",
+    section: "Usar o assistente",
+    minRole: "agent",
+    sidebar: true,
+  },
+  {
     href: "/app/ai/agents",
     label: "Agentes",
-    description: "Quem atende por você: instruções, modelo, ferramentas e publicação.",
+    description: "Os assistentes dos CSMs: nome, descrição, instruções, documentos e modelo de IA.",
     icon: "Robot",
     group: "ia",
     section: "Montar o agente",
