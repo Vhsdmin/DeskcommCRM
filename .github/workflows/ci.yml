@@ -57,10 +57,6 @@ jobs:
       - name: Role rank audit
         run: pnpm lint:role-rank
 
-      - name: Unit tests
-        run: pnpm test:unit
-
-
       # Scripts do kit self-host num repo git descartável (docker/crontab
       # dublados). É o único gate que exercita o update.sh — um erro aqui
       # rebobina a instalação de quem hospeda, e nenhum teste TS o veria.
@@ -72,6 +68,30 @@ jobs:
       # deixava o .env pela metade — passaram por todos os checks verdes. 15s.
       - name: Kit self-host (bash)
         run: pnpm test:shell
+
+  # Suíte unitária em partes paralelas. No runner do repositório PRIVADO
+  # (VendePay) ela leva ~1,5 s por arquivo: em 2026-10-15 rodou 484 de ~1.100
+  # arquivos em 12,5 min, sem nenhum vermelho, e o job morreu no teto de 15 min.
+  # Dividir custa quase os mesmos minutos que um job só com teto maior (cada
+  # parte paga ~30 s de preâmbulo) e devolve a resposta em um terço do tempo.
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      # Sem fail-fast: um vermelho numa parte não deve esconder o da outra.
+      fail-fast: false
+      matrix:
+        parte: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/preparar-node
+        # O teto do preâmbulo mora aqui porque passo de composite action não
+        # aceita `timeout-minutes`. Razão e medições: o cabeçalho da action.
+        timeout-minutes: 5
+
+      - name: Unit tests (parte ${{ matrix.parte }} de 3)
+        run: pnpm test:unit --shard=${{ matrix.parte }}/3
 
   # Gate de isolamento multi-tenant + invariantes de governança.
   # Job separado de propósito: roda em paralelo ao verify (não atrasa o feedback

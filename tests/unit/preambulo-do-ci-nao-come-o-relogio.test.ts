@@ -56,6 +56,11 @@ const TETOS: Record<string, { minutos: number; razao: string }> = {
     minutos: 20,
     razao: "sobe Postgres e aplica o baseline; trabalho real p90 325s",
   },
+  "ci.yml::unit": {
+    minutos: 20,
+    razao:
+      "VendePay, repo privado: a suíte inteira leva ~28 min no runner do privado (484 arquivos em 12,5 min); dividida em 3 partes, cada uma fica em ~10 min",
+  },
 };
 
 interface Linha {

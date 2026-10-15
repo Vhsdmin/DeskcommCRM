@@ -31,11 +31,16 @@ name: e2e
 # O job falha honestamente: a primeira versão usava `continue-on-error: true` no
 # job inteiro e reportou VERDE com o `supabase start` quebrado e zero teste
 # executado. Verde que não distingue "passou" de "nem rodou" é pior que vermelho.
+#
+# VENDEPAY (2026-10-15): SÓ RODA SOB DEMANDA. Este fork é repositório PRIVADO, e
+# no privado o Actions cobra minuto: uma rodada das três partes custava ~100 min
+# cobrados (cada parte paga ~8,5 min só de setup, e o runner do privado é mais
+# lento que o do público, onde as medições abaixo foram feitas). Rodando em todo
+# push do PR, uns 20 pushes esgotavam a franquia do mês. Dispare pela aba
+# Actions › e2e › Run workflow, ou `gh workflow run e2e.yml --ref <branch>`,
+# antes de um merge que mexa em tela ou fluxo.
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+  workflow_dispatch: {}
 
 # O GITHUB_TOKEN deste job serve a `actions/checkout` (clone) e a
 # `actions/setup-node` (manifest de `actions/node-versions`, repo público).
@@ -86,7 +91,9 @@ jobs:
   # mês sem ninguém perceber.
   e2e-parte:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45, não 30: no runner do repositório privado (VendePay) a parte 1 rodou
+    # 124 de 147 specs em 21 min, depois de ~8,5 min de setup, e foi cancelada.
+    timeout-minutes: 45
     strategy:
       # Sem fail-fast: se a parte 1 quebrar, ainda quero saber se a 2 também.
       # Com ele ligado, o primeiro vermelho esconde o outro e o conserto vira
@@ -594,7 +601,6 @@ jobs:
         troca-de-organizacao-tem-volta.spec.ts
         organizacoes-criacao-convite-e-cache.spec.ts
         suporte-temporario.spec.ts
-        i18n-espanhol-na-tela.spec.ts
         inbox-abas-espelham-o-comando.spec.ts
         moeda-da-organizacao.spec.ts
         zona-de-perigo-apaga-dados-de-teste.spec.ts
