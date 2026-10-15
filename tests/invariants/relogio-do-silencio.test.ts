@@ -42,6 +42,13 @@ const TIPOS: Array<[tipo: string, quebraOSilencio: boolean, porque: string]> = [
   ["next_action_dismissed", false, "decidiu NÃO agir: fica sem próximo passo"],
   ["lead_cooled", false, "É A OBSERVAÇÃO DO SILÊNCIO — o caso que motivou tudo"],
   ["lead_reactivated", false, "observação de sistema, ninguém falou com ninguém"],
+  // (0272) registros manuais de CS: alguém da equipe falou com o cliente.
+  ["customer_support", true, "atendimento registrado com o cliente"],
+  ["customer_meeting", true, "reunião realizada com o cliente"],
+  ["customer_ebr", true, "EBR realizada com o cliente"],
+  ["customer_qbr", true, "QBR realizada com o cliente"],
+  ["customer_journey_updated", false, "decisão interna da equipe, não conversa"],
+  ["customer_nps_requested", false, "convite de pesquisa não é conversa"],
 ];
 
 /**

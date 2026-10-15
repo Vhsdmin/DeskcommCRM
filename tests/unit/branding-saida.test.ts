@@ -109,9 +109,10 @@ describe("marcaDaSaida — o piso", () => {
     // Controle positivo do item 2 do cabeçalho: se alguém trocar o índice em
     // `saida.ts` por outro grau, a igualdade abaixo continua valendo pelo lado
     // errado — por isso a asserção seguinte prende o ÍNDICE, que é a decisão.
-    // Grau 7 (`--color-accent-700`, #049366) desde a paleta VendePay; era 6 na Sage.
-    expect(REGUA_DO_PRODUTO.claro.indices.accent).toBe(7);
-    expect(ACCENT_DO_PRODUTO).toBe(REGUA_DO_PRODUTO.rampaDoProduto[7]);
+    // Grau 8 (`--color-accent-800`, #037a55) desde a paleta VendePay com o
+    // texto branco do botão em 4,5:1; era 6 na Sage.
+    expect(REGUA_DO_PRODUTO.claro.indices.accent).toBe(8);
+    expect(ACCENT_DO_PRODUTO).toBe(REGUA_DO_PRODUTO.rampaDoProduto[8]);
   });
 
   it("a frente do accent é CALCULADA, nunca branco fixo", async () => {

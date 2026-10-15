@@ -14311,7 +14311,10 @@ alter table public.webhook_events_log
   drop constraint if exists webhook_events_log_provider_check;
 alter table public.webhook_events_log
   add constraint webhook_events_log_provider_check check (provider in (
-    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio'
+    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio',
+    -- (0271) eventos de conta do Gestão VendePay. Vocabulário final AQUI, num
+    -- bloco só: o bloco da 0271 não reconstrói esta constraint.
+    'gestao'
   ));
 
 -- ---- a marca da instalação sai do .env e vai para o banco (migration 0155) ----
@@ -24992,11 +24995,8 @@ grant execute on function public.fn_delete_customer_activity(uuid,uuid,uuid,inte
 alter table public.contacts add column if not exists cs_phase text;
 alter table public.contacts add column if not exists cs_owner_user_id uuid references auth.users(id) on delete set null;
 alter table public.contacts add column if not exists cs_revision integer not null default 0;
-do $$ begin
-  if not exists(select 1 from pg_constraint where conname='contacts_cs_phase_check' and conrelid='public.contacts'::regclass) then
-    alter table public.contacts add constraint contacts_cs_phase_check check(cs_phase is null or cs_phase in ('onboarding','acompanhamento','expansao'));
-  end if;
-end $$;
+-- A constraint `contacts_cs_phase_check` NÃO é criada aqui: o vocabulário final
+-- mora no bloco da 0267, logo abaixo — uma constraint, um bloco.
 create or replace function public.fn_update_contact_cs(p_org uuid,p_contact uuid,p_phase text,p_owner uuid,p_revision integer)
 returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
 declare c public.contacts%rowtype; next_revision integer; actor_role text;
@@ -25022,6 +25022,9 @@ grant execute on function public.fn_update_contact_cs(uuid,uuid,text,uuid,intege
 -- ---- Fases CS (0267) ----
 -- 0267: fases da jornada definidas pela equipe VendePay.
 alter table public.contacts drop constraint if exists contacts_cs_phase_check;
+-- Dados ANTES da constraint: a 0266 aceitava 'acompanhamento', que deixou de
+-- existir. Quem estava nela segue em 'adocao', o acompanhamento de uso.
+update public.contacts set cs_phase = 'adocao' where cs_phase = 'acompanhamento';
 alter table public.contacts add constraint contacts_cs_phase_check check(cs_phase is null or cs_phase in ('entrada','onboarding','ativacao','adocao','expansao','renovacao'));
 create or replace function public.fn_update_contact_cs(p_org uuid,p_contact uuid,p_phase text,p_owner uuid,p_revision integer)
 returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
@@ -25231,6 +25234,108 @@ end; $$;
 revoke all on function public.fn_cs_performance(uuid,timestamptz,timestamptz,uuid,integer,text,integer) from public,anon,authenticated;
 grant execute on function public.fn_cs_performance(uuid,timestamptz,timestamptz,uuid,integer,text,integer) to authenticated;
 
+-- ---- Conexão com o Gestão VendePay (migration 0271) ----
+alter table public.contacts add column if not exists gestao_account_id text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'contacts_gestao_account_id_format' and conrelid = 'public.contacts'::regclass) then
+    alter table public.contacts add constraint contacts_gestao_account_id_format
+      check (gestao_account_id is null or (length(gestao_account_id) between 1 and 128 and gestao_account_id = btrim(gestao_account_id)));
+  end if;
+end $$;
+create unique index if not exists uniq_contacts_org_gestao_account
+  on public.contacts (organization_id, gestao_account_id)
+  where gestao_account_id is not null and is_merged_into is null;
+comment on column public.contacts.gestao_account_id is
+  'ID do usuário/conta no Gestão VendePay. Chave do vínculo do webhook do Gestão; e-mail e telefone nunca são usados para casar contas.';
+
+create table if not exists public.gestao_conexoes (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null unique references public.organizations(id) on delete cascade,
+  path_token text not null unique,
+  secret_encrypted bytea not null,
+  is_active boolean not null default true,
+  last_received_at timestamptz,
+  created_by_user_id uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint gestao_conexoes_path_token_format check (length(path_token) >= 32)
+);
+comment on table public.gestao_conexoes is
+  'Conexão por webhook com o Gestão VendePay (uma por organização). Server-side only: RLS ligada sem policies e grants revogados de anon/authenticated.';
+comment on column public.gestao_conexoes.secret_encrypted is
+  'Segredo do HMAC SHA-256 que assina cada envio, cifrado por fn_encrypt_oauth. Exibido uma vez ao criar ou trocar.';
+
+alter table public.gestao_conexoes enable row level security;
+revoke all on public.gestao_conexoes from anon, authenticated;
+grant select, insert, update, delete on public.gestao_conexoes to service_role;
+
+drop trigger if exists trg_gestao_conexoes_updated_at on public.gestao_conexoes;
+create trigger trg_gestao_conexoes_updated_at
+  before update on public.gestao_conexoes
+  for each row execute function public.fn_set_updated_at();
+
+-- O provider 'gestao' entra no vocabulário de `webhook_events_log_provider_check`
+-- no bloco onde ela já é reconstruída (o do provider 'zernio'): uma constraint,
+-- um bloco — ver tests/unit/baseline-constraint-reconstruida.test.ts.
+
+create unique index if not exists uniq_webhook_events_gestao_event
+  on public.webhook_events_log (organization_id, external_id)
+  where provider = 'gestao' and external_id is not null;
+
+-- ---- atividade de CS conta como contato com o cliente (migration 0272) ----
+create or replace function public.fn_update_last_activity_at()
+  returns trigger
+  language plpgsql
+  set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  -- LISTA POSITIVA: só isto conta como "alguém tocou este negócio". Tipo que
+  -- não está aqui NÃO quebra o silêncio — inclusive tipo que ainda não existe.
+  -- Ver o cabeçalho da 0079 antes de acrescentar linha nesta lista.
+  if new.type not in (
+    'ai_turn',              -- a IA falou com o cliente
+    'note',                 -- alguém registrou trabalho no negócio
+    'lead_edited',          -- humano mexeu nos dados
+    'stage_changed',        -- humano moveu o negócio
+    'next_action_approved', -- humano decidiu agir
+    -- (0235) ligação ATENDIDA é interação; `voice_call_missed` não entra.
+    'voice_call',
+    -- (0272) registros manuais de CS: alguém da equipe falou com o cliente.
+    'customer_support',
+    'customer_meeting',
+    'customer_ebr',
+    'customer_qbr'
+  ) then
+    return new;
+  end if;
+
+  update public.crm_leads
+     set last_activity_at = greatest(coalesce(last_activity_at, '-infinity'::timestamptz), new.performed_at)
+   where id = new.lead_id;
+
+  if new.contact_id is not null then
+    update public.contacts
+       set last_activity_at = greatest(coalesce(last_activity_at, '-infinity'::timestamptz), new.performed_at)
+     where id = new.contact_id;
+  end if;
+  return new;
+end$function$;
+
+with ultimo as (
+  select a.contact_id, max(a.performed_at) as em
+    from public.crm_lead_activities a
+   where a.contact_id is not null
+     and a.deleted_at is null
+     and a.type in ('customer_support', 'customer_meeting', 'customer_ebr', 'customer_qbr')
+     and a.performed_at <= now()
+   group by a.contact_id
+)
+update public.contacts c
+   set last_activity_at = u.em
+  from ultimo u
+ where c.id = u.contact_id
+   and (c.last_activity_at is null or c.last_activity_at < u.em);
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
@@ -25397,51 +25502,3 @@ drop trigger if exists trg_platform_meta_app_updated_at on public.platform_meta_
 create trigger trg_platform_meta_app_updated_at
   before update on public.platform_meta_app
   for each row execute function public.fn_set_updated_at();
-
--- ---- Conexão com o Gestão VendePay (migration 0271) ----
-alter table public.contacts add column if not exists gestao_account_id text;
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'contacts_gestao_account_id_format' and conrelid = 'public.contacts'::regclass) then
-    alter table public.contacts add constraint contacts_gestao_account_id_format
-      check (gestao_account_id is null or (length(gestao_account_id) between 1 and 128 and gestao_account_id = btrim(gestao_account_id)));
-  end if;
-end $$;
-create unique index if not exists uniq_contacts_org_gestao_account
-  on public.contacts (organization_id, gestao_account_id)
-  where gestao_account_id is not null and is_merged_into is null;
-comment on column public.contacts.gestao_account_id is
-  'ID do usuário/conta no Gestão VendePay. Chave do vínculo do webhook do Gestão; e-mail e telefone nunca são usados para casar contas.';
-
-create table if not exists public.gestao_conexoes (
-  id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null unique references public.organizations(id) on delete cascade,
-  path_token text not null unique,
-  secret_encrypted bytea not null,
-  is_active boolean not null default true,
-  last_received_at timestamptz,
-  created_by_user_id uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  constraint gestao_conexoes_path_token_format check (length(path_token) >= 32)
-);
-comment on table public.gestao_conexoes is
-  'Conexão por webhook com o Gestão VendePay (uma por organização). Server-side only: RLS ligada sem policies e grants revogados de anon/authenticated.';
-comment on column public.gestao_conexoes.secret_encrypted is
-  'Segredo do HMAC SHA-256 que assina cada envio, cifrado por fn_encrypt_oauth. Exibido uma vez ao criar ou trocar.';
-
-alter table public.gestao_conexoes enable row level security;
-revoke all on public.gestao_conexoes from anon, authenticated;
-grant select, insert, update, delete on public.gestao_conexoes to service_role;
-
-drop trigger if exists trg_gestao_conexoes_updated_at on public.gestao_conexoes;
-create trigger trg_gestao_conexoes_updated_at
-  before update on public.gestao_conexoes
-  for each row execute function public.fn_set_updated_at();
-
-alter table public.webhook_events_log drop constraint if exists webhook_events_log_provider_check;
-alter table public.webhook_events_log add constraint webhook_events_log_provider_check
-  check (provider = any (array['waha'::text, 'nuvemshop'::text, 'generic'::text, 'meta_cloud'::text, 'zernio'::text, 'gestao'::text]));
-
-create unique index if not exists uniq_webhook_events_gestao_event
-  on public.webhook_events_log (organization_id, external_id)
-  where provider = 'gestao' and external_id is not null;

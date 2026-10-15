@@ -103,6 +103,22 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .single();
   if (erroRegistro) {
     if (erroRegistro.code === "23505") {
+      // Mesmo event_id já registrado. Só é "duplicado" se o original TERMINOU:
+      // com ele ainda em processamento, responder 200 faria o Gestão dar o
+      // evento por entregue — e se o original falhar, o evento se perde.
+      const { data: original } = await admin
+        .from("webhook_events_log")
+        .select("status")
+        .eq("organization_id", organizationId)
+        .eq("provider", "gestao")
+        .eq("external_id", eventId)
+        .maybeSingle();
+      if (original?.status === "received") {
+        return fail("state_conflict", "event still processing", 409, {
+          requestId,
+          headers: { "Retry-After": "30" },
+        });
+      }
       return ok({ status: "duplicado", event_id: eventId }, { requestId });
     }
     logger.error("[gestao.webhook] falha ao registrar evento", { requestId, error: erroRegistro.message });
@@ -145,6 +161,10 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         requestId,
       });
       return fail("state_conflict", motivo, 409, { requestId });
+    }
+    if (desfecho.status === "antigo") {
+      await finalizar("processed", "ignorado: evento mais antigo que o último aplicado a este cliente");
+      return ok({ status: "ignorado", contact_id: desfecho.contactId }, { requestId });
     }
     if (desfecho.status === "anonimizado") {
       await finalizar("error", "cliente anonimizado (LGPD) — não é reaberto");

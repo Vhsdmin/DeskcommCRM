@@ -11,7 +11,10 @@
  *  - `conflito`: o e-mail ou telefone já pertence a OUTRO cliente do CRM. Não
  *    juntamos sozinhos — quem resolve é uma pessoa, na ficha (mesclar ou
  *    corrigir). O evento fica registrado com o motivo;
- *  - `anonimizado`: a conta vinculada foi anonimizada (LGPD) e não é reaberta.
+ *  - `anonimizado`: a conta vinculada foi anonimizada (LGPD) e não é reaberta;
+ *  - `antigo`: o evento é mais antigo (`occurred_at`) que o último já aplicado
+ *    a este cliente. Entrega fora de ordem — um reenvio atrasado — não pode
+ *    sobrescrever dado mais novo, então é registrado e ignorado.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -21,7 +24,8 @@ export type DesfechoDoEvento =
   | { status: "criado"; contactId: string; telefoneRecusado: boolean }
   | { status: "atualizado"; contactId: string; telefoneRecusado: boolean }
   | { status: "conflito"; campo: "email" | "telefone"; contactId: string | null }
-  | { status: "anonimizado"; contactId: string };
+  | { status: "anonimizado"; contactId: string }
+  | { status: "antigo"; contactId: string };
 
 /** Qual trava única o Postgres acusou — o nome do índice diz o campo. */
 function campoDoConflito(mensagem: string): "email" | "telefone" | null {
@@ -40,7 +44,7 @@ export async function processarEventoDoGestao(
 
   const { data: existente, error: erroBusca } = await admin
     .from("contacts")
-    .select("id, is_anonymized")
+    .select("id, is_anonymized, source_metadata")
     .eq("organization_id", organizationId)
     .eq("gestao_account_id", contaId)
     .is("is_merged_into", null)
@@ -55,6 +59,14 @@ export async function processarEventoDoGestao(
 
   if (existente) {
     if (existente.is_anonymized) return { status: "anonimizado", contactId: existente.id as string };
+    const aplicadoEm = (existente.source_metadata as { gestao_occurred_at?: unknown } | null)
+      ?.gestao_occurred_at;
+    if (
+      typeof aplicadoEm === "string" &&
+      Date.parse(evento.occurred_at) < Date.parse(aplicadoEm)
+    ) {
+      return { status: "antigo", contactId: existente.id as string };
+    }
     const patch: Record<string, unknown> = { name: campos.name, source_metadata: metadata };
     if (campos.email !== null) patch.email = campos.email;
     if (campos.phone_number !== null) patch.phone_number = campos.phone_number;

@@ -135,7 +135,7 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 ### Identidade visual VendePay (14/10/2026)
 - Fonte: tokens `--vp-color-*` do Gestão VendePay (gestao-hml), lidos da folha de estilo nos temas claro e escuro, mais medidas da casca, botões, segmentos, tabelas e selos no painel autenticado. Logos baixados de `/brand/logo-full.png` e `/brand/logo-full-claro.png`; símbolo recortado das primeiras 58 colunas.
 - Decisões do usuário: tema segue o sistema (padrão já existente), replicar paleta + fontes + moldura, nome "VENDEPAY | CRM".
-- `app/globals.css`: paleta VendePay nos blocos `:root`, `[data-theme="light"]` e `[data-theme="dark"]`, rampa verde de 11 paradas (accent claro `#049366` = 700, escuro `#0BF372` = 400), cantos 8/10/16/20, tokens `--color-shell*` e classe `.moldura-vendepay`. Anel de foco do claro e seleção do escuro ajustados para cumprir os pisos de contraste.
+- `app/globals.css`: paleta VendePay nos blocos `:root`, `[data-theme="light"]` e `[data-theme="dark"]`, rampa verde de 11 paradas (accent claro `#037a55` = 800 — o `#049366` do Gestão dava 3,9:1 com texto branco —, escuro `#0BF372` = 400), cantos 8/10/16/20, tokens `--color-shell*` e classe `.moldura-vendepay`. Anel de foco do claro e seleção do escuro ajustados para cumprir os pisos de contraste.
 - Fontes: Open Sans (texto) e Poppins (h1) via `next/font`, no lugar de Atkinson Hyperlegible.
 - Casca: fundo `#092725`/`#D3EAE6` com brilhos difusos; menu e topo transparentes; conteúdo em painel arredondado. Item ativo e realces de menu/hover usam `accent-soft` com texto accent.
 - Componentes: botão primário com brilho, cantos maiores, cabeçalho de tabela em maiúsculas.
@@ -162,3 +162,13 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 ### Somente português (14/10/2026)
 - `ESCOLHA_DE_IDIOMA_ATIVA = false` em `lib/i18n/idiomas.ts`; `idiomaDaInterface` devolve PT-BR e substitui `normalizarIdioma` em todo ponto que decide o idioma de quem olha (`lib/auth/server.ts`, páginas públicas, admin, onboarding, e-mails da agenda e Meet). `normalizarIdioma` segue pura, com os testes de espanhol preservados.
 - Seletor "PT/ES" do topo e campo Idioma em Perfil e Organização ocultos. Verificado na tela; suíte unitária com os 8 arquivos preexistentes falhando e nenhum novo.
+
+### Correções do code review do PR #1 (15/10/2026)
+- Baseline: `webhook_events_log_provider_check` e `contacts_cs_phase_check` reconstruídas num bloco só cada, com o vocabulário final; o bloco da 0267 migra `acompanhamento` → `adocao` entre o drop e o add. O arquivo da 0267 já aplicado não foi editado (doutrina de forward-fix); o caminho do self-host é o baseline.
+- Migration 0272 (aplicada no DEV duas vezes): atendimento, reunião, EBR e QBR entram na lista positiva de `fn_update_last_activity_at`, com backfill de `contacts.last_activity_at` sem regredir valores. "Última atividade" do Cliente de teste CS passou de "—" para 09/10/2026. Invariante `relogio-do-silencio` ganhou as linhas dos tipos de CS.
+- Auditoria de edição/exclusão de atividade deixa de copiar o payload (resumo e próximos passos); guarda tipo, data, revisão e `had_next_steps`.
+- Guarda de suporte declarada nos handlers PATCH/DELETE; NPS público na exceção justificada do teste de cobertura.
+- Webhook do Gestão: evento com `occurred_at` mais antigo que o último aplicado é ignorado (200 `ignorado`); reenvio de evento ainda em processamento recebe 409 com `Retry-After`. Provados ao vivo no DEV.
+- Tema claro: `--color-accent` = accent-800 e hover = accent-900; novo teste mede o `--color-accent-fg` literal contra o accent (≥ 4,5:1), com sabotagem confirmando que `#049366` reprova.
+- Blocos 0271/0272 do baseline movidos para antes da varredura de anon, que é o último bloco por desenho.
+- Suíte unitária: 7 arquivos falhando, todos também falhando na `main` (notificações/tema no Node 26, importação de leads).

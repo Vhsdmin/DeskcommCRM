@@ -337,3 +337,5 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261012180000` | `0270_paineis_cs_nps` | Painéis agregados por sessão/RLS, NPS paginado e desempenho CS sem duplicar fontes. |
 
 | `20261014200000` | `0271_conexao_gestao` | Webhook assinado do Gestão: vínculo do cliente pelo ID da conta, conexão por organização com segredo cifrado e deduplicação de eventos. |
+
+| `20261015120000` | `0272_atividade_cs_conta_como_contato` | Atendimento, reunião, EBR e QBR atualizam a última atividade do cliente; backfill sem regredir valores. |

@@ -12,8 +12,6 @@ const deleteSchema = z.object({ revision: z.number().int().nonnegative() }).stri
 type Context = { params: Promise<{ id: string; activityId: string }> };
 export const dynamic = "force-dynamic";
 async function change(req: NextRequest, ctx: Context, remove: boolean) {
-  const denied = await requireSupportWrite();
-  if (denied) return denied;
   const requestId = randomUUID();
   const authz = await requireRole("agent", { requestId, resource: "contacts" });
   if (!authz.ok) return authz.response;
@@ -110,19 +108,30 @@ async function change(req: NextRequest, ctx: Context, remove: boolean) {
     metadata: {
       activity_id: activityId,
       operation: remove ? "activity.deleted" : "activity.edited",
+      // O CONTEÚDO do registro (resumo, próximos passos) não entra: a auditoria
+      // é append-only e a anonimização LGPD não a alcança. Fica o que identifica
+      // a mudança sem carregar dado do cliente.
       previous: {
         type: existing.data.type,
-        payload: existing.data.payload,
         performed_at: existing.data.performed_at,
         revision: existing.data.revision,
+        had_next_steps: Boolean(
+          (existing.data.payload as { next_steps?: unknown } | null)?.next_steps,
+        ),
       },
     },
   });
   return ok({ id: activityId, revision: parsed.data.revision + 1, deleted: remove }, { requestId });
 }
+// A guarda de suporte fica em cada handler exportado, onde a varredura de
+// `tests/unit/suporte-cobertura-de-efeitos.test.ts` a enxerga.
 export async function PATCH(req: NextRequest, ctx: Context) {
+  const denied = await requireSupportWrite();
+  if (denied) return denied;
   return change(req, ctx, false);
 }
 export async function DELETE(req: NextRequest, ctx: Context) {
+  const denied = await requireSupportWrite();
+  if (denied) return denied;
   return change(req, ctx, true);
 }

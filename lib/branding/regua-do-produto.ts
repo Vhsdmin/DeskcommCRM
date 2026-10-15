@@ -69,7 +69,7 @@ export const REGUA_DO_PRODUTO: Regua = {
         tipo: "componente",
         fonte: {
           tipo: "grau",
-          indice: 7,
+          indice: 8,
           alfa: 1,
         },
         contra: null,
@@ -81,14 +81,14 @@ export const REGUA_DO_PRODUTO: Regua = {
           tipo: "frenteCalculada",
           sobre: {
             tipo: "grau",
-            indice: 7,
+            indice: 8,
             alfa: 1,
           },
         },
         contra: [
           {
             tipo: "grau",
-            indice: 7,
+            indice: 8,
             alfa: 1,
           },
         ],
@@ -98,7 +98,7 @@ export const REGUA_DO_PRODUTO: Regua = {
         tipo: "componente",
         fonte: {
           tipo: "grau",
-          indice: 8,
+          indice: 9,
           alfa: 1,
         },
         contra: null,
@@ -172,8 +172,8 @@ export const REGUA_DO_PRODUTO: Regua = {
       "#0b0c0e",
     ],
     indices: {
-      accent: 7,
-      hover: 8,
+      accent: 8,
+      hover: 9,
       soft: 0,
     },
     alfaDoSoft: 1,

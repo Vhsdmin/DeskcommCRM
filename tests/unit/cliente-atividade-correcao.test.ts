@@ -63,7 +63,7 @@ beforeEach(() => {
   });
   m.audit.mockResolvedValue(undefined);
 });
-it("preserva autor e registra estado anterior na auditoria", async () => {
+it("preserva autor e registra estado anterior na auditoria, sem o conteúdo do atendimento", async () => {
   const { q } = setup();
   expect((await call()).status).toBe(200);
   expect(q.update).toHaveBeenCalledWith(
@@ -71,13 +71,12 @@ it("preserva autor e registra estado anterior na auditoria", async () => {
     { count: "exact" },
   );
   expect(q.update.mock.calls[0]?.[0]).not.toHaveProperty("performed_by_user_id");
-  expect(m.audit).toHaveBeenCalledWith(
-    expect.objectContaining({
-      metadata: expect.objectContaining({
-        previous: expect.objectContaining({ payload: { summary: "Anterior" } }),
-      }),
-    }),
-  );
+  const previous = m.audit.mock.calls[0]?.[0]?.metadata?.previous;
+  expect(previous).toEqual(expect.objectContaining({ revision: 0, had_next_steps: false }));
+  // A auditoria é append-only e a anonimização LGPD não a alcança: o texto do
+  // atendimento não pode ir para lá.
+  expect(previous).not.toHaveProperty("payload");
+  expect(JSON.stringify(m.audit.mock.calls)).not.toContain("Anterior");
 });
 it("agente não altera atividade de outra pessoa", async () => {
   const { q, rpc } = setup({ ...existing, performed_by_user_id: "other" });

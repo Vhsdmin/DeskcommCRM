@@ -58,10 +58,10 @@
   --color-accent-800: #037a55;
   --color-accent-900: #065f45;
   --color-accent-950: #04231a;
-  --color-accent: var(--color-accent-700);
+  --color-accent: var(--color-accent-800);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-50);
-  --color-accent-hover: var(--color-accent-800);
+  --color-accent-hover: var(--color-accent-900);
 
   /* Neutrals — greige (11 stops, light) */
   --color-neutral-50:  #f8f9fa;
@@ -266,10 +266,10 @@
   --color-text-subtle: #667085;
   --color-border: #e6e9ef;
   --color-border-strong: #d0d5dd;
-  --color-accent: var(--color-accent-700);
+  --color-accent: var(--color-accent-800);
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-50);
-  --color-accent-hover: var(--color-accent-800);
+  --color-accent-hover: var(--color-accent-900);
   --color-neutral-50: #f8f9fa;
   --color-neutral-100: #f2f4f7;
   --color-neutral-200: #e6e9ef;

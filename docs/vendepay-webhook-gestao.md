@@ -34,7 +34,7 @@ Cada ambiente (homologação, produção) tem a sua conexão, com endereço e se
 |---|---|
 | `event_id` | Único por evento. Reenviar o mesmo id não processa de novo. |
 | `event_type` | `account.created` ou `account.updated`. |
-| `occurred_at` | ISO-8601 com fuso. |
+| `occurred_at` | ISO-8601 com fuso. Evento mais antigo que o último aplicado ao cliente é ignorado. |
 | `account.id` | ID do usuário no Gestão. É a chave do vínculo com o cliente no CRM. |
 | `account.name` | Obrigatório. |
 | `account.email`, `account.phone` | Opcionais. Telefone em E.164 ou formato brasileiro. |
@@ -47,10 +47,11 @@ O cliente é encontrado **somente** pelo `account.id`. E-mail e telefone nunca j
 |---|---|---|
 | `200` `criado` / `atualizado` | Cliente criado (fase Entrada da jornada) ou atualizado. | Não |
 | `200` `duplicado` | `event_id` já processado. | Não |
+| `200` `ignorado` | Evento mais antigo que o último aplicado a este cliente (entrega fora de ordem). | Não |
 | `400` | JSON inválido ou fora do contrato (`details` diz o campo). | Depois de corrigir |
 | `401` | Assinatura ausente ou inválida. | Depois de corrigir o segredo |
 | `404` | Endereço desconhecido ou conexão pausada. | Não |
-| `409` | E-mail ou telefone já pertence a outro cliente do CRM. Uma pessoa resolve na ficha. | Sim, depois de resolvido |
+| `409` | E-mail ou telefone já pertence a outro cliente do CRM (resolve-se na ficha), ou o mesmo `event_id` ainda está em processamento (`Retry-After`). | Sim |
 | `410` | O cliente vinculado foi anonimizado (LGPD). | Não |
 | `429` | Mais de 120 envios por minuto no mesmo endereço. | Sim, após `Retry-After` |
 | `500` / `503` | Falha do CRM. | Sim, com espera crescente |
