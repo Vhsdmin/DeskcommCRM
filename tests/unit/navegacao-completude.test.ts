@@ -36,6 +36,8 @@ const NAV_ALLOWLIST: Record<string, string> = {
     "sub-fluxo de criar agente, alcançado pelo botão dentro da lista de Agentes",
   "/app/team/invite": "sub-fluxo de convite, alcançado de dentro de Equipe",
   "/app/settings/tenant/whatsapp": "redirect legado para /app/connections; mantido por links salvos",
+  "/app/ads/meta": "Meta Ads oculto no CRM da VendePay (lib/ads/visibilidade.ts) — a tela responde 404",
+  "/app/settings/meta-ads": "Meta Ads oculto no CRM da VendePay (lib/ads/visibilidade.ts) — a tela responde 404",
   "/app/settings/canal-oficial":
     "redirect para /app/connections?aba=oficial desde o PR #105 — conectar canal passou a ter um lugar só. Conexões é a porta; a aba é navegação interna dela",
   "/app/settings/templates":

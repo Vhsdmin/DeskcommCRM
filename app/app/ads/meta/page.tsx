@@ -18,7 +18,9 @@
  * "já que estou lendo a linha, leio o token junto" é exatamente como ele
  * vazaria para um prop de client component.
  */
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+
+import { META_ADS_VISIVEL } from "@/lib/ads/visibilidade";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
@@ -32,6 +34,8 @@ export const metadata = { title: "Meta Ads" };
 export const dynamic = "force-dynamic";
 
 export default async function MetaAdsPage() {
+  // Oculto no CRM da VendePay — ver `lib/ads/visibilidade.ts`.
+  if (!META_ADS_VISIVEL) notFound();
   const user = await requireAuth();
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) redirect("/app");

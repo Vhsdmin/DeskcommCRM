@@ -196,6 +196,14 @@ const PROVA_PROPRIA: readonly Excecao[] = [
   //
   // NÃO é DEBITO_CONHECIDO: há prova comportamental, escrita no mesmo PR.
   {
+    tabela: "gestao_conexoes",
+    razao:
+      "tests/invariants/conexao-gestao-e-server-side.test.ts — privilégio NENHUM para " +
+      "anon e authenticated, `permission denied` medido sob `set role`, RLS ligada e " +
+      "zero policies. Deny-all porque a linha guarda o segredo que assina os envios do " +
+      "Gestão VendePay; a API lê pelo service_role filtrando a organização da sessão.",
+  },
+  {
     tabela: "ad_platform_connections",
     razao:
       "tests/invariants/credencial-de-anuncios-e-server-side.test.ts — privilégio " +

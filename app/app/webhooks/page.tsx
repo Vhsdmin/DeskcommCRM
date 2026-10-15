@@ -21,7 +21,7 @@ export default async function WebhooksPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Webhooks</h1>
         <p className="text-sm text-muted-foreground">
           {traduzir(
-            "Receba contatos de fora (landing pages, formulários) e crie automações que agem sozinhas.",
+            "Receba os eventos de conta do Gestão VendePay e crie automações que agem sozinhas.",
             idioma,
           )}
         </p>

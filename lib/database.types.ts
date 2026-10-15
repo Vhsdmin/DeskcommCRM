@@ -3207,6 +3207,7 @@ export type Database = {
           email: string | null
           email_normalized: string | null
           force_human: boolean
+          gestao_account_id: string | null
           id: string
           is_anonymized: boolean
           is_blocked: boolean
@@ -3247,6 +3248,7 @@ export type Database = {
           email?: string | null
           email_normalized?: string | null
           force_human?: boolean
+          gestao_account_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -3287,6 +3289,7 @@ export type Database = {
           email?: string | null
           email_normalized?: string | null
           force_human?: boolean
+          gestao_account_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -4857,6 +4860,50 @@ export type Database = {
             columns: ["pointer_id"]
             isOneToOne: false
             referencedRelation: "followup_flow_pointers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gestao_conexoes: {
+        Row: {
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          is_active: boolean
+          last_received_at: string | null
+          organization_id: string
+          path_token: string
+          secret_encrypted: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          organization_id: string
+          path_token: string
+          secret_encrypted: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          organization_id?: string
+          path_token?: string
+          secret_encrypted?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_conexoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

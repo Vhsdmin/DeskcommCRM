@@ -335,3 +335,5 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261009233000` | `0269_nps_substituicao_autorizada` | Substituir convite ativo exige seu autor ou gestor, igual ao cancelamento. |
 
 | `20261012180000` | `0270_paineis_cs_nps` | Painéis agregados por sessão/RLS, NPS paginado e desempenho CS sem duplicar fontes. |
+
+| `20261014200000` | `0271_conexao_gestao` | Webhook assinado do Gestão: vínculo do cliente pelo ID da conta, conexão por organização com segredo cifrado e deduplicação de eventos. |
