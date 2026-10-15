@@ -196,6 +196,13 @@ const PROVA_PROPRIA: readonly Excecao[] = [
   //
   // NÃO é DEBITO_CONHECIDO: há prova comportamental, escrita no mesmo PR.
   {
+    tabela: "customer_nps_surveys",
+    razao:
+      "tests/invariants/cs-cliente-isolamento.test.ts — JWT de dois tenants reais: membro " +
+      "de A lê 1 pesquisa de A e 0 de B, B não lê a de A, e `token_hash` dá permission " +
+      "denied sob authenticated (grant por coluna). Escrita só pelas definers de NPS.",
+  },
+  {
     tabela: "gestao_conexoes",
     razao:
       "tests/invariants/conexao-gestao-e-server-side.test.ts — privilégio NENHUM para " +

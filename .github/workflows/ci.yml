@@ -35,6 +35,11 @@ jobs:
         timeout-minutes: 5
 
       - name: Typecheck
+        # O tsc frio deste repositório chega a ~3,2 GB de RSS (medido) e passa
+        # do heap padrão do Node no runner de repositório PRIVADO, que tem menos
+        # memória que o público: o job morria com "heap out of memory".
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm typecheck
 
       - name: Lint
