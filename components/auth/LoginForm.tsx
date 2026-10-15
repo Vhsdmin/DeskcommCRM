@@ -45,7 +45,11 @@ export function LoginForm({ next }: { next?: string }) {
         router.replace(`/login/mfa${params.toString() ? `?${params}` : ""}`);
         return;
       }
-      if (res.error === "invalid_credentials") {
+      if (res.error === "service_unavailable") {
+        setServerError(
+          t("Não foi possível conectar ao serviço de login. Tente novamente em instantes."),
+        );
+      } else if (res.error === "invalid_credentials") {
         setServerError(t("Email ou senha incorretos."));
       } else if (res.error === "rate_limited") {
         setServerError(t("Muitas tentativas. Aguarde alguns minutos."));

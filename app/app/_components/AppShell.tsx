@@ -17,7 +17,7 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
   useCrmAlerts();
   useNotifyOpenFromServiceWorker();
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="moldura-vendepay flex min-h-screen w-full">
       <BarraDeProgressoNavegacao />
       <div className="hidden md:block">
         <Sidebar collapsed={sidebarCollapsed} />
@@ -43,7 +43,9 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
       */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto rounded-tl-2xl border-t border-l bg-background p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

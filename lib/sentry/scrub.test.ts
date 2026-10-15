@@ -130,3 +130,11 @@ describe("sentryScrubHooks", () => {
     expect(JSON.stringify(crumb)).not.toContain(TOKEN);
   });
 });
+
+it("redige o fragmento do link NPS em URL e navegação", () => {
+  const token = "a".repeat(64);
+  const url = `https://crm.exemplo.com/pesquisa/nps#${token}`;
+  expect(scrubUrl(url)).not.toContain(token);
+  const event = sentryScrubHooks.beforeBreadcrumb({ data: { from: url, to: url } });
+  expect(JSON.stringify(event)).not.toContain(token);
+});

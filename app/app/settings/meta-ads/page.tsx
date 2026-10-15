@@ -25,7 +25,9 @@
  * O token NÃO é lido aqui, nem decifrado: `existeConexaoDeLeitura` responde
  * apenas se a linha existe. A tela nunca mostra o token de volta.
  */
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+
+import { META_ADS_VISIVEL } from "@/lib/ads/visibilidade";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
@@ -39,6 +41,8 @@ export const metadata = { title: "Meta Ads" };
 export const dynamic = "force-dynamic";
 
 export default async function MetaAdsSettingsPage() {
+  // Oculto no CRM da VendePay — ver `lib/ads/visibilidade.ts`.
+  if (!META_ADS_VISIVEL) notFound();
   const user = await requireAuth();
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) redirect("/app");

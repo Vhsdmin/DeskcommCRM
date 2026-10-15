@@ -27,7 +27,12 @@ import { deltaEOklab, hexParaOklch, rampaDeSemente } from "@/lib/branding/rampa"
 import type { Rampa } from "@/lib/branding/rampa";
 
 const RAIZ = process.cwd();
-const CSS = fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8");
+// A calibração deste arquivo foi medida na paleta Sage do produto original.
+// Desde a adaptação VendePay o `app/globals.css` usa a paleta VendePay, então o
+// algoritmo de marca própria é medido contra a cópia congelada da Sage — os
+// números abaixo continuam valendo para ela. A paleta em vigor é medida contra
+// os pisos em `branding-contraste.test.ts` ("a paleta VendePay ... cabe nos pisos").
+const CSS = fs.readFileSync(path.join(RAIZ, "tests/fixtures/branding/globals-sage.css"), "utf8");
 const REGUA: Regua = extrairRegua(CSS);
 
 const rampaChapada = (hex: string): Rampa =>
@@ -122,6 +127,34 @@ describe("extrairRegua — os pares saem do globals.css, nunca de lista à mão"
     expect(razao("--color-accent", "--color-bg")).toBeCloseTo(5.51, 2);
     expect(razao(":focus-visible/outline", "--color-bg")).toBeCloseTo(3.79, 2);
     expect(razao(":focus-visible/outline", "--color-surface-elevated")).toBeCloseTo(3.6, 2);
+  });
+
+  it("a paleta VendePay, como está no app/globals.css de hoje, cabe nos pisos", () => {
+    const regua = extrairRegua(fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8"));
+    for (const tema of [regua.claro, regua.escuro]) {
+      const reprovas = medirPares(tema, regua.rampaDoProduto, 0).filter((p) => !p.passa);
+      expect(reprovas, `${tema.nome}: ${JSON.stringify(reprovas)}`).toEqual([]);
+    }
+  });
+
+  it("o texto LITERAL do botão primário (--color-accent-fg) tem 4,5:1 sobre o accent, nos dois temas", () => {
+    // O piso acima mede o `-fg` como "melhor frente calculada" — não o valor que
+    // a folha DECLARA. Foi assim que branco sobre #049366 (3,9:1) passou verde.
+    const css = fs.readFileSync(path.join(RAIZ, "app/globals.css"), "utf8");
+    const regua = extrairRegua(css);
+    const bloco = (seletor: string) => {
+      const i = css.indexOf(`${seletor} {`);
+      return css.slice(i, css.indexOf("\n}\n", i));
+    };
+    for (const [nome, seletor, tema] of [
+      ["claro", ":root", regua.claro],
+      ["escuro", '[data-theme="dark"]', regua.escuro],
+    ] as const) {
+      const fg = bloco(seletor).match(/--color-accent-fg:\s*(#[0-9a-f]{6})/i)?.[1];
+      expect(fg, `${nome}: --color-accent-fg literal`).toBeTruthy();
+      const accent = regua.rampaDoProduto[tema.indices.accent]!;
+      expect(razaoDeContraste(fg!, accent), `${nome}: ${fg} sobre ${accent}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("a Sage inteira, como está no CSS, cabe nos pisos", () => {

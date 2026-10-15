@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CaretLeft } from "@/lib/ui/icons";
 import { TabNav } from "./_tab-nav";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 // ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ export default async function TenantDetailLayout({ children, params }: TenantLay
   // Auth check — outer (protected)/layout.tsx already guards, but we need
   // org data server-side for the header. requirePlatformAdmin is cheap (cached).
   const { user } = await requirePlatformAdmin();
-  const idioma = normalizarIdioma((user.user_metadata?.locale as string | undefined) ?? null);
+  const idioma = idiomaDaInterface((user.user_metadata?.locale as string | undefined) ?? null);
 
   const { id } = await params;
   const admin = createAdminClient();

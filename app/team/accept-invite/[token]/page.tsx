@@ -14,7 +14,7 @@ import { verifyInviteToken } from "@/lib/auth/invite-token";
 import { authRateLimited, AUTH_LIMITS } from "@/lib/auth/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { AcceptInviteForm } from "./AcceptInviteForm";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ export default async function AcceptInvitePage({ params }: PageProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = normalizarIdioma(
+  const idioma = idiomaDaInterface(
     (user?.user_metadata?.locale as string | undefined) ?? null,
   );
   const t = (texto: string) => traduzir(texto, idioma);
@@ -117,7 +117,7 @@ export default async function AcceptInvitePage({ params }: PageProps) {
         <form action="/api/auth/signout" method="post" className="mt-4">
           <button
             type="submit"
-            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent"
+            className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent-soft"
           >
             {t("Sair")}
           </button>

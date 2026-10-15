@@ -278,7 +278,9 @@ describe("o que a derivação move e o CSS ainda não emite", () => {
     // O par com rótulo: a derivação DIZ que girou `--color-success`; se o CSS
     // não a emite, o log precisa dizer isso também — senão o motivo descreve um
     // movimento que a tela não faz.
-    const cor = corDe("#22c55e");
+    // `#16a34a` colide com o `--color-success` da paleta VendePay e força a
+    // rotação; na Sage o controle era `#22c55e`, que não colide mais.
+    const cor = corDe("#16a34a");
     const movidas = (cor.derivada?.motivos ?? []).filter(
       (m) => m.codigo === "semantica_deslocada",
     );

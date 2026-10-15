@@ -53,7 +53,7 @@ export function NextActionSlot({
           aria-label={`${t("Aprovar:")} ${label}`}
           className={cn(
             "rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors",
-            "bg-accent/10 text-accent hover:bg-accent/20",
+            "bg-accent/10 text-accent hover:bg-accent-soft",
             "disabled:opacity-50",
           )}
         >

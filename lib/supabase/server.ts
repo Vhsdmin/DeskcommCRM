@@ -1,3 +1,4 @@
+import { supabaseFetch } from "@/lib/supabase/fetch";
 /**
  * Supabase client para Server Components, Route Handlers e Server Actions.
  *
@@ -14,6 +15,7 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();

@@ -1737,7 +1737,9 @@ lido por ninguém**.
 **Como foi provado.** Supabase local pg17 com o `baseline.sql` (o que o
 `install.sh` aplica, não a cadeia de migrations, que não sobe do zero), `next
 build` + `next start` de produção, login com conta de teste real, cinco telas
-percorridas pelo browser. Spec: `tests/e2e/i18n-espanhol-na-tela.spec.ts`.
+percorridas pelo browser. Spec: `tests/e2e/i18n-espanhol-na-tela.spec.ts`
+(removida no VendePay em 2026-10-15: o CRM usa só PT-BR, com a escolha de
+idioma desligada em `lib/i18n/idiomas.ts`).
 Evidência: `evidence/i18n-es/01-inbox-em-espanhol.png` e
 `evidence/i18n-es/02-inbox-de-volta-em-portugues.png`.
 
@@ -2117,3 +2119,15 @@ Produto `7f1d0f3e`, integrado à main `ca895850`: as dez specs de organizações
 Evidência local preservada em `.superpowers/evidence/comunidade-360/final-qa-targeted-r4/` e log `.superpowers/sdd/comunidade-360/final-qa-targeted-r4.log`. A rodada inclui atualização concorrente da interface sem perder formulário, sugestão obsoleta sem confirmação antiga de sucesso e encerramento de suporte com retorno ao contexto original.
 
 Validação integral do mesmo produto: 733 arquivos unitários / 7.911 casos aprovados + 1 falha esperada; 184 arquivos de banco / 1.466 casos aprovados + 1 falha esperada e 1 ignorado, com INSTALL e UPDATE; tipos, lint (0 erros, 344 avisos) e build aprovados. `lint:channels`, validadores shell e conferência de release também passaram. Os checks remotos continuam sendo condição do merge pelo revisor da PR #613.
+
+### VendePay — agenda CS (09/10/2026)
+- [P0] Histórico do cliente → Marcar compromisso: cliente pré-selecionado, tipos EBR 30min e QBR 60min reais do desenvolvimento. Provado pela tela.
+- Configuração de tipos → Preparar EBR/QBR → Criar: ambos persistidos e disponíveis na agenda; duração/responsável editáveis e lembretes não habilitados automaticamente.
+- Sem disponibilidade publicada: aviso específico aponta Equipe → Atendimento. Usuário optou por publicação manual; agendamento completo permanece pendente dessa configuração.
+- Evidência: docs/vendepay-agenda-ebr-qbr.jpg; testes: tests/unit/agenda-modelos-cs.test.tsx e lib/agenda/erro-de-horarios.test.ts.
+
+### VendePay — horários publicados e agendamento completo (09/10/2026)
+- Usuário publicou segunda a sexta, 08h–18h no fuso de São Paulo.
+- QBR 13/10 10h–11h: criação pela tela, confirmação e bloqueio do slot na agenda.
+- Achado corrigido: agendamento de contato sem lead não emitia atividade. Agora ancora no contato e preserva autoria; EBR 14/10 10h–10h30 criada pela tela e verificada no Histórico.
+- Histórico → Ver agendamento: acesso à reunião pela agenda existente. Evidência: docs/vendepay-agenda-historico.jpg.

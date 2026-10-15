@@ -196,6 +196,21 @@ const PROVA_PROPRIA: readonly Excecao[] = [
   //
   // NÃO é DEBITO_CONHECIDO: há prova comportamental, escrita no mesmo PR.
   {
+    tabela: "customer_nps_surveys",
+    razao:
+      "tests/invariants/cs-cliente-isolamento.test.ts — JWT de dois tenants reais: membro " +
+      "de A lê 1 pesquisa de A e 0 de B, B não lê a de A, e `token_hash` dá permission " +
+      "denied sob authenticated (grant por coluna). Escrita só pelas definers de NPS.",
+  },
+  {
+    tabela: "gestao_conexoes",
+    razao:
+      "tests/invariants/conexao-gestao-e-server-side.test.ts — privilégio NENHUM para " +
+      "anon e authenticated, `permission denied` medido sob `set role`, RLS ligada e " +
+      "zero policies. Deny-all porque a linha guarda o segredo que assina os envios do " +
+      "Gestão VendePay; a API lê pelo service_role filtrando a organização da sessão.",
+  },
+  {
     tabela: "ad_platform_connections",
     razao:
       "tests/invariants/credencial-de-anuncios-e-server-side.test.ts — privilégio " +
@@ -217,7 +232,8 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "tests/invariants/credencial-de-anuncios-e-server-side.test.ts — mesmo " +
       "`describe.each`. Não guarda segredo, mas é o livro-razão de quais leads " +
       "da organização viraram venda, e quem o lê é o servidor com o admin client " +
-      "filtrando organization_id à mão (a tela `/app/settings/conversoes`).",
+      "filtrando organization_id à mão. A tela de Conversões foi retirada na " +
+      "adaptação VendePay; a tabela permanece sem consumidor.",
   },
 ];
 

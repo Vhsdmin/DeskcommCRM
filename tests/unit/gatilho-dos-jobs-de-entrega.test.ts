@@ -129,7 +129,13 @@ const GATILHO_ESPERADO: Record<string, { condicao: string | null; efeito: string
   // Desligar qualquer um destes faz o PR entrar sem ter sido testado.
   "ci.yml::verify": {
     condicao: null,
-    efeito: "Este é o check obrigatório `verify` (typecheck + lint + test:unit).",
+    efeito: "Este é o check obrigatório `verify` (typecheck + lint + kit self-host).",
+  },
+  "ci.yml::unit": {
+    condicao: null,
+    efeito:
+      "É o `pnpm test:unit` em 3 partes (`--shard`), que saiu do `verify` no VendePay " +
+      "porque a suíte inteira estourava o teto no runner do repositório privado.",
   },
   "ci.yml::invariants": {
     condicao: null,

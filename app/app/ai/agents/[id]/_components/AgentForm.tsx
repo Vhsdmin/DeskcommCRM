@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TokenCounter } from "@/lib/ui/TokenCounter";
-import { Info } from "@/lib/ui/icons";
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
 
@@ -86,7 +85,6 @@ interface BaseProps {
    */
   provedoresDaInstalacao?: string[];
   channelSessions: ChannelSessionLite[];
-  routerMembership?: { routerId: string; routerName: string } | null;
   readOnly?: boolean;
 }
 
@@ -802,21 +800,6 @@ export function AgentForm(props: Props) {
           {/* WhatsApp session */}
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Por qual número ele atende")}</h3>
-            {props.routerMembership && (
-              <div className="flex items-start gap-2 rounded-md bg-accent-soft p-3 text-xs text-text-muted">
-                <Info className="mt-0.5 shrink-0" aria-hidden />
-                <p>
-                  {t("Este agente é acionado pelo roteador")}{" "}
-                  <Link
-                    href={`/app/ai/routers/${props.routerMembership.routerId}`}
-                    className="font-medium underline underline-offset-2"
-                  >
-                    «{props.routerMembership.routerName}»
-                  </Link>{" "}
-                  {t("— o campo de número abaixo não se aplica.")}
-                </p>
-              </div>
-            )}
             <div className="space-y-1">
               <Label htmlFor="channel_session_id">{t("Número conectado")}</Label>
               <Select

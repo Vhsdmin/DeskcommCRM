@@ -109,8 +109,10 @@ describe("marcaDaSaida — o piso", () => {
     // Controle positivo do item 2 do cabeçalho: se alguém trocar o índice em
     // `saida.ts` por outro grau, a igualdade abaixo continua valendo pelo lado
     // errado — por isso a asserção seguinte prende o ÍNDICE, que é a decisão.
-    expect(REGUA_DO_PRODUTO.claro.indices.accent).toBe(6);
-    expect(ACCENT_DO_PRODUTO).toBe(REGUA_DO_PRODUTO.rampaDoProduto[6]);
+    // Grau 8 (`--color-accent-800`, #037a55) desde a paleta VendePay com o
+    // texto branco do botão em 4,5:1; era 6 na Sage.
+    expect(REGUA_DO_PRODUTO.claro.indices.accent).toBe(8);
+    expect(ACCENT_DO_PRODUTO).toBe(REGUA_DO_PRODUTO.rampaDoProduto[8]);
   });
 
   it("a frente do accent é CALCULADA, nunca branco fixo", async () => {
@@ -191,7 +193,7 @@ describe("marcaDaSaida — NUNCA LANÇA", () => {
     clienteExplode = true;
 
     const marca = await marcaDaSaida("11111111-1111-4111-8111-111111111111");
-    expect(marca.nome).toBe("DeskcommCRM");
+    expect(marca.nome).toBe("VendePay CRM");
     expect(marca.accent).toBe(ACCENT_DO_PRODUTO);
     expect(marca.accentFg).toBe(melhorFrenteSobre(ACCENT_DO_PRODUTO));
   });
@@ -214,7 +216,7 @@ describe("marcaDaSaida — NUNCA LANÇA", () => {
     for (const settings of ["texto", 42, [], { branding: "isto era um objeto" }, null]) {
       respostaDaOrganizacao = { data: { settings }, error: null };
       const marca = await marcaDaSaida("11111111-1111-4111-8111-111111111111");
-      expect(marca.nome).toBe("DeskcommCRM");
+      expect(marca.nome).toBe("VendePay CRM");
     }
   });
 

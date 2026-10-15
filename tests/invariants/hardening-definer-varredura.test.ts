@@ -67,6 +67,24 @@ const ANON_PERMITIDO: readonly Excecao[] = [];
  */
 const AUTHENTICATED_PERMITIDO: readonly Excecao[] = [
   {
+    fn: "fn_manage_customer_nps(uuid,uuid,text,text,uuid)",
+    razao:
+      "POST app/api/v1/contacts/[id]/nps/route.ts usa createClient da sessão. " +
+      "auth.uid(), papel agent+ na org do parâmetro, contato não anonimizado/mesclado " +
+      "e autoria (agente só substitui/cancela o próprio convite) validados no corpo. " +
+      "tests/invariants/cs-cliente-isolamento.test.ts prova que usuário de outra org " +
+      "não cria nem cancela convite.",
+  },
+  {
+    fn: "fn_delete_customer_activity(uuid,uuid,uuid,integer)",
+    razao:
+      "DELETE app/api/v1/contacts/[id]/timeline/[activityId]/route.ts usa createClient " +
+      "da sessão. Definer porque a exclusão lógica esconderia a própria linha da RLS de " +
+      "SELECT; o corpo exige papel agent+ na org, autoria ou gestor, revisão e registro " +
+      "manual de CS. tests/invariants/cs-cliente-isolamento.test.ts prova a recusa " +
+      "cross-org e o controle positivo.",
+  },
+  {
     fn: "fn_reply_action(uuid,uuid,text,text,text,text)",
     razao:
       "POST app/api/v1/ai/replies/[id]/route.ts usa createClient da sessão. " +

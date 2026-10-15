@@ -14311,7 +14311,10 @@ alter table public.webhook_events_log
   drop constraint if exists webhook_events_log_provider_check;
 alter table public.webhook_events_log
   add constraint webhook_events_log_provider_check check (provider in (
-    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio'
+    'waha', 'nuvemshop', 'generic', 'meta_cloud', 'zernio',
+    -- (0271) eventos de conta do Gestão VendePay. Vocabulário final AQUI, num
+    -- bloco só: o bloco da 0271 não reconstrói esta constraint.
+    'gestao'
   ));
 
 -- ---- a marca da instalação sai do .env e vai para o banco (migration 0155) ----
@@ -24874,6 +24877,464 @@ revoke execute on function public.fn_agenda_conexoes_google_do_dono(uuid, uuid) 
 grant  execute on function public.fn_agenda_conexoes_google_do_dono(uuid, uuid) to authenticated, service_role;
 
 notify pgrst, 'reload schema';
+
+-- 0261: histórico de relacionamento do contato sem negócio comercial.
+-- Não amplia a visibilidade de atividades vinculadas a leads.
+alter table public.crm_lead_activities alter column lead_id drop not null;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'activity_contact_or_lead' and conrelid = 'public.crm_lead_activities'::regclass) then
+    alter table public.crm_lead_activities add constraint activity_contact_or_lead check (lead_id is not null or contact_id is not null);
+  end if;
+end $$;
+drop policy if exists contact_activity_select on public.crm_lead_activities;
+create policy contact_activity_select on public.crm_lead_activities for select to authenticated using (
+  lead_id is null and exists (
+    select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id
+  )
+);
+-- Restritiva: policies permissivas existentes não podem contornar esta regra.
+drop policy if exists contact_activity_insert_guard on public.crm_lead_activities;
+create policy contact_activity_insert_guard on public.crm_lead_activities as restrictive for insert to authenticated with check (
+  lead_id is not null or (
+    public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+    and performed_by_user_id = auth.uid() and actor_kind = 'user'
+    and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+  )
+);
+create index if not exists contact_activities_performed_idx on public.crm_lead_activities (organization_id, contact_id, performed_at desc) where lead_id is null;
+-- 0262: o trigger legado também valida a âncora de contato quando não há lead.
+create or replace function public.fn_validate_activity_lead_org() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+declare v_org uuid;
+begin
+  if new.lead_id is null then
+    select organization_id into v_org from public.contacts where id = new.contact_id;
+    if v_org is null then raise exception 'contact_not_found' using errcode = '23503'; end if;
+    if v_org <> new.organization_id then raise exception 'contact_org_mismatch' using errcode = '23514'; end if;
+  else
+    select organization_id into v_org from public.crm_leads where id = new.lead_id;
+    if v_org is null then raise exception 'lead_not_found' using errcode = '23503'; end if;
+    if v_org <> new.organization_id then raise exception 'lead_org_mismatch' using errcode = '23514'; end if;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.fn_validate_activity_lead_org() from public, anon;
+grant execute on function public.fn_validate_activity_lead_org() to authenticated, service_role;
+
+-- 0263: correção de registros manuais de CS. Exclusão lógica preserva o registro.
+alter table public.crm_lead_activities add column if not exists revision integer not null default 0;
+alter table public.crm_lead_activities add column if not exists deleted_at timestamptz;
+alter table public.crm_lead_activities add column if not exists edited_at timestamptz;
+alter table public.crm_lead_activities add column if not exists edited_by_user_id uuid references auth.users(id);
+revoke update on public.crm_lead_activities from authenticated;
+grant update (payload, type, performed_at, revision, deleted_at, edited_at, edited_by_user_id) on public.crm_lead_activities to authenticated;
+drop policy if exists contact_activity_visible on public.crm_lead_activities;
+create policy contact_activity_visible on public.crm_lead_activities as restrictive for select to authenticated using (deleted_at is null);
+drop policy if exists contact_activity_update on public.crm_lead_activities;
+create policy contact_activity_update on public.crm_lead_activities for update to authenticated using (
+  lead_id is null and source_module = 'crm' and actor_kind = 'user'
+  and type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+  and deleted_at is null
+  and public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+  and (performed_by_user_id = auth.uid() or public.fn_user_role_in_org(organization_id) in ('manager','admin'))
+  and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+) with check (
+  lead_id is null and source_module = 'crm' and actor_kind = 'user'
+  and type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+  and public.fn_user_role_in_org(organization_id) in ('agent','manager','admin')
+  and (performed_by_user_id = auth.uid() or public.fn_user_role_in_org(organization_id) in ('manager','admin'))
+  and edited_by_user_id = auth.uid()
+  and exists (select 1 from public.contacts c where c.id = contact_id and c.organization_id = crm_lead_activities.organization_id and not c.is_anonymized and c.is_merged_into is null)
+);
+
+-- 0264: exclusão lógica restrita, preservando a política de visibilidade.
+create or replace function public.fn_delete_customer_activity(p_id uuid, p_contact uuid, p_org uuid, p_revision integer)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
+declare changed integer;
+begin
+  if auth.uid() is null or public.fn_user_role_in_org(p_org) not in ('agent','manager','admin') then
+    return false;
+  end if;
+  update public.crm_lead_activities a set deleted_at=now(), edited_at=now(), edited_by_user_id=auth.uid(), revision=a.revision+1
+  where a.id=p_id and a.contact_id=p_contact and a.organization_id=p_org
+    and a.revision=p_revision and a.deleted_at is null and a.lead_id is null
+    and a.source_module='crm' and a.actor_kind='user'
+    and a.type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+    and (a.performed_by_user_id=auth.uid() or public.fn_user_role_in_org(p_org) in ('manager','admin'))
+    and exists(select 1 from public.contacts c where c.id=p_contact and c.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null);
+  get diagnostics changed = row_count;
+  return changed = 1;
+end;
+$$;
+revoke all on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) from public, anon;
+grant execute on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) to authenticated;
+
+-- 0265: exclusão lógica restrita, preservando a política de visibilidade.
+create or replace function public.fn_delete_customer_activity(p_id uuid, p_contact uuid, p_org uuid, p_revision integer)
+returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
+declare changed integer;
+begin
+  if auth.uid() is null or coalesce(public.fn_user_role_in_org(p_org), '') not in ('agent','manager','admin') then
+    return false;
+  end if;
+  update public.crm_lead_activities a set deleted_at=now(), edited_at=now(), edited_by_user_id=auth.uid(), revision=a.revision+1
+  where a.id=p_id and a.contact_id=p_contact and a.organization_id=p_org
+    and a.revision=p_revision and a.deleted_at is null and a.lead_id is null
+    and a.source_module='crm' and a.actor_kind='user'
+    and a.type in ('customer_support','customer_meeting','customer_ebr','customer_qbr')
+    and (a.performed_by_user_id=auth.uid() or public.fn_user_role_in_org(p_org) in ('manager','admin'))
+    and exists(select 1 from public.contacts c where c.id=p_contact and c.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null);
+  get diagnostics changed = row_count;
+  return changed = 1;
+end;
+$$;
+revoke all on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) from public, anon;
+grant execute on function public.fn_delete_customer_activity(uuid,uuid,uuid,integer) to authenticated;
+
+-- 0266: acompanhamento interno de CS no cliente existente, sem duplicar Conta VendePay.
+alter table public.contacts add column if not exists cs_phase text;
+alter table public.contacts add column if not exists cs_owner_user_id uuid references auth.users(id) on delete set null;
+alter table public.contacts add column if not exists cs_revision integer not null default 0;
+-- A constraint `contacts_cs_phase_check` NÃO é criada aqui: o vocabulário final
+-- mora no bloco da 0267, logo abaixo — uma constraint, um bloco.
+create or replace function public.fn_update_contact_cs(p_org uuid,p_contact uuid,p_phase text,p_owner uuid,p_revision integer)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare c public.contacts%rowtype; next_revision integer; actor_role text;
+begin
+  actor_role := public.fn_user_role_in_org(p_org);
+  if auth.uid() is null or coalesce(actor_role,'') not in ('agent','manager','admin') then raise insufficient_privilege; end if;
+  if p_revision is null or p_revision<0 or (p_phase is not null and p_phase not in ('onboarding','acompanhamento','expansao')) then raise check_violation; end if;
+  select * into c from public.contacts where id=p_contact and organization_id=p_org and not is_anonymized and is_merged_into is null for update;
+  if not found then return jsonb_build_object('status','not_found'); end if;
+  if c.cs_revision<>p_revision then return jsonb_build_object('status','conflict'); end if;
+  if p_owner is distinct from c.cs_owner_user_id and p_owner is not null and not exists(select 1 from public.user_organizations where organization_id=p_org and user_id=p_owner and revoked_at is null and accepted_at is not null and role in ('agent','manager','admin')) then return jsonb_build_object('status','invalid_owner'); end if;
+  if p_owner is distinct from c.cs_owner_user_id and actor_role='agent' and p_owner is distinct from auth.uid() then raise insufficient_privilege; end if;
+  if p_phase is not distinct from c.cs_phase and p_owner is not distinct from c.cs_owner_user_id then return jsonb_build_object('status','saved','revision',c.cs_revision); end if;
+  update public.contacts set cs_phase=p_phase,cs_owner_user_id=p_owner,cs_revision=cs_revision+1 where id=p_contact and organization_id=p_org returning cs_revision into next_revision;
+  insert into public.crm_lead_activities(organization_id,contact_id,lead_id,source_module,type,performed_by_user_id,actor_kind,reason,payload)
+    values(p_org,p_contact,null,'crm','customer_journey_updated',auth.uid(),'user','Jornada de atendimento atualizada',jsonb_build_object('previous_phase',c.cs_phase,'phase',p_phase,'previous_owner_user_id',c.cs_owner_user_id,'owner_user_id',p_owner));
+  return jsonb_build_object('status','saved','revision',next_revision);
+end;
+$$;
+revoke all on function public.fn_update_contact_cs(uuid,uuid,text,uuid,integer) from public,anon;
+grant execute on function public.fn_update_contact_cs(uuid,uuid,text,uuid,integer) to authenticated;
+
+-- ---- Fases CS (0267) ----
+-- 0267: fases da jornada definidas pela equipe VendePay.
+alter table public.contacts drop constraint if exists contacts_cs_phase_check;
+-- Dados ANTES da constraint: a 0266 aceitava 'acompanhamento', que deixou de
+-- existir. Quem estava nela segue em 'adocao', o acompanhamento de uso.
+update public.contacts set cs_phase = 'adocao' where cs_phase = 'acompanhamento';
+alter table public.contacts add constraint contacts_cs_phase_check check(cs_phase is null or cs_phase in ('entrada','onboarding','ativacao','adocao','expansao','renovacao'));
+create or replace function public.fn_update_contact_cs(p_org uuid,p_contact uuid,p_phase text,p_owner uuid,p_revision integer)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare c public.contacts%rowtype; next_revision integer; actor_role text;
+begin
+  actor_role := public.fn_user_role_in_org(p_org);
+  if auth.uid() is null or coalesce(actor_role,'') not in ('agent','manager','admin') then raise insufficient_privilege; end if;
+  if p_revision is null or p_revision<0 or (p_phase is not null and p_phase not in ('entrada','onboarding','ativacao','adocao','expansao','renovacao')) then raise check_violation; end if;
+  select * into c from public.contacts where id=p_contact and organization_id=p_org and not is_anonymized and is_merged_into is null for update;
+  if not found then return jsonb_build_object('status','not_found'); end if;
+  if c.cs_revision<>p_revision then return jsonb_build_object('status','conflict'); end if;
+  if p_owner is distinct from c.cs_owner_user_id and p_owner is not null and not exists(select 1 from public.user_organizations where organization_id=p_org and user_id=p_owner and revoked_at is null and accepted_at is not null and role in ('agent','manager','admin')) then return jsonb_build_object('status','invalid_owner'); end if;
+  if p_owner is distinct from c.cs_owner_user_id and actor_role='agent' and p_owner is distinct from auth.uid() then raise insufficient_privilege; end if;
+  if p_phase is not distinct from c.cs_phase and p_owner is not distinct from c.cs_owner_user_id then return jsonb_build_object('status','saved','revision',c.cs_revision); end if;
+  update public.contacts set cs_phase=p_phase,cs_owner_user_id=p_owner,cs_revision=cs_revision+1 where id=p_contact and organization_id=p_org returning cs_revision into next_revision;
+  insert into public.crm_lead_activities(organization_id,contact_id,lead_id,source_module,type,performed_by_user_id,actor_kind,reason,payload)
+    values(p_org,p_contact,null,'crm','customer_journey_updated',auth.uid(),'user','Jornada de atendimento atualizada',jsonb_build_object('previous_phase',c.cs_phase,'phase',p_phase,'previous_owner_user_id',c.cs_owner_user_id,'owner_user_id',p_owner));
+  return jsonb_build_object('status','saved','revision',next_revision);
+end;
+$$;
+revoke all on function public.fn_update_contact_cs(uuid,uuid,text,uuid,integer) from public,anon;
+grant execute on function public.fn_update_contact_cs(uuid,uuid,text,uuid,integer) to authenticated;
+
+-- ---- Pesquisa NPS (0268) ----
+-- 0268: pesquisa pública autorizada por link opaco; gestão interna via sessão/RLS.
+create table if not exists public.customer_nps_surveys (
+ id uuid primary key default gen_random_uuid(),
+ organization_id uuid not null references public.organizations(id) on delete cascade,
+ contact_id uuid not null references public.contacts(id) on delete cascade,
+ created_by_user_id uuid references auth.users(id) on delete set null,
+ token_hash text not null unique check(token_hash ~ '^[a-f0-9]{64}$'),
+ created_at timestamptz not null default now(),
+ expires_at timestamptz not null default (now()+interval '30 days'),
+ cancelled_at timestamptz,
+ score integer check(score between 0 and 10),
+ comment text check(char_length(comment)<=2000),
+ answered_at timestamptz,
+ constraint nps_answer_consistent check((score is null and answered_at is null) or (score is not null and answered_at is not null))
+);
+create index if not exists customer_nps_contact_idx on public.customer_nps_surveys(organization_id,contact_id,created_at desc);
+create unique index if not exists customer_nps_one_pending on public.customer_nps_surveys(contact_id) where score is null and cancelled_at is null;
+alter table public.customer_nps_surveys enable row level security;
+revoke all on public.customer_nps_surveys from public,anon,authenticated;
+grant select(id,organization_id,contact_id,created_by_user_id,created_at,expires_at,cancelled_at,score,comment,answered_at) on public.customer_nps_surveys to authenticated;
+grant all on public.customer_nps_surveys to service_role;
+drop policy if exists customer_nps_read on public.customer_nps_surveys;
+create policy customer_nps_read on public.customer_nps_surveys for select to authenticated using (
+ organization_id in(select public.fn_user_org_ids()) and exists(select 1 from public.contacts c where c.id=contact_id and c.organization_id=customer_nps_surveys.organization_id and not c.is_anonymized and c.is_merged_into is null)
+);
+-- Definer necessário: colunas de token e writes não são expostas ao cliente SQL.
+create or replace function public.fn_manage_customer_nps(p_org uuid,p_contact uuid,p_action text,p_hash text default null,p_survey uuid default null)
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare role_name text; survey public.customer_nps_surveys%rowtype; c public.contacts%rowtype;
+begin
+ role_name:=public.fn_user_role_in_org(p_org);
+ if auth.uid() is null or coalesce(role_name,'') not in('agent','manager','admin') then raise insufficient_privilege; end if;
+ select * into c from public.contacts where id=p_contact and organization_id=p_org and not is_anonymized and is_merged_into is null for update;
+ if not found then return jsonb_build_object('status','not_found'); end if;
+ if p_action='create' then
+  if p_hash is null or p_hash !~ '^[a-f0-9]{64}$' then raise check_violation; end if;
+  update public.customer_nps_surveys set cancelled_at=now() where organization_id=p_org and contact_id=p_contact and score is null and cancelled_at is null;
+  insert into public.customer_nps_surveys(organization_id,contact_id,created_by_user_id,token_hash) values(p_org,p_contact,auth.uid(),p_hash) returning * into survey;
+ elsif p_action='cancel' then
+  select * into survey from public.customer_nps_surveys where id=p_survey and organization_id=p_org and contact_id=p_contact for update;
+  if not found then return jsonb_build_object('status','not_found'); end if;
+  if role_name='agent' and survey.created_by_user_id is distinct from auth.uid() then raise insufficient_privilege; end if;
+  if survey.score is not null or survey.cancelled_at is not null then return jsonb_build_object('status','conflict'); end if;
+  update public.customer_nps_surveys set cancelled_at=now() where id=survey.id and organization_id=p_org;
+ else raise check_violation; end if;
+ insert into public.crm_lead_activities(organization_id,contact_id,lead_id,source_module,type,actor_kind,performed_by_user_id,reason,payload)
+ values(p_org,p_contact,null,'crm',case when p_action='create' then 'customer_nps_requested' else 'customer_nps_cancelled' end,'user',auth.uid(),case when p_action='create' then 'Link NPS criado' else 'Pesquisa NPS cancelada' end,jsonb_build_object('survey_id',survey.id));
+ return jsonb_build_object('status','saved','id',survey.id,'expires_at',survey.expires_at);
+end; $$;
+revoke all on function public.fn_manage_customer_nps(uuid,uuid,text,text,uuid) from public,anon,authenticated;
+grant execute on function public.fn_manage_customer_nps(uuid,uuid,text,text,uuid) to authenticated;
+-- Inbound público: chamado somente pelo servidor após prova do token; nunca retorna PII, org ou resposta anterior.
+create or replace function public.fn_public_customer_nps(p_hash text,p_score integer default null,p_comment text default null)
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare survey public.customer_nps_surveys%rowtype;
+begin
+ if p_hash is null or p_hash !~ '^[a-f0-9]{64}$' then return jsonb_build_object('status','unavailable'); end if;
+ select * into survey from public.customer_nps_surveys where token_hash=p_hash for update;
+ if not found then return jsonb_build_object('status','unavailable'); end if;
+ -- A organização é resolvida exclusivamente pelo hash, nunca pela requisição.
+ if survey.cancelled_at is not null or survey.expires_at<=now() or not exists(select 1 from public.contacts c where c.id=survey.contact_id and c.organization_id=survey.organization_id and not c.is_anonymized and c.is_merged_into is null) then return jsonb_build_object('status','unavailable'); end if;
+ if survey.answered_at is not null then return jsonb_build_object('status','answered'); end if;
+ if p_score is null then return jsonb_build_object('status','ready'); end if;
+ if p_score not between 0 and 10 or char_length(p_comment)>2000 then raise check_violation; end if;
+ update public.customer_nps_surveys set score=p_score,comment=nullif(btrim(p_comment),''),answered_at=now() where id=survey.id and organization_id=survey.organization_id;
+ insert into public.crm_lead_activities(organization_id,contact_id,lead_id,source_module,type,actor_kind,reason,payload)
+ values(survey.organization_id,survey.contact_id,null,'crm','customer_nps_answered','contact','Cliente respondeu ao NPS',jsonb_build_object('survey_id',survey.id,'score',p_score));
+ insert into public.api_audit_log(organization_id,action,resource_type,resource_id,bypassed_rls,metadata) values(survey.organization_id,'contact.updated','contacts',survey.contact_id,true,jsonb_build_object('operation','customer.nps_answered','survey_id',survey.id,'actor_kind','contact'));
+ return jsonb_build_object('status','saved');
+end; $$;
+revoke all on function public.fn_public_customer_nps(text,integer,text) from public,anon,authenticated;
+grant execute on function public.fn_public_customer_nps(text,integer,text) to service_role;
+-- Comentário pode conter dados pessoais: anonimização do contato também limpa a pesquisa.
+create or replace function public.fn_redact_customer_nps() returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+ if new.is_anonymized and not old.is_anonymized then
+  update public.customer_nps_surveys set score=null,comment=null,answered_at=null,cancelled_at=coalesce(cancelled_at,now()) where contact_id=new.id and organization_id=new.organization_id;
+  update public.crm_lead_activities set payload='{}',reason='Pesquisa NPS anonimizada' where contact_id=new.id and organization_id=new.organization_id and type in('customer_nps_requested','customer_nps_cancelled','customer_nps_answered');
+ end if;
+ return new;
+end; $$;
+revoke all on function public.fn_redact_customer_nps() from public,anon,authenticated;
+drop trigger if exists contacts_redact_nps on public.contacts;
+create trigger contacts_redact_nps after update of is_anonymized on public.contacts for each row execute function public.fn_redact_customer_nps();
+
+-- ---- Autor da substituição NPS (0269) ----
+-- 0269: substituição de convite pendente respeita o mesmo autor/gestor do cancelamento.
+create or replace function public.fn_manage_customer_nps(p_org uuid,p_contact uuid,p_action text,p_hash text default null,p_survey uuid default null)
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare role_name text; survey public.customer_nps_surveys%rowtype; c public.contacts%rowtype;
+begin
+ role_name:=public.fn_user_role_in_org(p_org);
+ if auth.uid() is null or coalesce(role_name,'') not in('agent','manager','admin') then raise insufficient_privilege; end if;
+ select * into c from public.contacts where id=p_contact and organization_id=p_org and not is_anonymized and is_merged_into is null for update;
+ if not found then return jsonb_build_object('status','not_found'); end if;
+ if p_action='create' then
+  if p_hash is null or p_hash !~ '^[a-f0-9]{64}$' then raise check_violation; end if;
+  if role_name='agent' and exists(select 1 from public.customer_nps_surveys where organization_id=p_org and contact_id=p_contact and score is null and cancelled_at is null and expires_at>now() and created_by_user_id is distinct from auth.uid()) then raise insufficient_privilege; end if;
+  update public.customer_nps_surveys set cancelled_at=now() where organization_id=p_org and contact_id=p_contact and score is null and cancelled_at is null;
+  insert into public.customer_nps_surveys(organization_id,contact_id,created_by_user_id,token_hash) values(p_org,p_contact,auth.uid(),p_hash) returning * into survey;
+ elsif p_action='cancel' then
+  select * into survey from public.customer_nps_surveys where id=p_survey and organization_id=p_org and contact_id=p_contact for update;
+  if not found then return jsonb_build_object('status','not_found'); end if;
+  if role_name='agent' and survey.created_by_user_id is distinct from auth.uid() then raise insufficient_privilege; end if;
+  if survey.score is not null or survey.cancelled_at is not null then return jsonb_build_object('status','conflict'); end if;
+  update public.customer_nps_surveys set cancelled_at=now() where id=survey.id and organization_id=p_org;
+ else raise check_violation; end if;
+ insert into public.crm_lead_activities(organization_id,contact_id,lead_id,source_module,type,actor_kind,performed_by_user_id,reason,payload)
+ values(p_org,p_contact,null,'crm',case when p_action='create' then 'customer_nps_requested' else 'customer_nps_cancelled' end,'user',auth.uid(),case when p_action='create' then 'Link NPS criado' else 'Pesquisa NPS cancelada' end,jsonb_build_object('survey_id',survey.id));
+ return jsonb_build_object('status','saved','id',survey.id,'expires_at',survey.expires_at);
+end; $$;
+revoke all on function public.fn_manage_customer_nps(uuid,uuid,text,text,uuid) from public,anon,authenticated;
+grant execute on function public.fn_manage_customer_nps(uuid,uuid,text,text,uuid) to authenticated;
+
+-- ---- Painéis CS e NPS (migration 0270) ----
+-- 0270: leitura agregada sobre as fontes existentes. Sem snapshots nem nova conta.
+-- SECURITY INVOKER: preserva RLS/colunas; autenticação e org também validadas no RPC.
+create index if not exists customer_nps_org_created_idx on public.customer_nps_surveys(organization_id,created_at desc,id);
+create index if not exists cs_activity_org_actor_time_idx on public.crm_lead_activities(organization_id,performed_by_user_id,performed_at) where deleted_at is null and type in ('customer_support','customer_meeting','customer_ebr','customer_qbr');
+create or replace function public.fn_cs_nps_dashboard(p_org uuid,p_from timestamptz,p_to timestamptz,p_status text default 'all',p_class text default 'all',p_offset integer default 0,p_owner uuid default null)
+returns jsonb language plpgsql stable security invoker set search_path=public,pg_temp as $$
+declare result jsonb;
+begin
+ if auth.uid() is null or public.fn_user_role_in_org(p_org) is null then raise insufficient_privilege; end if;
+ if p_from is null or p_to is null or p_from>=p_to or p_to-p_from>interval '732 days' or p_offset<0 or p_offset>1000000 or p_status not in('all','answered','pending','expired','cancelled') or p_class not in('all','detractor','neutral','promoter') then raise check_violation; end if;
+ with base as materialized (
+  select s.id,s.contact_id,c.name,c.cs_owner_user_id,s.created_by_user_id,s.created_at,s.answered_at,s.score,s.comment,s.expires_at,
+   case when s.answered_at is not null then 'answered' when s.cancelled_at is not null then 'cancelled' when s.expires_at<=now() then 'expired' else 'pending' end status
+  from public.customer_nps_surveys s join public.contacts c on c.id=s.contact_id and c.organization_id=p_org
+  where s.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null and s.created_at>=p_from and s.created_at<p_to and (p_owner is null or s.created_by_user_id=p_owner)
+ ), summary as (
+  select count(*) total,count(*) filter(where status='answered') answered,count(*) filter(where status='pending') pending,count(*) filter(where status='expired') expired,count(*) filter(where status='cancelled') cancelled,
+   count(*) filter(where score<=6) detractors,count(*) filter(where score between 7 and 8) neutrals,count(*) filter(where score>=9) promoters,
+   round(avg(score)*10,1) average_100,
+   round(100.0*(count(*) filter(where score>=9)-count(*) filter(where score<=6))/nullif(count(score),0),1) nps
+  from base
+ ), filtered as materialized (
+  select * from base where (p_status='all' or status=p_status) and (p_class='all' or (p_class='detractor' and score<=6) or (p_class='neutral' and score between 7 and 8) or (p_class='promoter' and score>=9))
+ ), page as (select * from filtered order by created_at desc,id desc limit 25 offset p_offset)
+ select jsonb_build_object('summary',(select to_jsonb(summary) from summary),'rows',coalesce((select jsonb_agg(to_jsonb(page) order by created_at desc,id desc) from page),'[]'::jsonb),'filtered_total',(select count(*) from filtered),'as_of',now()) into result;
+ return result;
+end; $$;
+revoke all on function public.fn_cs_nps_dashboard(uuid,timestamptz,timestamptz,text,text,integer,uuid) from public,anon,authenticated;
+grant execute on function public.fn_cs_nps_dashboard(uuid,timestamptz,timestamptz,text,text,integer,uuid) to authenticated;
+
+create or replace function public.fn_cs_performance(p_org uuid,p_from timestamptz,p_to timestamptz,p_owner uuid default null,p_silence integer default 30,p_focus text default 'silence',p_offset integer default 0)
+returns jsonb language plpgsql stable security invoker set search_path=public,pg_temp as $$
+declare role_name text; effective_owner uuid; result jsonb;
+begin
+ role_name:=public.fn_user_role_in_org(p_org);
+ if auth.uid() is null or role_name is null then raise insufficient_privilege; end if;
+ if p_from is null or p_to is null or p_from>=p_to or p_to-p_from>interval '732 days' or p_silence not in(7,14,30,60,90) or p_focus not in('silence','detractor') or p_offset<0 or p_offset>1000000 then raise check_violation; end if;
+ if role_name not in ('manager','admin') and p_owner is not null and p_owner<>auth.uid() then raise insufficient_privilege; end if;
+ effective_owner:=case when role_name in('manager','admin') then p_owner else auth.uid() end;
+ with clients as materialized (
+  select c.id,c.name,c.cs_owner_user_id,c.cs_phase,c.created_at,
+   (select max(a.performed_at) from public.crm_lead_activities a where a.organization_id=p_org and a.contact_id=c.id and a.deleted_at is null and a.type in('customer_support','customer_meeting','customer_ebr','customer_qbr') and a.performed_at<=now()) last_contact,
+   (select max(s.answered_at) from public.customer_nps_surveys s where s.organization_id=p_org and s.contact_id=c.id and s.score<=6 and not exists(select 1 from public.crm_lead_activities a where a.organization_id=p_org and a.contact_id=c.id and a.deleted_at is null and a.type in('customer_support','customer_meeting','customer_ebr','customer_qbr') and a.performed_at>=s.answered_at and a.performed_at<=now())) detractor_since
+  from public.contacts c where c.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null and (effective_owner is null or c.cs_owner_user_id=effective_owner)
+ ), activity as materialized (
+  select a.performed_by_user_id user_id,a.type,a.contact_id from public.crm_lead_activities a join public.contacts c on c.id=a.contact_id and c.organization_id=p_org
+  where a.organization_id=p_org and a.deleted_at is null and not c.is_anonymized and c.is_merged_into is null and a.type in('customer_support','customer_meeting','customer_ebr','customer_qbr') and a.performed_at>=p_from and a.performed_at<p_to and a.performed_at<=now() and (effective_owner is null or a.performed_by_user_id=effective_owner)
+ ), overdue as materialized (
+  select t.assigned_to user_id from public.crm_tasks t join public.contacts c on c.id=t.contact_id and c.organization_id=p_org where t.organization_id=p_org and not c.is_anonymized and c.is_merged_into is null and t.status in('pending','in_progress') and t.due_date<now() and (effective_owner is null or t.assigned_to=effective_owner)
+ ), owners as (select user_id from activity union select cs_owner_user_id from clients union select user_id from overdue), performance as (
+  select o.user_id,
+   (select count(*) from activity a where a.user_id is not distinct from o.user_id and type='customer_support') supports,
+   (select count(*) from activity a where a.user_id is not distinct from o.user_id and type in('customer_meeting','customer_ebr','customer_qbr')) meetings,
+   (select count(*) from activity a where a.user_id is not distinct from o.user_id and type='customer_ebr') ebr,
+   (select count(*) from activity a where a.user_id is not distinct from o.user_id and type='customer_qbr') qbr,
+   (select count(distinct contact_id) from activity a where a.user_id is not distinct from o.user_id) contacted_clients,
+   (select count(*) from clients c where c.cs_owner_user_id is not distinct from o.user_id) portfolio,
+   (select count(*) from overdue t where t.user_id is not distinct from o.user_id) overdue_tasks,
+   (select count(*) from clients c where c.cs_owner_user_id is not distinct from o.user_id and coalesce(c.last_contact,c.created_at)<now()-make_interval(days=>p_silence)) silent_clients,
+   (select count(*) from clients c where c.cs_owner_user_id is not distinct from o.user_id and c.detractor_since is not null) unattended_detractors
+  from owners o
+ ), attention as materialized (
+  select * from clients where case when p_focus='silence' then coalesce(last_contact,created_at)<now()-make_interval(days=>p_silence) else detractor_since is not null end
+ ), page as (select * from attention order by coalesce(detractor_since,last_contact,created_at),id limit 25 offset p_offset)
+ select jsonb_build_object('performance',coalesce((select jsonb_agg(to_jsonb(performance) order by user_id) from performance),'[]'::jsonb),'attention',coalesce((select jsonb_agg(to_jsonb(page) order by coalesce(detractor_since,last_contact,created_at),id) from page),'[]'::jsonb),'attention_total',(select count(*) from attention),'as_of',now()) into result;
+ return result;
+end; $$;
+revoke all on function public.fn_cs_performance(uuid,timestamptz,timestamptz,uuid,integer,text,integer) from public,anon,authenticated;
+grant execute on function public.fn_cs_performance(uuid,timestamptz,timestamptz,uuid,integer,text,integer) to authenticated;
+
+-- ---- Conexão com o Gestão VendePay (migration 0271) ----
+alter table public.contacts add column if not exists gestao_account_id text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'contacts_gestao_account_id_format' and conrelid = 'public.contacts'::regclass) then
+    alter table public.contacts add constraint contacts_gestao_account_id_format
+      check (gestao_account_id is null or (length(gestao_account_id) between 1 and 128 and gestao_account_id = btrim(gestao_account_id)));
+  end if;
+end $$;
+create unique index if not exists uniq_contacts_org_gestao_account
+  on public.contacts (organization_id, gestao_account_id)
+  where gestao_account_id is not null and is_merged_into is null;
+comment on column public.contacts.gestao_account_id is
+  'ID do usuário/conta no Gestão VendePay. Chave do vínculo do webhook do Gestão; e-mail e telefone nunca são usados para casar contas.';
+
+create table if not exists public.gestao_conexoes (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null unique references public.organizations(id) on delete cascade,
+  path_token text not null unique,
+  secret_encrypted bytea not null,
+  is_active boolean not null default true,
+  last_received_at timestamptz,
+  created_by_user_id uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint gestao_conexoes_path_token_format check (length(path_token) >= 32)
+);
+comment on table public.gestao_conexoes is
+  'Conexão por webhook com o Gestão VendePay (uma por organização). Server-side only: RLS ligada sem policies e grants revogados de anon/authenticated.';
+comment on column public.gestao_conexoes.secret_encrypted is
+  'Segredo do HMAC SHA-256 que assina cada envio, cifrado por fn_encrypt_oauth. Exibido uma vez ao criar ou trocar.';
+
+alter table public.gestao_conexoes enable row level security;
+revoke all on public.gestao_conexoes from anon, authenticated;
+grant select, insert, update, delete on public.gestao_conexoes to service_role;
+
+drop trigger if exists trg_gestao_conexoes_updated_at on public.gestao_conexoes;
+create trigger trg_gestao_conexoes_updated_at
+  before update on public.gestao_conexoes
+  for each row execute function public.fn_set_updated_at();
+
+-- O provider 'gestao' entra no vocabulário de `webhook_events_log_provider_check`
+-- no bloco onde ela já é reconstruída (o do provider 'zernio'): uma constraint,
+-- um bloco — ver tests/unit/baseline-constraint-reconstruida.test.ts.
+
+create unique index if not exists uniq_webhook_events_gestao_event
+  on public.webhook_events_log (organization_id, external_id)
+  where provider = 'gestao' and external_id is not null;
+
+-- ---- atividade de CS conta como contato com o cliente (migration 0272) ----
+create or replace function public.fn_update_last_activity_at()
+  returns trigger
+  language plpgsql
+  set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  -- LISTA POSITIVA: só isto conta como "alguém tocou este negócio". Tipo que
+  -- não está aqui NÃO quebra o silêncio — inclusive tipo que ainda não existe.
+  -- Ver o cabeçalho da 0079 antes de acrescentar linha nesta lista.
+  if new.type not in (
+    'ai_turn',              -- a IA falou com o cliente
+    'note',                 -- alguém registrou trabalho no negócio
+    'lead_edited',          -- humano mexeu nos dados
+    'stage_changed',        -- humano moveu o negócio
+    'next_action_approved', -- humano decidiu agir
+    -- (0235) ligação ATENDIDA é interação; `voice_call_missed` não entra.
+    'voice_call',
+    -- (0272) registros manuais de CS: alguém da equipe falou com o cliente.
+    'customer_support',
+    'customer_meeting',
+    'customer_ebr',
+    'customer_qbr'
+  ) then
+    return new;
+  end if;
+
+  update public.crm_leads
+     set last_activity_at = greatest(coalesce(last_activity_at, '-infinity'::timestamptz), new.performed_at)
+   where id = new.lead_id;
+
+  if new.contact_id is not null then
+    update public.contacts
+       set last_activity_at = greatest(coalesce(last_activity_at, '-infinity'::timestamptz), new.performed_at)
+     where id = new.contact_id;
+  end if;
+  return new;
+end$function$;
+
+with ultimo as (
+  select a.contact_id, max(a.performed_at) as em
+    from public.crm_lead_activities a
+   where a.contact_id is not null
+     and a.deleted_at is null
+     and a.type in ('customer_support', 'customer_meeting', 'customer_ebr', 'customer_qbr')
+     and a.performed_at <= now()
+   group by a.contact_id
+)
+update public.contacts c
+   set last_activity_at = u.em
+  from ultimo u
+ where c.id = u.contact_id
+   and (c.last_activity_at is null or c.last_activity_at < u.em);
 
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --

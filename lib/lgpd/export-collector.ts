@@ -1,3 +1,4 @@
+import { NPS_SURVEY_COLUMNS, type NpsSurvey } from "@/lib/contacts/nps";
 /**
  * LGPD export collector — aggregates all personal data the CRM holds about
  * one contact (Art. 18 II — direito de acesso).
@@ -235,6 +236,8 @@ export interface ExportPayload {
   activities: ActivityRow[];
   appointments: AppointmentRow[];
   tasks: TaskRow[];
+  /** Respostas e convites, sem hash de acesso. Ausente em exports antigos. */
+  nps_surveys?: NpsSurvey[];
   webhook_captures: CaptureRow[];
   audit_log_extract: AuditRow[];
   meeting_deliveries: MeetingDeliveryRow[];
@@ -311,6 +314,32 @@ async function lerControlador(
     display_name: data.display_name ?? "",
     dpo_email: data.dpo_email ?? null,
   };
+}
+
+export async function collectNpsForExport(
+  admin: ReturnType<typeof createAdminClient>,
+  organizationId: string,
+  contactId: string,
+): Promise<NpsSurvey[]> {
+  const nps_surveys: NpsSurvey[] = [];
+  {
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await admin
+        .from("customer_nps_surveys")
+        .select(NPS_SURVEY_COLUMNS)
+        .eq("organization_id", organizationId)
+        .eq("contact_id", contactId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + 999);
+      if (error) throw new Error("Não foi possível coletar as pesquisas NPS para exportação.");
+      const rows = (data ?? []) as unknown as NpsSurvey[];
+      nps_surveys.push(...rows);
+      if (rows.length < 1000) break;
+    }
+  }
+
+  return nps_surveys;
 }
 
 export async function collectExportData(args: CollectArgs): Promise<ExportPayload> {
@@ -606,6 +635,10 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
     }
   }
 
+  // NPS também é apagado na anonimização: entrega a nota/comentário no data.json.
+  // Paginação sem teto silencioso e escopo duplo, nunca exporta token_hash.
+  const nps_surveys = contactId ? await collectNpsForExport(admin, organizationId, contactId) : [];
+
   // Chamadas de voz — `contact_id` direto em `voice_calls` (migration 0232).
   //
   // O que existe aqui é o REGISTRO da ligação, nunca o áudio: gravação está
@@ -801,6 +834,7 @@ export async function collectExportData(args: CollectArgs): Promise<ExportPayloa
     activities,
     appointments,
     tasks,
+    nps_surveys,
     webhook_captures,
     audit_log_extract,
     reply_drafts,
@@ -833,6 +867,7 @@ function emptyPayload(
     activities: [],
     appointments: [],
     tasks: [],
+    nps_surveys: [],
     webhook_captures: [],
     audit_log_extract: [],
     meeting_deliveries: [],

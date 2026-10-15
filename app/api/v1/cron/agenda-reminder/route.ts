@@ -70,7 +70,7 @@ import { espacarEnvio } from "@/lib/automation/throttle";
 import { env } from "@/lib/env";
 import { tagDeIdioma } from "@/lib/i18n/datas";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { IDIOMA_PADRAO, normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
+import { IDIOMA_PADRAO, idiomaDaInterface, type Idioma } from "@/lib/i18n/idiomas";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -338,7 +338,7 @@ async function handle(req: NextRequest): Promise<Response> {
       quando: new Date(linha.starts_at),
       timezone: organizacao?.timezone ?? "America/Sao_Paulo",
       local: linha.location_details ?? tipo.location_details ?? null,
-      idioma: normalizarIdioma(organizacao?.locale),
+      idioma: idiomaDaInterface(organizacao?.locale),
     });
 
     if (tipo.reminder_template_name) {

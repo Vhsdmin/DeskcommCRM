@@ -74,8 +74,7 @@ export function scrubMessage(input: string): string {
  * proteção sozinho, e este arquivo não precisa nomear provider (invariante 1 de
  * `docs/doctrine/restricao-de-canal.md`).
  */
-const CREDENTIAL_PATH =
-  /(\/api\/v1\/webhooks\/[^/?#\s]+\/|\/team\/accept-invite\/)[^/?#\s]+/g;
+const CREDENTIAL_PATH = /(\/api\/v1\/webhooks\/[^/?#\s]+\/|\/team\/accept-invite\/)[^/?#\s]+/g;
 
 /**
  * Redige credencial de path e valor de query string, preservando as CHAVES da query.
@@ -85,7 +84,9 @@ const CREDENTIAL_PATH =
  * pode carregar assinatura, token ou dado do titular.
  */
 export function scrubUrl(input: string): string {
-  const withoutToken = input.replace(CREDENTIAL_PATH, "$1[TOKEN]");
+  const withoutToken = input
+    .replace(CREDENTIAL_PATH, "$1[TOKEN]")
+    .replace(/(\/pesquisa\/nps)#\S*/g, "$1#[TOKEN]");
   // O `^` da alternância não é adorno: o Sentry preenche `request.query_string`
   // com a query CRUA, sem o `?` na frente (`sig=abc`, não `?sig=abc`). Sem ele a
   // assinatura sobrevivia nesse campo — medido, não suposto.
@@ -179,9 +180,9 @@ export const sentryScrubHooks = {
     if (typeof breadcrumb.message === "string") {
       breadcrumb.message = scrubUrl(breadcrumb.message);
     }
-    const url = breadcrumb.data?.url;
-    if (typeof url === "string" && breadcrumb.data) {
-      breadcrumb.data.url = scrubUrl(url);
+    for (const key of ["url", "from", "to"]) {
+      const value = breadcrumb.data?.[key];
+      if (typeof value === "string" && breadcrumb.data) breadcrumb.data[key] = scrubUrl(value);
     }
     return breadcrumb;
   },

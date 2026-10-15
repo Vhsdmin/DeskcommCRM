@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { signOut } from "@/app/actions/auth/signOut";
 
@@ -30,7 +30,7 @@ export default async function AcessoRevogadoPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = normalizarIdioma(
+  const idioma = idiomaDaInterface(
     (user?.user_metadata?.locale as string | undefined) ?? null,
   );
 

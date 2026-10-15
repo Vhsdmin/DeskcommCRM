@@ -23,7 +23,7 @@ export interface ActivityEvidence {
 
 export interface EmitLeadActivityInput {
   organizationId: string;
-  leadId: string;
+  leadId: string | null;
   contactId?: string | null;
   /**
    * Tipo da atividade — do vocabulário fechado (activity-vocabulary.ts). É
@@ -57,7 +57,7 @@ export interface EmitLeadActivityInput {
 /** A linha exatamente como vai para `crm_lead_activities`. */
 export interface LeadActivityRow {
   organization_id: string;
-  lead_id: string;
+  lead_id: string | null;
   contact_id: string | null;
   type: ActivityType;
   source_module: string;

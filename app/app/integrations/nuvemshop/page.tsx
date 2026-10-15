@@ -20,7 +20,7 @@ import { ConnectButton, DisconnectButton } from "./_components/ConnectButton";
 import { StatusToast } from "./_components/StatusToast";
 import { Suspense } from "react";
 import { tagDeIdioma } from "@/lib/i18n/datas";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 interface IntegrationRow {
@@ -47,7 +47,7 @@ export default async function NuvemshopIntegrationPage() {
   const user = await loadAuthUser();
   const activeOrg = user ? await resolveActiveOrg(user) : null;
   const configured = isConfigured();
-  const idioma = normalizarIdioma(user?.locale ?? null);
+  const idioma = idiomaDaInterface(user?.locale ?? null);
 
   const integration =
     activeOrg && configured ? await loadIntegration(activeOrg.orgId) : null;

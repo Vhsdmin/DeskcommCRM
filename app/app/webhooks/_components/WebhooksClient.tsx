@@ -2,10 +2,9 @@
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SourcesTab } from "./SourcesTab";
+import { ConexaoGestaoTab } from "./ConexaoGestaoTab";
 import { RulesTab } from "./RulesTab";
 import { ActivityTab } from "./ActivityTab";
-import { CapturasTab } from "./CapturasTab";
 import { useT } from "@/hooks/i18n/useT";
 
 export function WebhooksClient() {
@@ -22,14 +21,14 @@ export function WebhooksClient() {
 
   if (!mounted) {
     // Mesma altura do TabsList (h-9) e largura MEDIDA da tablist — zero layout
-    // shift. 432px é a medida com QUATRO abas (`getBoundingClientRect` em
-    // 1440px, aba "Leads recebidos" incluída); eram 306px com três, e um
-    // skeleton estreito demais faz a página saltar no primeiro paint.
+    // shift. 323px é a medida com TRÊS abas (`getBoundingClientRect` em
+    // 1440px, sem "Leads recebidos", oculta no CRM da VendePay); com quatro
+    // eram 432px, e um skeleton estreito demais faz a página saltar.
     // Ao acrescentar ou renomear aba, MEDIR de novo — este número não se
     // estima a olho.
     return (
       <div className="flex-1">
-        <Skeleton className="h-9 w-[432px]" />
+        <Skeleton className="h-9 w-[323px]" />
       </div>
     );
   }
@@ -38,12 +37,13 @@ export function WebhooksClient() {
     <Tabs defaultValue="sources" className="flex-1">
       <TabsList>
         <TabsTrigger value="sources">{t("Receber dados")}</TabsTrigger>
-        <TabsTrigger value="capturas">{t("Leads recebidos")}</TabsTrigger>
+        {/* "Leads recebidos" fica oculto no CRM da VendePay: os clientes chegam
+            pelo Gestão, não por formulário externo. O componente continua em
+            `CapturasTab.tsx`. */}
         <TabsTrigger value="rules">{t("Automações")}</TabsTrigger>
         <TabsTrigger value="activity">{t("Atividade")}</TabsTrigger>
       </TabsList>
-      <TabsContent value="sources"><SourcesTab /></TabsContent>
-      <TabsContent value="capturas"><CapturasTab /></TabsContent>
+      <TabsContent value="sources"><ConexaoGestaoTab /></TabsContent>
       <TabsContent value="rules"><RulesTab /></TabsContent>
       <TabsContent value="activity"><ActivityTab /></TabsContent>
     </Tabs>

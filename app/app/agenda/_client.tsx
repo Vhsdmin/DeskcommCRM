@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { mensagemDeConfiguracaoDaAgenda } from "@/lib/agenda/erro-de-horarios";
 import { useRouter } from "next/navigation";
 
 import { EntradaDaAgenda } from "@/components/agenda/EntradaDaAgenda";
@@ -231,7 +233,11 @@ export function AgendaClient({
   // "a consulta falhou" em "publicou, só não tem vaga" — dias travados e aviso
   // nenhum, que é exatamente o que uma instalação fresca produz (a rota devolve
   // 422 porque ninguém está em `attendant_availability`).
-  const { data: horarios, isError: horariosFalharam } = useHorariosLivres(
+  const {
+    data: horarios,
+    isError: horariosFalharam,
+    error: horariosErro,
+  } = useHorariosLivres(
     marcando && tipo
       ? { event_type_id: tipo.id, de: janelaDeBusca.de, ate: janelaDeBusca.ate }
       : null,
@@ -373,7 +379,10 @@ export function AgendaClient({
             {t("O que está marcado, com quem, e quem atende — seu e da equipe.")}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/app/settings/tenant/agenda">{t("Tipos de agendamento")}</Link>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setAncora(new Date())}>
             {t("Hoje")}
           </Button>
@@ -689,6 +698,7 @@ export function AgendaClient({
                 horariosPorDia={horariosPorDia}
                 publicouHorarios={horarios?.publicou_horarios ?? true}
                 erroAoCarregar={horariosFalharam}
+                mensagemDeErro={mensagemDeConfiguracaoDaAgenda(horariosErro)}
                 fusoSuposto={horarios?.fuso_suposto ?? false}
                 fontesDefasadas={horarios?.fontes_defasadas}
                 googleCoberturaParcial={horarios?.google_cobertura_parcial}

@@ -34,10 +34,7 @@ export default async function CrmHubPage() {
       role={activeOrg?.role ?? null}
       interfaceSettings={activeOrg?.interface_settings}
       title={traduzir("CRM", idioma)}
-      subtitle={traduzir(
-        "Onde a venda acontece — e o que você define uma vez para ela funcionar.",
-        idioma,
-      )}
+      subtitle={traduzir("Clientes, jornada, tarefas e pesquisas de satisfação.", idioma)}
       locale={idioma}
     />
   );

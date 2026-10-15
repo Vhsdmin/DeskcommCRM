@@ -10,6 +10,7 @@ import type { TimelineItem, TimelineItemView } from "@/lib/types/contacts";
  * razão pela qual o formulário do dossiê foi extraído e não duplicado.
  */
 export const TIMELINE_COL_LIST = [
+  "revision",
   "id",
   "organization_id",
   "lead_id",

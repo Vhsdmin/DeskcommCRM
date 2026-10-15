@@ -15,7 +15,7 @@ import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { empresaExigeMfa, exigeCadastroDeMfa } from "@/lib/auth/politica-mfa";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 import type { AuthUser, Role, UserOrgMembership, ActiveOrg } from "./types";
 
 const ACTIVE_ORG_COOKIE = "active_org";
@@ -230,7 +230,7 @@ export const loadAuthUser = cache(async (): Promise<AuthUser | null> => {
   // própria, e quem não pertence a organização nenhuma, não têm o que resolver.
   // Ler assim mesmo faria toda tela do produto tocar o cookie para descartar o
   // valor em seguida.
-  const idioma = normalizarIdioma(
+  const idioma = idiomaDaInterface(
     locale ?? support?.locale ?? (await localeDaOrgAtiva(memberships)),
   );
   const timezone = (user.user_metadata?.timezone as string | undefined) ?? null;

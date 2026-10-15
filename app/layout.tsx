@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Open_Sans, Poppins } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { coresDaBarraDoNavegador } from "@/lib/branding/barra-do-navegador";
@@ -25,11 +25,19 @@ import { Providers } from "./providers";
 import { PublicEnvScript } from "./public-env-script";
 import "./globals.css";
 
-const atkinson = Atkinson_Hyperlegible({
+// As fontes do Gestão VendePay: Open Sans no texto, Poppins nos títulos.
+const openSans = Open_Sans({
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  variable: "--font-atkinson",
+  variable: "--font-open-sans",
+});
+
+const poppins = Poppins({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+  variable: "--font-poppins",
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -82,11 +90,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const { name } = marca;
   return {
     title: {
-      default: `${name} — atendimento e vendas por WhatsApp com agentes de IA`,
+      default: `${name} — atendimento e sucesso do cliente`,
       template: `%s · ${name}`,
     },
     description:
-      "Centralize o atendimento por WhatsApp num funil só. Agentes de IA resolvem o que dá pra resolver e passam para o time humano o que importa — com tudo registrado. Multi-tenant, LGPD-nativo, feito para operações brasileiras.",
+      "CRM interno da VendePay para atendimento e sucesso do cliente: carteira, histórico de relacionamento, jornada, tarefas, agenda e NPS.",
     applicationName: name,
     authors: [{ name }],
     keywords: [
@@ -278,7 +286,7 @@ export default function RootLayout({
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${atkinson.variable} ${plexMono.variable}`}
+      className={`${openSans.variable} ${poppins.variable} ${plexMono.variable}`}
     >
       <head>
         {/* Primeiro de tudo: a cor da instalação, antes do CSS e do script de tema. */}

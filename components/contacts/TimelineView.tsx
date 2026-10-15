@@ -1,5 +1,11 @@
 "use client";
+import { npsClass } from "@/lib/contacts/nps";
+import { FASES_JORNADA_CS } from "@/lib/types/contacts";
 
+import Link from "next/link";
+import { RegistrarAtividade } from "./RegistrarAtividade";
+import { ExcluirAtividade } from "./ExcluirAtividade";
+import { TIPO_ATIVIDADE } from "@/lib/contacts/atividade-schema";
 import type { Locale } from "date-fns";
 
 import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
@@ -19,6 +25,9 @@ import { activityLabel, actorName, actorShape } from "@/lib/leads/activity-vocab
 interface Props {
   contactId: string;
   types?: string[];
+  canEdit?: boolean;
+  actorUserId?: string;
+  manager?: boolean;
 }
 
 const ICON_MAP: Record<string, PhosphorIcon> = {
@@ -29,7 +38,11 @@ const ICON_MAP: Record<string, PhosphorIcon> = {
   system: Gear,
 };
 
-function dayHeader(d: Date, t: (texto: string) => string = (texto) => texto, locale: Locale): string {
+function dayHeader(
+  d: Date,
+  t: (texto: string) => string = (texto) => texto,
+  locale: Locale,
+): string {
   if (isToday(d)) return t("Hoje");
   if (isYesterday(d)) return t("Ontem");
   return format(d, "dd/MM/yyyy", { locale: locale });
@@ -46,12 +59,12 @@ function summarizePayload(p: Record<string, unknown>): string {
   if (!p) return "";
   for (const campo of ["body", "text", "summary", "reason", "note"]) {
     const v = p[campo];
-    if (typeof v === "string" && v.trim() !== "") return v.slice(0, 200);
+    if (typeof v === "string" && v.trim() !== "") return v;
   }
   return "";
 }
 
-export function TimelineView({ contactId, types }: Props) {
+export function TimelineView({ contactId, types, canEdit, actorUserId, manager }: Props) {
   const localeDaData = useLocaleDeData();
   const t = useT();
   const q = useTimeline(contactId, types);
@@ -101,10 +114,10 @@ export function TimelineView({ contactId, types }: Props) {
   return (
     <div className="space-y-6">
       {grouped.map(([key, items]) => {
-        const date = new Date(key);
+        const date = new Date(`${key}T12:00:00`);
         return (
           <section key={key} className="space-y-2">
-            <h3 className="sticky top-0 z-10 bg-background py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="sticky top-0 z-10 bg-background py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               {dayHeader(date, t, localeDaData)}
             </h3>
             <ul className="space-y-2">
@@ -135,12 +148,14 @@ export function TimelineView({ contactId, types }: Props) {
                       className={cn(
                         "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center text-accent",
                         forma === "filled" && "rounded-full bg-accent-soft",
-                        forma === "ring" && "rounded-full border border-accent bg-surface ring-1 ring-inset ring-accent/40",
+                        forma === "ring" &&
+                          "rounded-full border border-accent bg-surface ring-1 ring-accent/40 ring-inset",
                         // Sistema, automação ou autor não registrado: o mesmo
                         // tracejado do "Sem responsável" no card. Três formas nas
                         // duas telas — quem distingue "automação" de "não sei
                         // quem" é o texto ao lado, não um quarto desenho.
-                        forma === "dashed" && "rounded-full border border-dashed border-border-strong",
+                        forma === "dashed" &&
+                          "rounded-full border border-dashed border-border-strong",
                       )}
                       aria-hidden
                     >
@@ -159,14 +174,89 @@ export function TimelineView({ contactId, types }: Props) {
                         <span className="text-xs text-muted-foreground">{time}</span>
                       </div>
                       {corpo && (
-                        // `title` dá o texto completo em hover/foco — sem ele o
-                        // truncamento de uma linha só cortava nota sem nenhum
-                        // jeito de ler o resto (o valor já vem limitado a 200
-                        // caracteres em `summarizePayload`, então nem é raro).
-                        <p className="mt-1 truncate text-sm text-muted-foreground" title={corpo}>
+                        // Resumo completo e quebras de linha preservados para leitura do atendimento.
+                        <p
+                          className="mt-1 text-sm break-words whitespace-pre-wrap text-muted-foreground"
+                          title={corpo}
+                        >
                           {corpo}
                         </p>
                       )}
+                      {it.type === "customer_nps_answered" &&
+                        typeof it.payload.score === "number" && (
+                          <div className="mt-2">
+                            <p className="text-sm font-semibold">
+                              NPS: {it.payload.score}/10 · {t(npsClass(it.payload.score))}
+                            </p>
+                            <Button asChild size="sm" variant="outline" className="mt-2">
+                              <Link href={`/app/contacts/${contactId}?aba=nps`}>
+                                {t("Ver resposta NPS")}
+                              </Link>
+                            </Button>
+                          </div>
+                        )}
+                      {it.type === "customer_journey_updated" && (
+                        <p className="mt-2 text-sm">
+                          {t("Fase da jornada")}:{" "}
+                          {t(
+                            FASES_JORNADA_CS[
+                              it.payload.previous_phase as keyof typeof FASES_JORNADA_CS
+                            ] ??
+                              (it.payload.previous_phase === "acompanhamento"
+                                ? "Acompanhamento"
+                                : "Não definida"),
+                          )}{" "}
+                          →{" "}
+                          {t(
+                            FASES_JORNADA_CS[it.payload.phase as keyof typeof FASES_JORNADA_CS] ??
+                              (it.payload.phase === "acompanhamento"
+                                ? "Acompanhamento"
+                                : "Não definida"),
+                          )}
+                          {it.payload.previous_owner_user_id !== it.payload.owner_user_id && (
+                            <span className="block">
+                              {t("Responsável pelo acompanhamento alterado.")}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {typeof it.payload.next_steps === "string" &&
+                        it.payload.next_steps.trim() && (
+                          <p className="mt-2 text-sm break-words whitespace-pre-wrap">
+                            <strong>{t("Próximos passos")}: </strong>
+                            {it.payload.next_steps}
+                          </p>
+                        )}
+                      {it.source_module === "agenda" && it.source_id && (
+                        <Button asChild variant="outline" size="sm" className="mt-2">
+                          <Link
+                            href={`/app/agenda?compromisso=${encodeURIComponent(it.source_id)}`}
+                          >
+                            {t("Ver agendamento")}
+                          </Link>
+                        </Button>
+                      )}
+                      {canEdit &&
+                        it.lead_id === null &&
+                        it.source_module === "crm" &&
+                        it.actor_kind === "user" &&
+                        Object.values(TIPO_ATIVIDADE).includes(
+                          it.type as (typeof TIPO_ATIVIDADE)[keyof typeof TIPO_ATIVIDADE],
+                        ) &&
+                        (manager || it.performed_by_user_id === actorUserId) && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <RegistrarAtividade
+                              key={`${it.id}-${it.revision}`}
+                              contactId={contactId}
+                              activity={it}
+                            />
+                            <ExcluirAtividade
+                              contactId={contactId}
+                              activityId={it.id}
+                              revision={it.revision ?? 0}
+                            />
+                          </div>
+                        )}
                     </div>
                   </li>
                 );

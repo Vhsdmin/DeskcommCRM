@@ -10,6 +10,7 @@ import { branding, marcaEhADoProduto } from "@/lib/branding";
 import { passosVisiveis } from "@/lib/onboarding/passos";
 import { env } from "@/lib/env";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
+import { idiomaDaInterface } from "@/lib/i18n/idiomas";
 
 export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAuth();
@@ -36,7 +37,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
   const marca = branding();
 
   return (
-    <IdiomaProvider locale={user.locale}>
+    <IdiomaProvider locale={idiomaDaInterface(user.locale)}>
       <div className="flex min-h-screen flex-col bg-muted/40">
         <header className="border-b bg-background">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-4">

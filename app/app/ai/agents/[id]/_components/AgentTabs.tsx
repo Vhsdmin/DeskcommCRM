@@ -36,7 +36,6 @@ interface Props {
   /** Provedores cuja chave veio na instalação — ver `AgentForm`. */
   provedoresDaInstalacao?: string[];
   channelSessions: ChannelSessionLite[];
-  routerMembership?: { routerId: string; routerName: string } | null;
   readOnly?: boolean;
 }
 
@@ -78,7 +77,6 @@ export function AgentTabs(props: Props) {
           funis={props.funis}
           cobertura={props.cobertura}
           materiais={props.materiais}
-          routerMembership={props.routerMembership}
           readOnly={props.readOnly}
         />
       </TabsContent>

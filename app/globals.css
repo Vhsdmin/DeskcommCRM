@@ -25,70 +25,70 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ─────────────────────────────────────────────────────────────────────────
-   DeskcommCRM — Design System tokens (Sage palette · density Aerada)
-   Source of truth: /app/design/lib/tokens.ts (PALETTES.sage)
+   VendePay CRM — Design System tokens (paleta VendePay · density Aerada)
+   Fonte: tokens `--vp-color-*` do Gestão VendePay (gestao-hml), temas claro e escuro
    Light + dark drawn separately (NOT inverted).
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
   /* Surfaces (light) */
-  --color-bg: #faf9f6;
+  --color-bg: #f8f9fa;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
+  --color-surface-elevated: #f2f4f7;
+  --color-overlay: rgba(11, 18, 32, 0.42);
 
   /* Text (light) */
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
+  --color-text: #212529;
+  --color-text-muted: #495057;
+  --color-text-subtle: #667085;
 
   /* Borders (light) */
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-border: #e6e9ef;
+  --color-border-strong: #d0d5dd;
 
   /* Accent — Sage (11 stops) */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
-  --color-accent: var(--color-accent-600);
+  --color-accent-50:  #e8fef1;
+  --color-accent-100: #c9fcdf;
+  --color-accent-200: #97f9c2;
+  --color-accent-300: #5cf79e;
+  --color-accent-400: #0bf372;
+  --color-accent-500: #04d361;
+  --color-accent-600: #00b359;
+  --color-accent-700: #049366;
+  --color-accent-800: #037a55;
+  --color-accent-900: #065f45;
+  --color-accent-950: #04231a;
+  --color-accent: var(--color-accent-800);
   --color-accent-fg: #ffffff;
-  --color-accent-soft: var(--color-accent-100);
-  --color-accent-hover: var(--color-accent-700);
+  --color-accent-soft: var(--color-accent-50);
+  --color-accent-hover: var(--color-accent-900);
 
   /* Neutrals — greige (11 stops, light) */
-  --color-neutral-50:  #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  --color-neutral-50:  #f8f9fa;
+  --color-neutral-100: #f2f4f7;
+  --color-neutral-200: #e6e9ef;
+  --color-neutral-300: #d0d5dd;
+  --color-neutral-400: #98a2b3;
+  --color-neutral-500: #667085;
+  --color-neutral-600: #495057;
+  --color-neutral-700: #343a40;
+  --color-neutral-800: #212529;
+  --color-neutral-900: #16181b;
+  --color-neutral-950: #0b0c0e;
 
   /* States (light) */
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  --color-success: #4caf50;
+  --color-success-bg: rgba(76, 175, 80, 0.14);
+  --color-success-fg: #2e7d32;
+  --color-warning: #e6a817;
+  --color-warning-bg: rgba(230, 180, 0, 0.18);
+  --color-warning-fg: #8a6d00;
+  --color-error: #ff2c2c;
+  --color-error-bg: rgba(244, 67, 54, 0.12);
+  --color-error-fg: #c62828;
+  --color-info: #045471;
+  --color-info-bg: rgba(4, 84, 113, 0.1);
+  --color-info-fg: #045471;
 
   /* Spacing (4-base) */
   --space-0: 0px;
@@ -108,18 +108,18 @@
 
   /* Radius */
   --radius-none: 0px;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
   /* Shadows — desaturated, neutral-based */
   --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
   --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --shadow-md: 0 5px 18px rgba(11, 18, 32, 0.07);
+  --shadow-lg: 0 8px 25px rgba(11, 18, 32, 0.12);
+  --shadow-xl: 0 14px 40px -18px rgba(11, 18, 32, 0.28);
 
   /* Density — Aerada */
   --density-row: 56px;
@@ -161,7 +161,7 @@
   --destructive-foreground: #ffffff;
   --border: var(--color-border);
   --input: var(--color-border);
-  --ring: var(--color-accent-500);
+  --ring: var(--color-accent-700);
   --radius: var(--radius-md);
   /* ---- Agenda · cor de pessoa (8 trilhas) ------------------------------
    * Quem é o dono do compromisso é o eixo visual da grade, e a accent NÃO
@@ -214,6 +214,13 @@
   --agenda-pessoa-6: #608bda;   /* índigo */
   --agenda-pessoa-7: #7b5bad;   /* violeta */
   --agenda-pessoa-8: #cc77b1;   /* framboesa */
+  /* ---- Moldura VendePay ----------------------------------------------
+   * Fundo atrás do menu e da barra do topo, com dois brilhos difusos no canto
+   * superior esquerdo — o mesmo desenho da casca do Gestão VendePay.
+   */
+  --color-shell: #d3eae6;
+  --color-shell-glow-1: rgba(24, 166, 151, 0.2);
+  --color-shell-glow-2: rgba(65, 196, 179, 0.14);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -250,47 +257,47 @@
    (lib/branding/css.ts), que só ganha consumidor com a tela de marca.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg: #faf9f6;
+  --color-bg: #f8f9fa;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
-  --color-accent: var(--color-accent-600);
+  --color-surface-elevated: #f2f4f7;
+  --color-overlay: rgba(11, 18, 32, 0.42);
+  --color-text: #212529;
+  --color-text-muted: #495057;
+  --color-text-subtle: #667085;
+  --color-border: #e6e9ef;
+  --color-border-strong: #d0d5dd;
+  --color-accent: var(--color-accent-800);
   --color-accent-fg: #ffffff;
-  --color-accent-soft: var(--color-accent-100);
-  --color-accent-hover: var(--color-accent-700);
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  --color-accent-soft: var(--color-accent-50);
+  --color-accent-hover: var(--color-accent-900);
+  --color-neutral-50: #f8f9fa;
+  --color-neutral-100: #f2f4f7;
+  --color-neutral-200: #e6e9ef;
+  --color-neutral-300: #d0d5dd;
+  --color-neutral-400: #98a2b3;
+  --color-neutral-500: #667085;
+  --color-neutral-600: #495057;
+  --color-neutral-700: #343a40;
+  --color-neutral-800: #212529;
+  --color-neutral-900: #16181b;
+  --color-neutral-950: #0b0c0e;
+  --color-success: #4caf50;
+  --color-success-bg: rgba(76, 175, 80, 0.14);
+  --color-success-fg: #2e7d32;
+  --color-warning: #e6a817;
+  --color-warning-bg: rgba(230, 180, 0, 0.18);
+  --color-warning-fg: #8a6d00;
+  --color-error: #ff2c2c;
+  --color-error-bg: rgba(244, 67, 54, 0.12);
+  --color-error-fg: #c62828;
+  --color-info: #045471;
+  --color-info-bg: rgba(4, 84, 113, 0.1);
+  --color-info-fg: #045471;
   --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
   --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --shadow-md: 0 5px 18px rgba(11, 18, 32, 0.07);
+  --shadow-lg: 0 8px 25px rgba(11, 18, 32, 0.12);
+  --shadow-xl: 0 14px 40px -18px rgba(11, 18, 32, 0.28);
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -308,7 +315,7 @@
   --destructive-foreground: #ffffff;
   --border: var(--color-border);
   --input: var(--color-border);
-  --ring: var(--color-accent-500);
+  --ring: var(--color-accent-700);
   /* ---- Agenda · cor de pessoa (espelho do :root) -----------------------
    * Espelhado aqui porque o tema escuro sobrescreve estas oito chaves, e
    * `tests/unit/branding-tema-claro-escopavel.test.ts` exige que este bloco
@@ -324,74 +331,81 @@
   --agenda-pessoa-6: #608bda;   /* índigo */
   --agenda-pessoa-7: #7b5bad;   /* violeta */
   --agenda-pessoa-8: #cc77b1;   /* framboesa */
+  /* ---- Moldura VendePay ----------------------------------------------
+   * Fundo atrás do menu e da barra do topo, com dois brilhos difusos no canto
+   * superior esquerdo — o mesmo desenho da casca do Gestão VendePay.
+   */
+  --color-shell: #d3eae6;
+  --color-shell-glow-1: rgba(24, 166, 151, 0.2);
+  --color-shell-glow-2: rgba(65, 196, 179, 0.14);
 }
 
 [data-theme="dark"] {
   /* Surfaces (dark — drawn) */
-  --color-bg: #161510;
-  --color-surface: #1d1c17;
-  --color-surface-elevated: #272620;
-  --color-overlay: rgba(0, 0, 0, 0.55);
+  --color-bg: #070707;
+  --color-surface: #101010;
+  --color-surface-elevated: #16161a;
+  --color-overlay: rgba(0, 0, 0, 0.6);
 
   /* Text (dark) */
-  --color-text: #f5f4ef;
-  --color-text-muted: #8e8b7f;
-  --color-text-subtle: #605e54;
+  --color-text: #e1e1e6;
+  --color-text-muted: #a8a8b3;
+  --color-text-subtle: #8a8a96;
 
   /* Borders (dark) */
-  --color-border: #33312a;
-  --color-border-strong: #444239;
+  --color-border: #29292e;
+  --color-border-strong: #3a3a41;
 
   /* Accent stays same hex stops; default shifts up for dark contrast */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  --color-accent-50:  #e8fef1;
+  --color-accent-100: #c9fcdf;
+  --color-accent-200: #97f9c2;
+  --color-accent-300: #5cf79e;
+  --color-accent-400: #0bf372;
+  --color-accent-500: #04d361;
+  --color-accent-600: #00b359;
+  --color-accent-700: #049366;
+  --color-accent-800: #037a55;
+  --color-accent-900: #065f45;
+  --color-accent-950: #04231a;
   --color-accent: var(--color-accent-400);
-  --color-accent-fg: #161510;
-  --color-accent-soft: rgba(130, 160, 119, 0.16);
+  --color-accent-fg: #04231a;
+  --color-accent-soft: rgba(11, 243, 114, 0.1);
   --color-accent-hover: var(--color-accent-300);
 
   /* Neutrals — greige (11 stops, dark) */
-  --color-neutral-50:  #f5f4ef;
-  --color-neutral-100: #e6e4dc;
-  --color-neutral-200: #bbb8ac;
-  --color-neutral-300: #8e8b7f;
-  --color-neutral-400: #605e54;
-  --color-neutral-500: #444239;
-  --color-neutral-600: #33312a;
-  --color-neutral-700: #272620;
-  --color-neutral-800: #1d1c17;
-  --color-neutral-900: #161510;
-  --color-neutral-950: #0c0b08;
+  --color-neutral-50:  #e1e1e6;
+  --color-neutral-100: #c4c4cc;
+  --color-neutral-200: #a8a8b3;
+  --color-neutral-300: #8a8a96;
+  --color-neutral-400: #5c5c66;
+  --color-neutral-500: #3a3a41;
+  --color-neutral-600: #29292e;
+  --color-neutral-700: #1c1c20;
+  --color-neutral-800: #16161a;
+  --color-neutral-900: #101010;
+  --color-neutral-950: #070707;
 
   /* States (dark) */
-  --color-success: #82a077;
-  --color-success-bg: rgba(130, 160, 119, 0.18);
-  --color-success-fg: #a4ba9a;
-  --color-warning: #d09455;
-  --color-warning-bg: rgba(208, 148, 85, 0.18);
-  --color-warning-fg: #e0ad77;
-  --color-error: #c87263;
-  --color-error-bg: rgba(200, 114, 99, 0.18);
-  --color-error-fg: #d99182;
-  --color-info: #7da9bf;
-  --color-info-bg: rgba(125, 169, 191, 0.18);
-  --color-info-fg: #9bbfd2;
+  --color-success: #4caf50;
+  --color-success-bg: rgba(76, 175, 80, 0.18);
+  --color-success-fg: #5fdb8a;
+  --color-warning: #e6b400;
+  --color-warning-bg: rgba(230, 180, 0, 0.2);
+  --color-warning-fg: #e6b400;
+  --color-error: #ff5e5e;
+  --color-error-bg: rgba(244, 67, 54, 0.16);
+  --color-error-fg: #ff8a8a;
+  --color-info: #5fb8db;
+  --color-info-bg: rgba(4, 84, 113, 0.22);
+  --color-info-fg: #5fb8db;
 
   /* Shadows — heavier in dark */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.40), 0 1px 1px 0 rgba(0, 0, 0, 0.20);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -1px rgba(0, 0, 0, 0.30);
-  --shadow-lg: 0 12px 32px -6px rgba(0, 0, 0, 0.55), 0 4px 12px -2px rgba(0, 0, 0, 0.40);
-  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.65), 0 8px 16px -4px rgba(0, 0, 0, 0.50);
+  --shadow-md: 0 5px 18px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
 
   /* shadcn-compat aliases */
   --background: var(--color-bg);
@@ -424,6 +438,10 @@
   --agenda-pessoa-6: #6c97e7;
   --agenda-pessoa-7: #be9ef6;
   --agenda-pessoa-8: #cc77b1;
+  /* ---- Moldura VendePay (tema escuro) --------------------------------- */
+  --color-shell: #092725;
+  --color-shell-glow-1: rgba(24, 166, 151, 0.2);
+  --color-shell-glow-2: rgba(65, 196, 179, 0.14);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -458,6 +476,7 @@
   --color-surface: var(--color-surface);
   --color-surface-elevated: var(--color-surface-elevated);
   --color-overlay: var(--color-overlay);
+  --color-shell: var(--color-shell);
 
   --color-text: var(--color-text);
   --color-text-muted: var(--color-text-muted);
@@ -532,7 +551,9 @@
   --color-card-foreground: var(--color-text);
 
   /* Tipografia */
-  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, -apple-system,
+  --font-display: var(--font-poppins), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-open-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, monospace;
@@ -698,12 +719,20 @@
     overflow-x: clip;
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-atkinson), ui-sans-serif, system-ui, -apple-system,
+    font-family: var(--font-open-sans), ui-sans-serif, system-ui, -apple-system,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+
+  /* Título de página em Poppins, como no Gestão VendePay (os títulos de card
+     lá seguem em Open Sans). */
+  h1 {
+    font-family: var(--font-poppins), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.02em;
   }
 
   code, kbd, pre, samp {
@@ -717,13 +746,13 @@
     color: var(--color-accent-950);
   }
   [data-theme="dark"] ::selection {
-    background-color: var(--color-accent-700);
+    background-color: var(--color-accent-900);
     color: var(--color-accent-50);
   }
 
   /* Focus ring: Sage 500/400, 2px with offset */
   :focus-visible {
-    outline: 2px solid var(--color-accent-500);
+    outline: 2px solid var(--color-accent-700);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
@@ -855,6 +884,42 @@
   border: 2px solid transparent;
   border-radius: inherit;
   box-sizing: border-box;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Moldura VendePay — a casca de `/app`.
+
+   Fundo `--color-shell` com dois brilhos desfocados no canto superior
+   esquerdo, como no Gestão VendePay. Os brilhos ficam em pseudo-elementos com
+   `z-index: -1` dentro de um contexto isolado, para nunca cobrirem conteúdo.
+   ───────────────────────────────────────────────────────────────────────── */
+.moldura-vendepay {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-shell);
+}
+.moldura-vendepay::before,
+.moldura-vendepay::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+}
+.moldura-vendepay::before {
+  top: 0;
+  left: 0;
+  width: 360px;
+  height: 360px;
+  background: var(--color-shell-glow-1);
+  filter: blur(52px);
+}
+.moldura-vendepay::after {
+  top: 70px;
+  left: -40px;
+  width: 300px;
+  height: 420px;
+  background: var(--color-shell-glow-2);
+  filter: blur(64px);
 }
 
 @media (prefers-reduced-motion: reduce) {

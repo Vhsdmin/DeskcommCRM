@@ -1,0 +1,29 @@
+{
+ "schema_version":1,"diagram_type":"architecture",
+ "meta":{"title":"VendePay — desempenho CS e NPS","subtitle":"Fontes existentes, leitura com RLS e retorno à ficha","output":"vendepay-paineis-cs.html","quality_profile":"standard"},
+ "lanes":[{"id":"source","label":"Fontes existentes"},{"id":"read","label":"Leitura autorizada"},{"id":"ui","label":"Telas"},{"id":"action","label":"Acompanhamento"}],
+ "mainPath":["surveys","npsrpc","npsui","contact","history"],
+ "nodes":[
+ {"id":"surveys","lane":"source","col":0,"type":"database","label":"customer_nps_surveys","sublabel":"criação, resposta, nota, comentário e estado"},
+ {"id":"history","lane":"source","col":0,"type":"database","label":"crm_lead_activities","sublabel":"atendimento/reunião manual; excluídos não contam"},
+ {"id":"tasks","lane":"source","col":0,"type":"database","label":"crm_tasks","sublabel":"pendente/em andamento com prazo vencido"},
+ {"id":"npsrpc","lane":"read","col":1,"type":"service","label":"fn_cs_nps_dashboard","sublabel":"GET /api/v1/cs/nps; sessão, org e RLS; agregado completo e página 25"},
+ {"id":"perfrpc","lane":"read","col":1,"type":"service","label":"fn_cs_performance","sublabel":"GET /api/v1/cs/performance; próprio escopo ou gestor"},
+ {"id":"npsui","lane":"ui","col":2,"type":"frontend","label":"Dashboard NPS","sublabel":"CRM → Ver tudo; média × 10 e NPS −100..100"},
+ {"id":"perfui","lane":"ui","col":2,"type":"frontend","label":"DesempenhoCS","sublabel":"Análise → Desempenho; autor, período e critérios atuais"},
+ {"id":"contact","lane":"action","col":3,"type":"frontend","label":"Ficha existente do cliente","sublabel":"NPS, Histórico e Tarefas; ações nativas auditadas"}
+ ],
+ "edges":[
+ {"id":"e1","from":"surveys","to":"npsrpc","label":"coorte de criação"},
+ {"id":"e2","from":"npsrpc","to":"npsui","label":"totais + pesquisas"},
+ {"id":"e3","from":"npsui","to":"contact","label":"abrir pesquisa / planejar contato"},
+ {"id":"e4","from":"history","to":"perfrpc","label":"contagem e último contato"},
+ {"id":"e5","from":"surveys","to":"perfrpc","label":"detratores sem contato posterior"},
+ {"id":"e6","from":"tasks","to":"perfrpc","label":"atrasos atuais"},
+ {"id":"e7","from":"perfrpc","to":"perfui","label":"responsáveis + atenção"},
+ {"id":"e8","from":"perfui","to":"contact","label":"planejar contato"},
+ {"id":"e9","from":"contact","to":"history","label":"registrar/corrigir atendimento fecha sinal"},
+ {"id":"e10","from":"contact","to":"surveys","label":"gerar/cancelar convite; resposta pública existente"},
+ {"id":"e11","from":"contact","to":"tasks","label":"criar/concluir tarefa de acompanhamento"}
+ ]
+}

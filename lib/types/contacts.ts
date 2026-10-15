@@ -26,6 +26,9 @@ export interface Contact {
   created_at: string;
   updated_at: string;
   last_activity_at: string | null;
+  cs_phase?: string | null;
+  cs_owner_user_id?: string | null;
+  cs_revision?: number;
   /**
    * Derivado (não é coluna): a conversa mais recente deste contato — atalho para o inbox.
    * Ausente é normal: contato criado à mão pode nunca ter conversado.
@@ -43,6 +46,7 @@ export interface Contact {
  * `source_module` is text (whatsapp | crm | nuvemshop | ai | system | ...).
  */
 export interface TimelineItem {
+  revision?: number;
   id: string;
   /**
    * Declarado porque a rota SEMPRE pediu esta coluna. O tipo é que omitia — e
@@ -50,7 +54,7 @@ export interface TimelineItem {
    * e vira campo que ninguém sabe que existe.
    */
   organization_id: string;
-  lead_id: string;
+  lead_id: string | null;
   contact_id: string | null;
   source_module: string;
   source_id: string | null;
@@ -78,3 +82,12 @@ export interface TimelineItemView extends TimelineItem {
   actor_agent_name?: string | null;
   actor_user_name?: string | null;
 }
+
+export const FASES_JORNADA_CS = {
+  entrada: "Entrada",
+  onboarding: "Onboarding",
+  ativacao: "Ativação",
+  adocao: "Adoção",
+  expansao: "Expansão",
+  renovacao: "Renovação",
+} as const;

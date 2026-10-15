@@ -16,7 +16,7 @@
  * runtime em vez de lida do bundle.
  */
 
-export const DEFAULT_APP_NAME = "DeskcommCRM";
+export const DEFAULT_APP_NAME = "VendePay CRM";
 
 export type Branding = {
   /** Nome exibido na interface e nos títulos de página. */
@@ -84,7 +84,7 @@ export function resolveBranding(
  */
 /**
  * A marca em vigor é a do PRODUTO — e é só então que o símbolo e o logotipo
- * de `lib/branding/desenho.ts` podem aparecer.
+ * de `lib/branding/arte-vendepay.ts` podem aparecer.
  *
  * Duas condições, e as duas são necessárias: sem logo configurado E com o nome
  * padrão. Quem só trocou o nome (para "Acme CRM") não pode receber um logotipo

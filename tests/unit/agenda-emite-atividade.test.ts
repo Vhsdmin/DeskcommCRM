@@ -402,32 +402,20 @@ describe("quando a gravação da timeline falha", () => {
     ).toHaveLength(0);
   });
 
-  it("o ramo SEM NEGÓCIO conta a perda — controle que prova que a sonda de aviso enxerga", async () => {
-    // CONTROLE DE VACUIDADE do caso seguinte, e o mais importante do arquivo:
-    // é a MESMA sonda (`rpc("emit_event")`) num ramo onde a contagem existe. Se
-    // ela ficasse muda aqui também, "zero avisos" abaixo seria instrumento
-    // morto em vez de achado.
+  it("marca para cliente sem lead e grava no histórico sem inventar negócio", async () => {
     banco.negocios = [];
-
-    await marcarAgendamentoHandler(cliente(), ctx, {
-      event_type_id: TIPO,
-      starts_at: HORARIO,
-      contact_id: CONTATO,
-    });
-
-    expect(
-      avisosDeRastroPerdido(),
-      "nem o ramo previsto avisa: nenhuma perda de rastro desta feature chega ao event_log, e a garantia de '100% das mutações geram atividade' passa a ser afirmação sem medição",
-    ).toHaveLength(1);
-    expect(avisosDeRastroPerdido()[0]!.args.p_payload).toMatchObject({
-      activity_type: "appointment_scheduled",
-    });
-    // O PAR do caso do vínculo: sem negócio não há onde ancorar, e nada é
-    // pendurado. Sem esta linha, um INSERT incondicional passaria nos dois.
-    expect(
-      banco.inserido["crm_lead_links"] ?? [],
-      "nasceu vínculo mesmo sem negócio para ancorar: o compromisso ficou pendurado num id que não é de negócio nenhum, e o dossiê que o listar mostra o dado de outro",
-    ).toHaveLength(0);
+    await marcarAgendamentoHandler(cliente(), ctx, {event_type_id: TIPO, starts_at: HORARIO, contact_id: CONTATO});
+    expect(atividades()).toHaveLength(1);
+    expect(atividades()[0]).toMatchObject({lead_id: null, contact_id: CONTATO, organization_id: ORG, source_module: "agenda", source_id: AGENDAMENTO, type: "appointment_scheduled", actor_kind: "user", performed_by_user_id: USUARIO});
+    expect(avisosDeRastroPerdido()).toHaveLength(0);
+    expect(banco.inserido["crm_lead_links"] ?? []).toHaveLength(0);
+  });
+  it("registra falha quando histórico do cliente sem lead é recusado", async () => {
+    banco.negocios = [];
+    banco.erroAoGravar["crm_lead_activities"] = "Erro de gravação";
+    await marcarAgendamentoHandler(cliente(), ctx, {event_type_id: TIPO, starts_at: HORARIO, contact_id: CONTATO});
+    expect(atividades()).toHaveLength(0);
+    expect(avisosDeRastroPerdido()).toHaveLength(1);
   });
 
   it("⚠️ DÍVIDA CONGELADA: o ramo de ERRO não conta a perda — engoliu por esquecimento", async () => {

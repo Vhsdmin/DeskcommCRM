@@ -3177,6 +3177,12 @@ export type Database = {
           },
         ]
       }
+      customer_nps_surveys: {
+        Row: { id: string; organization_id: string; contact_id: string; created_by_user_id: string | null; token_hash: string; created_at: string; expires_at: string; cancelled_at: string | null; score: number | null; comment: string | null; answered_at: string | null }
+        Insert: { id?: string; organization_id: string; contact_id: string; created_by_user_id?: string | null; token_hash: string; created_at?: string; expires_at?: string; cancelled_at?: string | null; score?: number | null; comment?: string | null; answered_at?: string | null }
+        Update: { id?: string; organization_id?: string; contact_id?: string; created_by_user_id?: string | null; token_hash?: string; created_at?: string; expires_at?: string; cancelled_at?: string | null; score?: number | null; comment?: string | null; answered_at?: string | null }
+        Relationships: [ { foreignKeyName: "customer_nps_surveys_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }, { foreignKeyName: "customer_nps_surveys_contact_id_fkey"; columns: ["contact_id"]; isOneToOne: false; referencedRelation: "contacts"; referencedColumns: ["id"] } ]
+      }
       contacts: {
         Row: {
           ai_authorized_at: string | null
@@ -3190,6 +3196,9 @@ export type Database = {
           blocked_reason: string | null
           consent: Json
           cpf_encrypted: string | null
+          cs_phase: string | null
+          cs_owner_user_id: string | null
+          cs_revision: number
           custom_fields: Json
           cpf_hash: string | null
           created_at: string
@@ -3198,6 +3207,7 @@ export type Database = {
           email: string | null
           email_normalized: string | null
           force_human: boolean
+          gestao_account_id: string | null
           id: string
           is_anonymized: boolean
           is_blocked: boolean
@@ -3227,6 +3237,9 @@ export type Database = {
           blocked_reason?: string | null
           consent?: Json
           cpf_encrypted?: string | null
+          cs_phase?: string | null
+          cs_owner_user_id?: string | null
+          cs_revision?: number
           custom_fields?: Json
           cpf_hash?: string | null
           created_at?: string
@@ -3235,6 +3248,7 @@ export type Database = {
           email?: string | null
           email_normalized?: string | null
           force_human?: boolean
+          gestao_account_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -3264,6 +3278,9 @@ export type Database = {
           blocked_reason?: string | null
           consent?: Json
           cpf_encrypted?: string | null
+          cs_phase?: string | null
+          cs_owner_user_id?: string | null
+          cs_revision?: number
           custom_fields?: Json
           cpf_hash?: string | null
           created_at?: string
@@ -3272,6 +3289,7 @@ export type Database = {
           email?: string | null
           email_normalized?: string | null
           force_human?: boolean
+          gestao_account_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -4842,6 +4860,50 @@ export type Database = {
             columns: ["pointer_id"]
             isOneToOne: false
             referencedRelation: "followup_flow_pointers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gestao_conexoes: {
+        Row: {
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          is_active: boolean
+          last_received_at: string | null
+          organization_id: string
+          path_token: string
+          secret_encrypted: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          organization_id: string
+          path_token: string
+          secret_encrypted: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_received_at?: string | null
+          organization_id?: string
+          path_token?: string
+          secret_encrypted?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_conexoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -7668,6 +7730,16 @@ export type Database = {
       }
     }
     Functions: {
+      fn_cs_nps_dashboard: { Args: { p_org: string; p_from: string; p_to: string; p_status?: string; p_class?: string; p_offset?: number; p_owner?: string | null }; Returns: Json }
+      fn_cs_performance: { Args: { p_org: string; p_from: string; p_to: string; p_owner?: string | null; p_silence?: number; p_focus?: string; p_offset?: number }; Returns: Json }
+      fn_manage_customer_nps: { Args: { p_org: string; p_contact: string; p_action: string; p_hash?: string | null; p_survey?: string | null }; Returns: Json }
+      fn_public_customer_nps: { Args: { p_hash: string; p_score?: number | null; p_comment?: string | null }; Returns: Json }
+      fn_redact_customer_nps: { Args: Record<PropertyKey, never>; Returns: unknown }
+
+      fn_update_contact_cs: {
+        Args: { p_org: string; p_contact: string; p_phase: string | null; p_owner: string | null; p_revision: number }
+        Returns: Json
+      }
       fn_channel_routing_claim: {
         Args: {
           p_channel: string

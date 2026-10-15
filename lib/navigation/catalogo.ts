@@ -152,7 +152,15 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
 
-  // ---- CRM — o funil ----
+  // ---- CRM — relacionamento ----
+  {
+    href: "/app/nps",
+    label: "Dashboard NPS",
+    description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",
+    icon: "Gauge",
+    group: "crm",
+    section: "Relacionamento e sucesso do cliente",
+  },
   {
     // ⚠️ ERA "Kanban", e a URL continua sendo. O nome saiu da interface porque o
     // produto tinha CINCO vocabulários para a mesma coisa — "Kanban" no menu,
@@ -174,8 +182,8 @@ export const NAV_CATALOG = [
   },
   {
     href: "/app/contacts",
-    label: "Contatos",
-    description: "As pessoas do outro lado da conversa e seu histórico.",
+    label: "Clientes",
+    description: "Clientes e histórico de relacionamento com a VendePay.",
     icon: "Users",
     group: "crm",
     section: "O dia a dia da venda",
@@ -290,16 +298,6 @@ export const NAV_CATALOG = [
     label: "Follow-ups",
     description: "Como o agente retoma uma conversa que esfriou, para nenhuma morrer no silêncio.",
     icon: "FlowArrow",
-    group: "ia",
-    section: "Montar o agente",
-    minRole: "manager",
-    sidebar: true,
-  },
-  {
-    href: "/app/ai/routers",
-    label: "Roteadores",
-    description: "Qual agente pega qual conversa, e quando o humano assume.",
-    icon: "Signpost",
     group: "ia",
     section: "Montar o agente",
     minRole: "manager",
@@ -453,7 +451,7 @@ export const NAV_CATALOG = [
   {
     href: "/app/webhooks",
     label: "Webhooks",
-    description: "Avise outros sistemas quando algo acontecer aqui dentro.",
+    description: "Receba as contas do Gestão VendePay e avise outros sistemas quando algo acontecer aqui dentro.",
     icon: "WebhooksLogo",
     group: "canais",
     minRole: "manager",
@@ -482,26 +480,10 @@ export const NAV_CATALOG = [
   {
     href: "/app/metrics",
     label: "Desempenho",
-    description: "Funil e performance por atendente nos últimos 30 dias.",
+    description: "Atendimentos, reuniões e clientes para acompanhar por responsável.",
     icon: "ChartBar",
     group: "analise",
     section: "Os números do período",
-    sidebar: true,
-  },
-  {
-    // Logo abaixo de Desempenho porque responde a metade da MESMA pergunta: lá
-    // está o que aconteceu depois que a pessoa chegou; aqui, quanto custou
-    // trazê-la. Ler as duas juntas é o que fecha a conta do custo por cliente.
-    href: "/app/ads/meta",
-    label: "Meta Ads",
-    description: "Quanto custou cada resultado das campanhas que trazem gente para cá.",
-    icon: "Megaphone",
-    group: "analise",
-    section: "Os números do período",
-    // `manager`, e não o `viewer` de Desempenho: aqui não há recorte por
-    // pessoa — orçamento e criativo são da empresa inteira. Mesmo grau dos
-    // outros dois vizinhos do grupo.
-    minRole: "manager",
     sidebar: true,
   },
   {
@@ -594,43 +576,6 @@ export const NAV_CATALOG = [
     minRole: "admin",
   },
   {
-    // Mora em Organização e não em Canais de propósito: o que se configura aqui
-    // é a CONTA DE ANÚNCIOS da empresa — dinheiro e identidade comercial, ao lado
-    // de billing e API tokens. Canais é por onde se FALA com o cliente, e os dois
-    // eixos são independentes (dá para receber lead de anúncio num número servido
-    // por qualquer transporte). Ver `lib/plataformas-de-anuncio/types.ts`.
-    href: "/app/settings/conversoes",
-    label: "Conversões",
-    description:
-      "Devolver ao anúncio as vendas que ele trouxe, para ele aprender a procurar mais clientes parecidos.",
-    icon: "ChartLineUp",
-    group: "organizacao",
-    section: "Sua empresa",
-    // `admin` pelo mesmo critério das vizinhas: o token grava na conta de
-    // anúncios da empresa, e quem o troca decide para onde vai o dinheiro de
-    // mídia. Um `manager` ficaria acima de billing na mesma prancheta.
-    minRole: "admin",
-  },
-  {
-    // Vizinha de Conversões, e SEPARADA dela de propósito. As duas conectam "a
-    // Meta" e a tentação de fundi-las é real — mas são credenciais de escopos
-    // diferentes, em tabelas diferentes (0214), com consequências opostas
-    // quando vencem: o token de leitura vencido deixa uma tela vazia, o de
-    // conversões vencido faz a empresa parar de reportar vendas sem sintoma.
-    // Uma tela só, com dois campos de token parecidos, é como se cola o token
-    // errado no campo errado e se perde uma semana achando que quebrou.
-    href: "/app/settings/meta-ads",
-    label: "Meta Ads",
-    description: "Conectar a conta de anúncios para ler o desempenho das campanhas.",
-    icon: "Megaphone",
-    group: "organizacao",
-    section: "Sua empresa",
-    // `admin` pelo mesmo critério da vizinha, mesmo o token sendo só de
-    // leitura: ele expõe orçamento e performance da conta inteira, e quem
-    // apenas LÊ a tela (`manager`) não precisa poder trocar a credencial.
-    minRole: "admin",
-  },
-  {
     href: "/app/settings/marca",
     label: "Marca",
     description: "O nome e a cor que sua empresa mostra dentro do sistema.",
@@ -644,15 +589,6 @@ export const NAV_CATALOG = [
     // SEM `sidebar`: fica só no hub. Trocar a marca é tarefa de uma vez, e
     // agrupar o menu já o fez crescer — duas telas a mais estouraram a dobra em
     // 900px, medido pelo e2e `navegacao.spec.ts`.
-  },
-  {
-    href: "/app/settings/billing",
-    label: "Billing",
-    description: "Plano e cobrança.",
-    icon: "Receipt",
-    group: "organizacao",
-    section: "Sua empresa",
-    minRole: "admin",
   },
   {
     href: "/app/lgpd/requests",

@@ -16,7 +16,7 @@ import {
 } from "@/lib/agenda/meet-delivery";
 import { meetVideoUrl } from "@/lib/agenda/google/meet";
 import { tagDeIdioma } from "@/lib/i18n/datas";
-import { normalizarIdioma, type Idioma } from "@/lib/i18n/idiomas";
+import { idiomaDaInterface, type Idioma } from "@/lib/i18n/idiomas";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export function createMeetDeliveryHandler(deps: {
@@ -105,7 +105,7 @@ export function createMeetDeliveryHandler(deps: {
             row.starts_at,
             row.time_zone,
             url,
-            normalizarIdioma(row.contact_locale ?? row.organization_locale),
+            idiomaDaInterface(row.contact_locale ?? row.organization_locale),
           ),
           optedOutThisTurn: false,
           now: new Date(),

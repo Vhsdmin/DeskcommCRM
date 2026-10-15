@@ -251,6 +251,13 @@ export const AUDIT_ACTIONS = [
   "webhook.source_deleted",
   "webhook.lead_received",
   "webhook.inbound_invalid_signature",
+  // Conexão com o Gestão VendePay (webhook assinado → cliente).
+  "gestao.conexao_criada",
+  "gestao.conexao_atualizada",
+  "gestao.segredo_trocado",
+  "gestao.cliente_criado",
+  "gestao.cliente_atualizado",
+  "gestao.evento_recusado",
   "automation.rule_created",
   "automation.rule_updated",
   "automation.rule_deleted",
