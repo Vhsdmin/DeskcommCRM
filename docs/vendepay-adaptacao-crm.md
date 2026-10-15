@@ -172,3 +172,11 @@ Verificação final do registro: build de produção passou; typecheck passou; l
 - Tema claro: `--color-accent` = accent-800 e hover = accent-900; novo teste mede o `--color-accent-fg` literal contra o accent (≥ 4,5:1), com sabotagem confirmando que `#049366` reprova.
 - Blocos 0271/0272 do baseline movidos para antes da varredura de anon, que é o último bloco por desenho.
 - Suíte unitária: 7 arquivos falhando, todos também falhando na `main` (notificações/tema no Node 26, importação de leads).
+
+### Assistente interno dos CSMs (15/10/2026)
+- Decisões do usuário: documentos como base de consulta (busca por trechos), sem Word (PDF/MD/TXT), conversa dos CSMs incluída agora.
+- `ASSISTENTE_CS = true` (`lib/ai/agents/assistente-cs.ts`): o editor de agente mostra só nome, descrição, instruções, documentos e empresa/modelo/chave; número, prioridade, freios, estilo, capacidades, gatilho, passagem para humano, casos, follow-up, papéis (operação/segurança) e publicação ficam ocultos. Abas Teste, Capacidades, Execuções e Propostas ocultas. O botão vira "Salvar"; o assistente usa a última versão salva.
+- Documentos: botão "Enviar documento" na seção do agente usa `/api/v1/ai/knowledge/sources/upload` e marca o material no agente. A preparação (trechos + embeddings) roda em segundo plano e exige chave da OpenAI (Credenciais ou `OPENAI_API_KEY`).
+- Conversa: `/app/assistente` (menu Agente de IA › Usar o assistente, papel agent+) e `GET/POST /api/v1/assistente`. Modelo via `buildModel` com a credencial do agente (ou a chave da instalação), `generateText` com até 6 passos e ferramentas somente leitura (`lib/assistente-cs/ferramentas.ts`): `buscar_documentos` (materiais marcados), `buscar_clientes` e `detalhe_do_cliente` (ficha, jornada, atividades, tarefas abertas, NPS), todas pelo client da sessão (RLS) com filtro de organização. A conversa não é gravada; auditoria `assistente_cs.pergunta` sem o conteúdo, com ferramentas e tokens. Rate limit 30/min por usuário.
+- Testes: `assistente-cs-ferramentas.test.ts`, `agente-assistente-cs-editor.test.tsx`; testes do editor de atendente fixados com `ASSISTENTE_CS=false`. Integração de dados do Gestão no assistente fica para quando a API existir.
+- Não testado ponta a ponta com modelo real: não há chave de IA cadastrada no DEV.

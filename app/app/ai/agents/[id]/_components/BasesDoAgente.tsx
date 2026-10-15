@@ -28,6 +28,10 @@ import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ASSISTENTE_CS } from "@/lib/ai/agents/assistente-cs";
 
 export interface MaterialDoAcervo {
   id: string;
@@ -46,7 +50,43 @@ interface Props {
 
 export function BasesDoAgente({ materiais, value, onChange, disabled = false }: Props) {
   const t = useT();
+  const router = useRouter();
   const marcados = new Set(value);
+  const arquivo = React.useRef<HTMLInputElement>(null);
+  const [enviando, setEnviando] = React.useState(false);
+
+  /**
+   * Envio direto daqui (assistente dos CSMs): o documento vai para a base de
+   * conhecimento da organização, já marcado para este agente. A preparação
+   * (trechos + embeddings) acontece em segundo plano; até lá ele aparece como
+   * "ainda não preparado".
+   */
+  async function enviar(file: File): Promise<void> {
+    setEnviando(true);
+    try {
+      const corpo = new FormData();
+      corpo.set("file", file);
+      corpo.set("name", file.name.replace(/\.[^.]+$/, "").slice(0, 120).padEnd(2, "_"));
+      const r = await fetch("/api/v1/ai/knowledge/sources/upload", { method: "POST", body: corpo });
+      const json = (await r.json().catch(() => null)) as
+        | { data?: { id: string; indexacao_habilitada?: boolean }; error?: { message?: string } }
+        | null;
+      if (!r.ok || !json?.data?.id) {
+        toast.error(json?.error?.message ?? t("Não foi possível enviar o documento."));
+        return;
+      }
+      onChange([...new Set([...value, json.data.id])]);
+      toast.success(
+        json.data.indexacao_habilitada === false
+          ? t("Documento enviado. Cadastre uma chave da OpenAI em Credenciais para ele ser preparado.")
+          : t("Documento enviado. Salve o agente; a preparação acontece em segundo plano."),
+      );
+      router.refresh();
+    } finally {
+      setEnviando(false);
+      if (arquivo.current) arquivo.current.value = "";
+    }
+  }
 
   function alternar(id: string, marcado: boolean): void {
     const proximo = new Set(marcados);
@@ -63,7 +103,34 @@ export function BasesDoAgente({ materiais, value, onChange, disabled = false }: 
   return (
     <Card className="space-y-3 p-4">
       <div>
-        <h3 className="text-sm font-medium">{t("O que ele consulta antes de responder")}</h3>
+        {ASSISTENTE_CS ? (
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-medium">{t("Documentos")}</h3>
+            <input
+              ref={arquivo}
+              type="file"
+              accept=".pdf,.md,.markdown,.txt,application/pdf,text/markdown,text/plain"
+              className="hidden"
+              aria-label={t("Enviar documento")}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void enviar(f);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled || enviando}
+              onClick={() => arquivo.current?.click()}
+            >
+              {enviando ? t("Enviando…") : t("Enviar documento (PDF, Markdown ou TXT)")}
+            </Button>
+          </div>
+        ) : null}
+        <h3 className={ASSISTENTE_CS ? "sr-only" : "text-sm font-medium"}>
+          {t("O que ele consulta antes de responder")}
+        </h3>
         <p className="text-xs text-muted-foreground">
           {t(
             "Marque o material do seu negócio que este assistente pode ler. Ele procura ali antes de responder, em vez de improvisar — e cita de onde tirou.",

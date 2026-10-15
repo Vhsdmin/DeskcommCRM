@@ -258,6 +258,8 @@ export const AUDIT_ACTIONS = [
   "gestao.cliente_criado",
   "gestao.cliente_atualizado",
   "gestao.evento_recusado",
+  // Assistente interno dos CSMs (consulta documentos e dados do CRM).
+  "assistente_cs.pergunta",
   "automation.rule_created",
   "automation.rule_updated",
   "automation.rule_deleted",

@@ -46,6 +46,9 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() } }));
+// Este arquivo cobre o editor no modo ATENDENTE (WhatsApp), preservado atrás da
+// chave do assistente dos CSMs — ver lib/ai/agents/assistente-cs.ts.
+vi.mock("@/lib/ai/agents/assistente-cs", () => ({ ASSISTENTE_CS: false }));
 vi.mock("@/app/app/ai/agents/[id]/_actions", () => ({
   saveAgentDraftAction: acoes.salvar,
   publishAgentAction: acoes.publicar,
