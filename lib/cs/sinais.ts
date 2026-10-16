@@ -14,6 +14,7 @@ export const TIPOS_DE_SINAL = [
   "sem_contato",
   "onboarding_parado",
   "sem_responsavel",
+  "mudanca_de_faixa",
 ] as const;
 export type TipoDeSinal = (typeof TIPOS_DE_SINAL)[number];
 
@@ -27,6 +28,7 @@ export const ROTULO_DO_SINAL: Record<TipoDeSinal, { titulo: string; descricao: s
   sem_contato: { titulo: "Sem contato", descricao: "Sem atendimento ou reunião há 30+ dias" },
   onboarding_parado: { titulo: "Onboarding parado", descricao: "Em Entrada/Onboarding há 14+ dias" },
   sem_responsavel: { titulo: "Sem responsável", descricao: "Na jornada sem CSM definido" },
+  mudanca_de_faixa: { titulo: "Subiu de faixa", descricao: "Cliente entrou na sua carteira: apresente-se" },
 };
 
 export const ROTULO_DA_SEVERIDADE: Record<Severidade, string> = {
