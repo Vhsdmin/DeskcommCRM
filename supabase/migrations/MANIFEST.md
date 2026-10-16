@@ -343,3 +343,4 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261015180000` | `0273_sinais_de_cs` | Sinais de CS por cliente (abrem e resolvem sozinhos) e fotografia diária: base da Central de Prioridades, Health Score e risco. |
 
 | `20261016150000` | `0274_carteira_por_faixa` | Faixas de carteira por GMV 30 dias (suporte/CSM), entrada automática, alerta de subida com "assumir", sinais só para faixas de CSM. |
+| `20261017120000` | `0275_playbooks_de_cs` | Playbooks por tipo de sinal: passos viram tarefas (escada por severidade), canceladas quando o sinal se resolve. |

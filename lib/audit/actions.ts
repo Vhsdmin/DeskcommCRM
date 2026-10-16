@@ -263,6 +263,7 @@ export const AUDIT_ACTIONS = [
   // Carteira por faixa de faturamento.
   "cs.carteira_faixas_atualizadas",
   "cs.cliente_assumido",
+  "cs.playbook_atualizado",
   "automation.rule_created",
   "automation.rule_updated",
   "automation.rule_deleted",

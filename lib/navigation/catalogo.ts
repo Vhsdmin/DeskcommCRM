@@ -178,6 +178,17 @@ export const NAV_CATALOG = [
     minRole: "viewer",
   },
   {
+    // Playbooks (migration 0275): os passos que cada alerta da Central vira em
+    // tarefas. Configuração — fica no hub, não no sidebar.
+    href: "/app/playbooks",
+    label: "Playbooks",
+    description: "O que fazer quando um alerta aparece: passos que viram tarefas com prazo e responsável.",
+    icon: "ListChecks",
+    group: "crm",
+    section: "Relacionamento e sucesso do cliente",
+    minRole: "viewer",
+  },
+  {
     href: "/app/nps",
     label: "Dashboard NPS",
     description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",

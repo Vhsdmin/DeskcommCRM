@@ -209,6 +209,12 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "de A e 0 de B; agente não insere (RLS) nem altera (0 linhas) — só manager+ configura.",
   },
   {
+    tabela: "cs_playbooks",
+    razao:
+      "tests/invariants/cs-playbooks.test.ts — JWT de dois tenants: membro de A lê o playbook " +
+      "de A e 0 de B; agente não grava (RLS) e não executa fn_cs_aplicar_playbooks (service_role).",
+  },
+  {
     tabela: "cs_sinais_dia",
     razao:
       "tests/invariants/cs-sinais.test.ts — mesma prova da linha acima: membro de A não lê a " +

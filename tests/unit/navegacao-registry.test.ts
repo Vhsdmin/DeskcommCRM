@@ -158,6 +158,7 @@ describe("hubSections", () => {
     expect(secoes.flatMap((s) => s.items.map((i) => i.href))).toEqual([
       "/app/central",
       "/app/carteira",
+      "/app/playbooks",
       "/app/nps",
       "/app/kanban",
       "/app/contacts",
