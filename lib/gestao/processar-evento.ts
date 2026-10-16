@@ -18,7 +18,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { camposDoCliente, type EventoDoGestao } from "./contrato";
+import { camposDoCliente, vendasDoEvento, type EventoDoGestao } from "./contrato";
 
 export type DesfechoDoEvento =
   | { status: "criado"; contactId: string; telefoneRecusado: boolean }
@@ -41,6 +41,14 @@ export async function processarEventoDoGestao(
 ): Promise<DesfechoDoEvento> {
   const campos = camposDoCliente(evento);
   const contaId = evento.account.id;
+  const vendas = vendasDoEvento(evento);
+  const dadosDeVendas = vendas
+    ? {
+        gestao_gmv_30d_centavos: vendas.gmv30dCentavos,
+        gestao_gmv_30d_em: vendas.gmvEm,
+        gestao_ultima_venda_em: vendas.ultimaVendaEm,
+      }
+    : {};
 
   const { data: existente, error: erroBusca } = await admin
     .from("contacts")
@@ -67,7 +75,7 @@ export async function processarEventoDoGestao(
     ) {
       return { status: "antigo", contactId: existente.id as string };
     }
-    const patch: Record<string, unknown> = { name: campos.name, source_metadata: metadata };
+    const patch: Record<string, unknown> = { name: campos.name, source_metadata: metadata, ...dadosDeVendas };
     if (campos.email !== null) patch.email = campos.email;
     if (campos.phone_number !== null) patch.phone_number = campos.phone_number;
     const { error } = await admin
@@ -94,6 +102,7 @@ export async function processarEventoDoGestao(
       source_metadata: metadata,
       gestao_account_id: contaId,
       cs_phase: "entrada",
+      ...dadosDeVendas,
     })
     .select("id")
     .single();
