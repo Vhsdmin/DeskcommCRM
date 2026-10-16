@@ -67,6 +67,14 @@ const ANON_PERMITIDO: readonly Excecao[] = [];
  */
 const AUTHENTICATED_PERMITIDO: readonly Excecao[] = [
   {
+    fn: "fn_cs_assumir_cliente(uuid,uuid)",
+    razao:
+      "POST app/api/v1/cs/carteira/assumir/route.ts usa createClient da sessão. " +
+      "auth.uid(), papel agent+ na org do parâmetro e, para agente, ser a responsável da " +
+      "faixa nova validados no corpo; só sobe de faixa (nunca rebaixa). " +
+      "tests/invariants/cs-carteira.test.ts prova que outra org e outro agente não assumem.",
+  },
+  {
     fn: "fn_manage_customer_nps(uuid,uuid,text,text,uuid)",
     razao:
       "POST app/api/v1/contacts/[id]/nps/route.ts usa createClient da sessão. " +

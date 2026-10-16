@@ -166,6 +166,18 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
   {
+    // Carteira por faixa de faturamento (migration 0274): quem cuida de cada
+    // cliente e quem subiu de faixa esperando ser assumido. Só no hub — a
+    // Central já traz o alerta de "subiu de faixa" para o dia a dia.
+    href: "/app/carteira",
+    label: "Carteira",
+    description: "Clientes por faixa de vendas dos últimos 30 dias, responsável de cada faixa e quem subiu de faixa.",
+    icon: "UsersThree",
+    group: "crm",
+    section: "Relacionamento e sucesso do cliente",
+    minRole: "viewer",
+  },
+  {
     href: "/app/nps",
     label: "Dashboard NPS",
     description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",

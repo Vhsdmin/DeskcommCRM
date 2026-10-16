@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { useTeamMembers } from "@/hooks/team/useTeamMembers";
 import { apiClient } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/types";
 import {
   ROTULO_DA_SEVERIDADE,
   ROTULO_DO_SINAL,
@@ -60,6 +62,19 @@ export function CentralDePrioridades({ gestor, userId }: { gestor: boolean; user
       (await apiClient.get<{ data: Central }>(`/api/v1/cs/central?escopo=${escopo}`)).data,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+  });
+
+  // "Subiu de faixa": a responsável da faixa nova assume o cliente daqui mesmo.
+  const cache = useQueryClient();
+  const assumir = useMutation({
+    mutationFn: async (contactId: string) =>
+      apiClient.post("/api/v1/cs/carteira/assumir", { contact_id: contactId }),
+    onSuccess: () => {
+      toast.success(t("Cliente assumido. A troca ficou no histórico dele."));
+      void cache.invalidateQueries({ queryKey: ["cs"] });
+    },
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : t("Não foi possível assumir o cliente.")),
   });
 
   const sinais = query.data?.sinais ?? [];
@@ -219,6 +234,16 @@ export function CentralDePrioridades({ gestor, userId }: { gestor: boolean; user
                       {vencido ? t("Prazo vencido") : t("Prazo")}{" "}
                       {new Date(s.prazo).toLocaleDateString(idioma)}
                     </span>
+                    {s.tipo === "mudanca_de_faixa" && (gestor || s.dono_user_id === userId) ? (
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs"
+                        disabled={assumir.isPending}
+                        onClick={() => assumir.mutate(s.contact_id)}
+                      >
+                        {t("Assumir cliente")}
+                      </Button>
+                    ) : null}
                     <Button asChild variant="outline" size="sm" className="h-8 text-xs">
                       <Link
                         href={
@@ -240,7 +265,7 @@ export function CentralDePrioridades({ gestor, userId }: { gestor: boolean; user
       {query.data ? (
         <p className="text-xs text-muted-foreground">
           {t("Atualizado em")} {new Date(query.data.atualizado_em).toLocaleString(idioma)} ·{" "}
-          {t("Regras v1: sem vender 7/15/30 dias, detrator sem retorno, tarefa vencida, sem contato 30/60 dias, onboarding parado 14 dias, sem responsável.")}
+          {t("Regras v2: subiu de faixa, sem vender 7/15/30 dias, detrator sem retorno, tarefa vencida, sem contato 30/60 dias, onboarding parado 14 dias, sem responsável. Clientes na faixa de suporte não geram alertas de CS.")}
         </p>
       ) : null}
     </div>

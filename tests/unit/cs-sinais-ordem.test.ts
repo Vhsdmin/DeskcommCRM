@@ -22,10 +22,12 @@ describe("Central de Prioridades — ordem de trabalho", () => {
     for (const tipo of TIPOS_DE_SINAL) expect(ROTULO_DO_SINAL[tipo].titulo).toBeTruthy();
   });
 
-  it("os tipos da tela são exatamente os do CHECK da migration 0273", async () => {
+  it("os tipos da tela são exatamente os do CHECK vigente (migration 0274)", async () => {
+    // A 0274 recria o CHECK com "mudanca_de_faixa"; é a última palavra sobre o vocabulário.
     const { readFileSync } = await import("node:fs");
-    const sql = readFileSync("supabase/migrations/20261015180000_0273_sinais_de_cs.sql", "utf8");
-    const bloco = sql.slice(sql.indexOf("constraint cs_sinais_tipo_check"), sql.indexOf("constraint cs_sinais_severidade_check"));
+    const sql = readFileSync("supabase/migrations/20261016150000_0274_carteira_por_faixa.sql", "utf8");
+    const inicio = sql.indexOf("add constraint cs_sinais_tipo_check");
+    const bloco = sql.slice(inicio, sql.indexOf(";", inicio));
     const doBanco = [...bloco.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
     expect(doBanco.sort()).toEqual([...TIPOS_DE_SINAL].sort());
   });

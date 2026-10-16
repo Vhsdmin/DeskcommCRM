@@ -31,7 +31,14 @@ import { normalizePhoneBR } from "@/lib/webhooks/inbound";
 
 export const HEADER_DE_ASSINATURA = "x-vendepay-signature";
 
-export const TIPOS_DE_EVENTO = ["account.created", "account.updated"] as const;
+/**
+ * `account.snapshot` (contrato v1 da página "Contrato de dados Gestão → CRM") traz
+ * a fotografia completa da conta. Por ora o CRM lê dela as vendas — GMV de 30
+ * dias em BRL e a última venda, que definem a faixa da carteira e o alerta de
+ * "sem vender"; os demais blocos (identificação, KYC, risco, Customer Success)
+ * são aceitos e ignorados até o Customer 360.
+ */
+export const TIPOS_DE_EVENTO = ["account.created", "account.updated", "account.snapshot"] as const;
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number];
 
 const textoOpcional = z
@@ -53,6 +60,26 @@ export const eventoDoGestaoSchema = z.object({
     }),
     phone: textoOpcional,
   }),
+  vendas: z
+    .object({
+      calculado_em: z.string().datetime({ offset: true }).nullish(),
+      ultima_venda_em: z.string().datetime({ offset: true }).nullish(),
+      por_moeda: z
+        .array(
+          z.object({
+            moeda: z.string().trim().length(3),
+            ultimos_30_dias: z
+              .object({
+                quantidade: z.number().int().nonnegative().nullish(),
+                volume_centavos: z.number().int().nonnegative().nullish(),
+              })
+              .nullish(),
+          }),
+        )
+        .max(20)
+        .default([]),
+    })
+    .nullish(),
 });
 
 export type EventoDoGestao = z.infer<typeof eventoDoGestaoSchema>;
@@ -70,6 +97,23 @@ export function assinaturaConfere(corpoCru: string, header: string | null, segre
   const a = Buffer.from(esperada, "utf8");
   const b = Buffer.from(recebida, "utf8");
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * As vendas que o CRM guarda: GMV dos últimos 30 dias em BRL (a carteira é por
+ * faixa em reais; outras moedas não somam) e a última venda. `undefined` = o
+ * evento não trouxe o bloco (não mexe no que está gravado); `null` = indisponível.
+ */
+export function vendasDoEvento(evento: EventoDoGestao):
+  | { gmv30dCentavos: number | null; gmvEm: string; ultimaVendaEm: string | null }
+  | undefined {
+  if (!evento.vendas) return undefined;
+  const brl = evento.vendas.por_moeda.find((m) => m.moeda.toUpperCase() === "BRL");
+  return {
+    gmv30dCentavos: brl?.ultimos_30_dias?.volume_centavos ?? (brl ? null : 0),
+    gmvEm: evento.vendas.calculado_em ?? evento.occurred_at,
+    ultimaVendaEm: evento.vendas.ultima_venda_em ?? null,
+  };
 }
 
 /** Os campos do cliente que o evento define, já normalizados. */

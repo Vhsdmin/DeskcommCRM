@@ -3177,6 +3177,47 @@ export type Database = {
           },
         ]
       }
+      cs_carteira_faixas: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          inicio_centavos: number
+          nome: string
+          organization_id: string
+          responsavel_user_id: string | null
+          tipo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          inicio_centavos: number
+          nome: string
+          organization_id: string
+          responsavel_user_id?: string | null
+          tipo: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          inicio_centavos?: number
+          nome?: string
+          organization_id?: string
+          responsavel_user_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cs_carteira_faixas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cs_sinais: {
         Row: {
           atualizado_em: string
@@ -3311,6 +3352,9 @@ export type Database = {
           force_human: boolean
           gestao_account_id: string | null
           gestao_ultima_venda_em: string | null
+          gestao_gmv_30d_centavos: number | null
+          gestao_gmv_30d_em: string | null
+          carteira_faixa_id: string | null
           id: string
           is_anonymized: boolean
           is_blocked: boolean
@@ -3353,6 +3397,9 @@ export type Database = {
           force_human?: boolean
           gestao_account_id?: string | null
           gestao_ultima_venda_em?: string | null
+          gestao_gmv_30d_centavos?: number | null
+          gestao_gmv_30d_em?: string | null
+          carteira_faixa_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -3395,6 +3442,9 @@ export type Database = {
           force_human?: boolean
           gestao_account_id?: string | null
           gestao_ultima_venda_em?: string | null
+          gestao_gmv_30d_centavos?: number | null
+          gestao_gmv_30d_em?: string | null
+          carteira_faixa_id?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -7837,6 +7887,8 @@ export type Database = {
     Functions: {
       fn_cs_nps_dashboard: { Args: { p_org: string; p_from: string; p_to: string; p_status?: string; p_class?: string; p_offset?: number; p_owner?: string | null }; Returns: Json }
       fn_cs_recalcular_sinais: { Args: { p_org: string }; Returns: Json }
+      fn_cs_assumir_cliente: { Args: { p_org: string; p_contact: string }; Returns: Json }
+      fn_cs_faixa_do_gmv: { Args: { p_org: string; p_gmv_centavos: number | null }; Returns: string | null }
       fn_cs_sinais_candidatos: {
         Args: { p_org: string }
         Returns: {

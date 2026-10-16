@@ -260,6 +260,9 @@ export const AUDIT_ACTIONS = [
   "gestao.evento_recusado",
   // Assistente interno dos CSMs (consulta documentos e dados do CRM).
   "assistente_cs.pergunta",
+  // Carteira por faixa de faturamento.
+  "cs.carteira_faixas_atualizadas",
+  "cs.cliente_assumido",
   "automation.rule_created",
   "automation.rule_updated",
   "automation.rule_deleted",

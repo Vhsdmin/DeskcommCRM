@@ -203,6 +203,12 @@ const PROVA_PROPRIA: readonly Excecao[] = [
       "executa fn_cs_recalcular_sinais, a única escrita (service_role).",
   },
   {
+    tabela: "cs_carteira_faixas",
+    razao:
+      "tests/invariants/cs-carteira.test.ts — JWT de dois tenants: membro de A lê as 2 faixas " +
+      "de A e 0 de B; agente não insere (RLS) nem altera (0 linhas) — só manager+ configura.",
+  },
+  {
     tabela: "cs_sinais_dia",
     razao:
       "tests/invariants/cs-sinais.test.ts — mesma prova da linha acima: membro de A não lê a " +

@@ -33,13 +33,31 @@ Cada ambiente (homologação, produção) tem a sua conexão, com endereço e se
 | Campo | Regra |
 |---|---|
 | `event_id` | Único por evento. Reenviar o mesmo id não processa de novo. |
-| `event_type` | `account.created` ou `account.updated`. |
+| `event_type` | `account.created`, `account.updated` ou `account.snapshot` (fotografia completa da conta; ver abaixo). |
 | `occurred_at` | ISO-8601 com fuso. Evento mais antigo que o último aplicado ao cliente é ignorado. |
 | `account.id` | ID do usuário no Gestão. É a chave do vínculo com o cliente no CRM. |
 | `account.name` | Obrigatório. |
 | `account.email`, `account.phone` | Opcionais. Telefone em E.164 ou formato brasileiro. |
 
 O cliente é encontrado **somente** pelo `account.id`. E-mail e telefone nunca juntam contas.
+
+### Vendas (`account.snapshot`)
+
+O snapshot segue o contrato publicado em "Contrato de dados Gestão → CRM". Por ora o CRM lê dele o bloco `vendas`; os demais blocos são aceitos e ignorados até o Customer 360.
+
+```json
+"vendas": {
+  "calculado_em": "2026-10-16T03:00:00Z",
+  "ultima_venda_em": "2026-10-15T20:14:00Z",
+  "por_moeda": [
+    { "moeda": "BRL", "ultimos_30_dias": { "quantidade": 120, "volume_centavos": 1500000 } }
+  ]
+}
+```
+
+- `volume_centavos` de BRL nos últimos 30 dias define a **faixa da carteira**; outras moedas não somam. Sem entrada BRL = R$ 0; BRL com `ultimos_30_dias` nulo = indisponível (não zera).
+- `ultima_venda_em` alimenta os alertas de 7/15/30 dias sem vender.
+- Evento sem o bloco `vendas` não altera o que está gravado.
 
 ## Respostas
 
