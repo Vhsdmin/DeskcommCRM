@@ -36,6 +36,7 @@ const config: VercelConfig = {
     { path: "/api/v1/cron/agenda-google-refresh", schedule: "*/10 * * * *" },
     { path: "/api/v1/cron/agenda-google-sync", schedule: "*/15 * * * *" },
     { path: "/api/v1/cron/risk-watcher", schedule: "*/15 * * * *" },
+    { path: "/api/v1/cron/cs-sinais", schedule: "7 * * * *" },
     { path: "/api/v1/cron/contact-phones", schedule: "*/30 * * * *" },
     { path: "/api/v1/cron/contact-proposals-watcher", schedule: "17 * * * *" },
     { path: "/api/v1/cron/lgpd-sla-watcher", schedule: "0 12 * * *" },

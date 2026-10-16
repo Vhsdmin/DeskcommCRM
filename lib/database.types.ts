@@ -3177,6 +3177,108 @@ export type Database = {
           },
         ]
       }
+      cs_sinais: {
+        Row: {
+          atualizado_em: string
+          contact_id: string
+          detectado_em: string
+          dono_user_id: string | null
+          evidencia: Json
+          id: string
+          motivo: string
+          organization_id: string
+          prazo: string
+          regra_versao: string
+          resolvido_em: string | null
+          severidade: string
+          tipo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          contact_id: string
+          detectado_em?: string
+          dono_user_id?: string | null
+          evidencia?: Json
+          id?: string
+          motivo: string
+          organization_id: string
+          prazo: string
+          regra_versao: string
+          resolvido_em?: string | null
+          severidade: string
+          tipo: string
+        }
+        Update: {
+          atualizado_em?: string
+          contact_id?: string
+          detectado_em?: string
+          dono_user_id?: string | null
+          evidencia?: Json
+          id?: string
+          motivo?: string
+          organization_id?: string
+          prazo?: string
+          regra_versao?: string
+          resolvido_em?: string | null
+          severidade?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cs_sinais_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cs_sinais_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cs_sinais_dia: {
+        Row: {
+          contact_id: string
+          dia: string
+          organization_id: string
+          severidade: string
+          tipo: string
+        }
+        Insert: {
+          contact_id: string
+          dia: string
+          organization_id: string
+          severidade: string
+          tipo: string
+        }
+        Update: {
+          contact_id?: string
+          dia?: string
+          organization_id?: string
+          severidade?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cs_sinais_dia_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cs_sinais_dia_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_nps_surveys: {
         Row: { id: string; organization_id: string; contact_id: string; created_by_user_id: string | null; token_hash: string; created_at: string; expires_at: string; cancelled_at: string | null; score: number | null; comment: string | null; answered_at: string | null }
         Insert: { id?: string; organization_id: string; contact_id: string; created_by_user_id?: string | null; token_hash: string; created_at?: string; expires_at?: string; cancelled_at?: string | null; score?: number | null; comment?: string | null; answered_at?: string | null }
@@ -3208,6 +3310,7 @@ export type Database = {
           email_normalized: string | null
           force_human: boolean
           gestao_account_id: string | null
+          gestao_ultima_venda_em: string | null
           id: string
           is_anonymized: boolean
           is_blocked: boolean
@@ -3249,6 +3352,7 @@ export type Database = {
           email_normalized?: string | null
           force_human?: boolean
           gestao_account_id?: string | null
+          gestao_ultima_venda_em?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -3290,6 +3394,7 @@ export type Database = {
           email_normalized?: string | null
           force_human?: boolean
           gestao_account_id?: string | null
+          gestao_ultima_venda_em?: string | null
           id?: string
           is_anonymized?: boolean
           is_blocked?: boolean
@@ -7731,6 +7836,18 @@ export type Database = {
     }
     Functions: {
       fn_cs_nps_dashboard: { Args: { p_org: string; p_from: string; p_to: string; p_status?: string; p_class?: string; p_offset?: number; p_owner?: string | null }; Returns: Json }
+      fn_cs_recalcular_sinais: { Args: { p_org: string }; Returns: Json }
+      fn_cs_sinais_candidatos: {
+        Args: { p_org: string }
+        Returns: {
+          contact_id: string
+          tipo: string
+          severidade: string
+          motivo: string
+          evidencia: Json
+          dono: string | null
+        }[]
+      }
       fn_cs_performance: { Args: { p_org: string; p_from: string; p_to: string; p_owner?: string | null; p_silence?: number; p_focus?: string; p_offset?: number }; Returns: Json }
       fn_manage_customer_nps: { Args: { p_org: string; p_contact: string; p_action: string; p_hash?: string | null; p_survey?: string | null }; Returns: Json }
       fn_public_customer_nps: { Args: { p_hash: string; p_score?: number | null; p_comment?: string | null }; Returns: Json }

@@ -154,6 +154,18 @@ export const NAV_CATALOG = [
 
   // ---- CRM — relacionamento ----
   {
+    // A tela inicial do CSM: os sinais de CS (migration 0273) ordenados por
+    // severidade e prazo — onde trabalhar hoje.
+    href: "/app/central",
+    label: "Central de Prioridades",
+    description: "Clientes críticos, sem contato, sem vender, tarefas vencidas e detratores — onde trabalhar hoje.",
+    icon: "Flag",
+    group: "crm",
+    section: "Relacionamento e sucesso do cliente",
+    minRole: "viewer",
+    sidebar: true,
+  },
+  {
     href: "/app/nps",
     label: "Dashboard NPS",
     description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",

@@ -196,6 +196,19 @@ const PROVA_PROPRIA: readonly Excecao[] = [
   //
   // NÃO é DEBITO_CONHECIDO: há prova comportamental, escrita no mesmo PR.
   {
+    tabela: "cs_sinais",
+    razao:
+      "tests/invariants/cs-sinais.test.ts — JWT de dois tenants: membro de A lê os sinais " +
+      "de A e 0 de B; authenticated não insere nem atualiza (permission denied) e não " +
+      "executa fn_cs_recalcular_sinais, a única escrita (service_role).",
+  },
+  {
+    tabela: "cs_sinais_dia",
+    razao:
+      "tests/invariants/cs-sinais.test.ts — mesma prova da linha acima: membro de A não lê a " +
+      "fotografia de B; escrita só pela função de recálculo.",
+  },
+  {
     tabela: "customer_nps_surveys",
     razao:
       "tests/invariants/cs-cliente-isolamento.test.ts — JWT de dois tenants reais: membro " +

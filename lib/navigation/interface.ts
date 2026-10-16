@@ -93,6 +93,10 @@ export function interfaceTemDestino(
 export function homeDaInterface(raw: unknown, platform: boolean, role: Role | null): string {
   const visible = destinosDaInterface(raw, platform, role);
   return (
+    // CRM da VendePay: o CSM entra pela Central de Prioridades (onde trabalhar
+    // hoje); o Inbox continua como segunda opção se a Central não estiver na
+    // interface escolhida para a organização.
+    visible.find((d) => d.href === "/app/central")?.href ??
     visible.find((d) => d.href === "/app/inbox")?.href ??
     visible.find((d) => !essencial(d, role, platform))?.href ??
     "/app/settings/profile"
