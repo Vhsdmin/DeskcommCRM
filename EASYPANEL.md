@@ -1,3 +1,21 @@
+# VendePay CRM no EasyPanel com Supabase próprio
+
+> **VendePay.** Esta branch (`vendepay-producao`) é o CRM de Atendimento e CS da
+> VendePay, não o DeskcommCRM 1.50.0. O Compose usa as imagens publicadas pelo
+> CI de `filipefagundes/VendePayCRM`, fixadas por digest, e o schema sai da
+> mesma imagem do worker. Diferenças em relação ao texto abaixo:
+>
+> - **Branch do Deskcomm:** `vendepay-producao` (não `easypanel`). O Supabase
+>   segue na branch `easypanel` do fork `Vhsdmin/supabase`.
+> - **Imagens privadas no GHCR:** antes do deploy, a VPS precisa de
+>   `docker login ghcr.io` com um token do GitHub de quem publica as imagens
+>   (escopo `read:packages`), ou as imagens precisam ser tornadas públicas.
+> - **E-mails do app:** esta versão envia pelo Resend (`RESEND_API_KEY` e
+>   `RESEND_FROM_EMAIL`); os campos `SMTP_*` do CRM gerados abaixo são ignorados.
+>   O SMTP do Supabase (convite e recuperação de senha) continua valendo.
+> - **Atualizar:** novas versões trocam os três digests juntos e exigem migração
+>   controlada do banco (o inicializador só instala banco novo).
+
 # Deskcomm no EasyPanel com Supabase próprio
 
 Destino desta alteração: **infraestrutura** para instalação nova. É um Compose
@@ -8,7 +26,7 @@ independente; não altera o produto nem os instaladores existentes.
 | Campo | Supabase | Deskcomm |
 | --- | --- | --- |
 | Repository | `https://github.com/Vhsdmin/supabase` | `https://github.com/Vhsdmin/DeskcommCRM` |
-| Branch | `easypanel` | `easypanel` |
+| Branch | `easypanel` | `vendepay-producao` |
 | Build Path | `/docker` | `/` |
 | Docker Compose File | `docker-compose.easypanel.yml` | `docker-compose.easypanel.yml` |
 | Serviço do domínio | `api-gw` | `app` |
@@ -32,7 +50,7 @@ No computador, com Git e Python 3, clone os forks lado a lado:
 
 ```bash
 git clone -b easypanel https://github.com/Vhsdmin/supabase.git
-git clone -b easypanel https://github.com/Vhsdmin/DeskcommCRM.git
+git clone -b vendepay-producao https://github.com/Vhsdmin/DeskcommCRM.git
 cd supabase/docker
 python3 generate-easypanel-env.py
 cd ../../DeskcommCRM
@@ -67,8 +85,8 @@ não substitua essas duas chaves por strings aleatórias.
    `OWNER_PASSWORD` do ambiente gerado. Conclua o onboarding e cadastre a IA
    pela tela quando quiser.
 
-O schema é copiado da imagem `deskcomm-worker:1.50.0`, a mesma versão de app e
-scheduler, em vez do baseline mais novo da branch. As três imagens foram
+O schema é copiado da imagem do worker (mesmo commit de app e scheduler), em
+vez do baseline da branch. As três imagens foram
 consultadas no GHCR antes da publicação deste Compose. Não há `build:` no
 arquivo, pois o EasyPanel usa `up --build` e isso reconstruiria serviços que
 tivessem uma seção de build.
@@ -97,7 +115,7 @@ recibo, evitando redefinir a senha a cada deploy. Não apague `setup-state`.
 - **Recursos opcionais:** este arquivo cobre o CRM e WhatsApp por mensagens.
   Os profiles de telefonia SIP e chamadas de voz do Compose original não são
   incluídos. O Compose original continua disponível para essas instalações.
-- **Atualizações:** esta instalação fica na versão 1.50.0. Não troque tags de
+- **Atualizações:** esta instalação fica nos digests do Compose. Não troque tags de
   imagem nem habilite o atualizador do instalador SSH por conta própria: ele
   opera outros arquivos de Compose. Atualizar exige backup, migração do banco
   e mudança coordenada das imagens; o inicializador recusa mudança de versão.
