@@ -1,11 +1,11 @@
 # VendePay CRM no EasyPanel com Supabase próprio
 
-> **VendePay.** Esta branch (`vendepay-producao`) é o CRM de Atendimento e CS da
-> VendePay, não o DeskcommCRM 1.50.0. O Compose usa as imagens publicadas pelo
+> **VendePay.** Este repositório é o CRM de Atendimento e CS da VendePay
+> (base: `filipefagundes/VendePayCRM`), não o DeskcommCRM 1.50.0. O Compose usa as imagens publicadas pelo
 > CI de `filipefagundes/VendePayCRM`, fixadas por digest, e o schema sai da
 > mesma imagem do worker. Diferenças em relação ao texto abaixo:
 >
-> - **Branch do Deskcomm:** `vendepay-producao` (não `easypanel`). O Supabase
+> - **Branch do Deskcomm:** `main` (não `easypanel`). O Supabase
 >   segue na branch `easypanel` do fork `Vhsdmin/supabase`.
 > - **Imagens privadas no GHCR:** antes do deploy, a VPS precisa de
 >   `docker login ghcr.io` com um token do GitHub de quem publica as imagens
@@ -26,7 +26,7 @@ independente; não altera o produto nem os instaladores existentes.
 | Campo | Supabase | Deskcomm |
 | --- | --- | --- |
 | Repository | `https://github.com/Vhsdmin/supabase` | `https://github.com/Vhsdmin/DeskcommCRM` |
-| Branch | `easypanel` | `vendepay-producao` |
+| Branch | `easypanel` | `main` |
 | Build Path | `/docker` | `/` |
 | Docker Compose File | `docker-compose.easypanel.yml` | `docker-compose.easypanel.yml` |
 | Serviço do domínio | `api-gw` | `app` |
@@ -50,7 +50,7 @@ No computador, com Git e Python 3, clone os forks lado a lado:
 
 ```bash
 git clone -b easypanel https://github.com/Vhsdmin/supabase.git
-git clone -b vendepay-producao https://github.com/Vhsdmin/DeskcommCRM.git
+git clone https://github.com/Vhsdmin/DeskcommCRM.git
 cd supabase/docker
 python3 generate-easypanel-env.py
 cd ../../DeskcommCRM
