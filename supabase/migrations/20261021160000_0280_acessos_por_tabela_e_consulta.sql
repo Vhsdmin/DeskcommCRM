@@ -17,7 +17,8 @@
 --     `crm.activity_write_failed` e eventos de LGPD caíam em
 --     "não classificado" e eram recusados para usuários restritos.
 --  4. `fn_aplicar_acesso_modulo()` (re)cria as policies em toda tabela de
---     tenant com RLS. Migration que criar tabela nova chama esta função; o
+--     tenant com RLS que tenha alguma policy permissiva (tabela só do servidor,
+--     sem policy nenhuma, continua sem nenhuma — e perde as que a 0276 criou). Migration que criar tabela nova chama esta função; o
 --     invariante `tests/invariants/equipe-acessos.test.ts` reprova tabela de
 --     tenant sem a policy (o Realtime não passa pelo `db_pre_request`).
 --  5. LGPD (`lgpd_requests`) passa a ser classificada para `/app/lgpd/requests`.
@@ -205,6 +206,14 @@ begin
     execute format('drop policy if exists acesso_modulo_insert on public.%I', t.table_name);
     execute format('drop policy if exists acesso_modulo_update on public.%I', t.table_name);
     execute format('drop policy if exists acesso_modulo_delete on public.%I', t.table_name);
+    -- Tabela só do servidor (RLS ligada e NENHUMA policy própria, como as de
+    -- credenciais): ninguém a lê pela sessão, e uma policy aqui — mesmo
+    -- restritiva — quebra a garantia "não há policy nenhuma" que os
+    -- invariantes dessas tabelas cobram. Fica como está.
+    continue when not exists (
+      select 1 from pg_policies p
+       where p.schemaname = 'public' and p.tablename = t.table_name
+         and p.permissive = 'PERMISSIVE' and p.policyname not like 'acesso_modulo_%');
     execute format('create policy acesso_modulo_select on public.%I as restrictive for select to authenticated using (%s)', t.table_name, leitura);
     execute format('create policy acesso_modulo_insert on public.%I as restrictive for insert to authenticated with check (%s)', t.table_name, escrita);
     execute format('create policy acesso_modulo_update on public.%I as restrictive for update to authenticated using (%s) with check (%s)', t.table_name, escrita, escrita);

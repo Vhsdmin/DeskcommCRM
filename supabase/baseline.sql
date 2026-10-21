@@ -26679,6 +26679,14 @@ begin
     execute format('drop policy if exists acesso_modulo_insert on public.%I', t.table_name);
     execute format('drop policy if exists acesso_modulo_update on public.%I', t.table_name);
     execute format('drop policy if exists acesso_modulo_delete on public.%I', t.table_name);
+    -- Tabela só do servidor (RLS ligada e NENHUMA policy própria, como as de
+    -- credenciais): ninguém a lê pela sessão, e uma policy aqui — mesmo
+    -- restritiva — quebra a garantia "não há policy nenhuma" que os
+    -- invariantes dessas tabelas cobram. Fica como está.
+    continue when not exists (
+      select 1 from pg_policies p
+       where p.schemaname = 'public' and p.tablename = t.table_name
+         and p.permissive = 'PERMISSIVE' and p.policyname not like 'acesso_modulo_%');
     execute format('create policy acesso_modulo_select on public.%I as restrictive for select to authenticated using (%s)', t.table_name, leitura);
     execute format('create policy acesso_modulo_insert on public.%I as restrictive for insert to authenticated with check (%s)', t.table_name, escrita);
     execute format('create policy acesso_modulo_update on public.%I as restrictive for update to authenticated using (%s) with check (%s)', t.table_name, escrita, escrita);

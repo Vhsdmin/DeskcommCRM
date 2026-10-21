@@ -83,12 +83,21 @@ do $$ begin
  if (select count(*) from public.contacts) <> 1 then raise exception 'Administrador perdeu acesso'; end if;
 end $$;
 reset role;
--- Toda tabela tenant já protegida por RLS ganhou a camada restritiva.
+-- Toda tabela tenant servida pela sessão (com policy permissiva) ganhou a camada
+-- restritiva; tabela só do servidor (RLS sem policy nenhuma) continua SEM policy.
 do $$ begin
  if exists (
    select 1 from information_schema.columns c join pg_class t on t.oid=to_regclass(format('public.%I',c.table_name))
    where c.table_schema='public' and c.column_name='organization_id' and c.udt_name='uuid'
      and t.relkind='r' and t.relrowsecurity
+     and exists (select 1 from pg_policy p where p.polrelid=t.oid and p.polpermissive and p.polname not like 'acesso_modulo_%')
      and (select count(*) from pg_policy p where p.polrelid=t.oid and not p.polpermissive and p.polname like 'acesso_modulo_%') <> 4
  ) then raise exception 'Tabela tenant sem proteção completa de módulos'; end if;
+ if exists (
+   select 1 from information_schema.columns c join pg_class t on t.oid=to_regclass(format('public.%I',c.table_name))
+   where c.table_schema='public' and c.column_name='organization_id' and c.udt_name='uuid'
+     and t.relkind='r' and t.relrowsecurity
+     and not exists (select 1 from pg_policy p where p.polrelid=t.oid and p.polpermissive and p.polname not like 'acesso_modulo_%')
+     and exists (select 1 from pg_policy p where p.polrelid=t.oid and p.polname like 'acesso_modulo_%')
+ ) then raise exception 'Tabela só do servidor ganhou policy de módulo'; end if;
 end $$;

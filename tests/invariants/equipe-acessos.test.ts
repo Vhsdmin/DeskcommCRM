@@ -8,7 +8,9 @@ describe("permissões de módulos no banco real", () => {
     expect(() => sql(`begin;\n${proof}\nrollback;`)).not.toThrow();
   });
 
-  it("toda tabela de tenant com RLS tem as policies de módulo (Realtime não passa pelo pre-request)", () => {
+  it("toda tabela de tenant servida pela sessão tem as policies de módulo (Realtime não passa pelo pre-request)", () => {
+    // Tabela só do servidor (RLS sem policy permissiva) fica de fora: ninguém a
+    // lê pela sessão, e os invariantes dela exigem ZERO policies.
     // Tabela nova de tenant sem `acesso_modulo_*` abriria o Realtime para perfis
     // restritos. Conserto: `select public.fn_aplicar_acesso_modulo();` na migration.
     const sem = sql(`
@@ -17,6 +19,9 @@ describe("permissões de módulos no banco real", () => {
         join pg_class pc on pc.oid = to_regclass(format('public.%I', c.table_name))
        where c.table_schema = 'public' and c.column_name = 'organization_id'
          and c.udt_name = 'uuid' and pc.relkind = 'r' and pc.relrowsecurity
+         and exists (select 1 from pg_policies p
+                      where p.schemaname = 'public' and p.tablename = c.table_name
+                        and p.permissive = 'PERMISSIVE' and p.policyname not like 'acesso_modulo_%')
          and (select count(*) from pg_policies p
                where p.schemaname = 'public' and p.tablename = c.table_name
                  and p.policyname in ('acesso_modulo_select','acesso_modulo_insert','acesso_modulo_update','acesso_modulo_delete')) < 4;
