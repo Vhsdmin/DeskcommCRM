@@ -128,7 +128,7 @@ export function InviteForm() {
                       <div className="text-xs text-muted-foreground">
                         {s.email_dispatched
                           ? t("Email enviado.")
-                          : t("Resend não configurado — link copiável abaixo (DEV).")}
+                          : t("E-mail não enviado — copie o link abaixo e mande para a pessoa.")}
                       </div>
                       {!s.email_dispatched ? (
                         <code className="mt-1 block text-xs break-all">{s.accept_url}</code>

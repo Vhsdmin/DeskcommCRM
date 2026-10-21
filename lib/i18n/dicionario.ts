@@ -6259,8 +6259,8 @@ export const DICIONARIO: Traducoes = {
   "Enviar convites": { es: "Enviar invitaciones" },
   "Enviados": { es: "Enviados" },
   "Email enviado.": { es: "Correo enviado." },
-  "Resend não configurado — link copiável abaixo (DEV).": {
-    es: "Resend no configurado — enlace copiable abajo (DEV).",
+  "E-mail não enviado — copie o link abaixo e mande para a pessoa.": {
+    es: "Correo no enviado — copie el enlace de abajo y envíelo a la persona.",
   },
   "Falhas": { es: "Fallas" },
   "Resultados aparecerão aqui após o envio.": { es: "Los resultados aparecerán aquí después del envío." },
