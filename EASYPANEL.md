@@ -10,9 +10,11 @@
 > - **Imagens privadas no GHCR:** antes do deploy, a VPS precisa de
 >   `docker login ghcr.io` com um token do GitHub de quem publica as imagens
 >   (escopo `read:packages`), ou as imagens precisam ser tornadas públicas.
-> - **E-mails do app:** esta versão envia pelo Resend (`RESEND_API_KEY` e
->   `RESEND_FROM_EMAIL`); os campos `SMTP_*` do CRM gerados abaixo são ignorados.
->   O SMTP do Supabase (convite e recuperação de senha) continua valendo.
+> - **E-mails do app:** com `SMTP_HOST` e `SMTP_FROM_EMAIL` preenchidos no
+>   ambiente do CRM, convites e avisos saem pelo SMTP (ex.: Google Workspace:
+>   `smtp.gmail.com`, 587, `starttls`, senha de app). Sem eles, saem pelo Resend
+>   (`RESEND_API_KEY` e `RESEND_FROM_EMAIL`). A recuperação de senha sai pelo
+>   SMTP do Supabase, configurado no ambiente do serviço do banco.
 > - **Atualizar:** novas versões trocam os três digests juntos e exigem migração
 >   controlada do banco (o inicializador só instala banco novo).
 

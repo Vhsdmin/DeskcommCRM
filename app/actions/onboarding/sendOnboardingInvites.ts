@@ -15,7 +15,7 @@ import { audit } from "@/lib/audit";
 import { env } from "@/lib/env";
 import { signInviteToken, INVITE_TTL_SECONDS } from "@/lib/auth/invite-token";
 import { buildInviteEmail } from "@/lib/email/templates/invite";
-import { sendEmail } from "@/lib/email/resend";
+import { sendEmail } from "@/lib/email/roteador";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { inviteOnboardingSchema } from "@/lib/schemas/onboarding";
 import { requireOnboardingCtx, patchOnboardingState, OnboardingError } from "./_shared";
