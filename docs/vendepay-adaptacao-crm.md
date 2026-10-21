@@ -222,3 +222,12 @@ As mudanças de acesso valem na próxima requisição autenticada; `InterfaceRef
 **Produção:** nenhuma alteração feita. As migrações 0276–0279 foram aplicadas somente no DEV. Easypanel existente requer backup e migração controlada antes da nova imagem, pois o `schema-init` recusa alteração automática de versão/checksum. Não remover volumes nem zerar o banco para esta atualização.
 
 Cobertura de regressão de interface: `tests/e2e/equipe-cadastro-direto.spec.ts`, incluído no workflow E2E. Cenários antigos de convite/personalização visual só rodam quando sua flag está ligada; revogação e onboarding continuam cobertos no modo atual. Os 170 testes direcionados passaram; a suíte geral reproduziu 11 falhas de importação de leads também na base limpa. TypeScript sem erros e lint sem erros (um aviso preexistente no tipo de suporte).
+
+**Correções da revisão do PR #9 (21/10/2026):**
+- O proxy passa a rodar sempre em `/api/*` e `/app/*` (inclusive caminhos com extensão), então `x-pathname` nunca chega do cliente até `requireRole`. Rotas sempre liberadas (notificações, sessão, versão, perfil) não consultam o vínculo no proxy.
+- Migration 0280: a classificação recurso → módulos sai do CASE copiado em cada migration e vai para a tabela `acesso_modulo_recursos` (leitura, escrita, prioridade = ordem antiga; resultado idêntico nos 490 recursos do DEV, exceto `lgpd_requests`, agora classificada). As policies restritivas comparam `organization_id` com `(select fn_orgs_com_acesso(...))`, calculado uma vez por consulta (InitPlan), em vez de chamar uma função por linha. `fn_aplicar_acesso_modulo()` recria as policies; o invariante reprova tabela de tenant sem elas.
+- `emit_event` classifica pela entidade + domínio do tipo (`fn_recurso_do_evento`): `user.profile_updated` da própria pessoa, `user.mentioned` (Inbox) e `crm.activity_write_failed` (funil) deixam de ser recusados; entidade disfarçada continua recusada.
+- Rebaixar um administrador grava `module_access = []` (só áreas pessoais) e a tela avisa para definir as Permissões; antes ficava nulo, o modo legado sem restrição.
+- Cadastro de usuário: falha 5xx (já compensada) não vira recibo de idempotência; a mesma chave pode tentar de novo.
+- Provas: 0280 aplicada no DEV duas vezes; prova SQL do PR passa; casos de evento conferidos em transação desfeita; testes unitários de proxy, idempotência, troca de papel e deriva da classificação.
+
