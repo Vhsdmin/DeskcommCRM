@@ -115,6 +115,17 @@ export type EntradaDaIdempotencia<T> = {
   agora?: () => Date;
 };
 
+/** PostgREST serializa bytea como \xHEX. Recibos anteriores gravavam o
+ * hexadecimal como bytes de texto: normalizar os dois formatos evita conflito
+ * falso no replay sem invalidar recibos ainda dentro das 24 horas. */
+function hashDoRecibo(value: string): string {
+  if (!value.startsWith("\\x")) return value;
+  const hex = value.slice(2);
+  if (hex.length === 64) return hex;
+  const texto = Buffer.from(hex, "hex").toString("utf8");
+  return /^[a-f0-9]{64}$/.test(texto) ? texto : value;
+}
+
 export async function comIdempotencia<T>(
   entrada: EntradaDaIdempotencia<T>,
 ): Promise<DesfechoIdempotente<T>> {
@@ -135,7 +146,7 @@ export async function comIdempotencia<T>(
   };
 
   const classificar = (recibo: Recibo): DesfechoIdempotente<T> =>
-    recibo.request_hash === hash
+    hashDoRecibo(recibo.request_hash) === hash
       ? { tipo: "replay", resposta: recibo.response_body as T, status: recibo.status_code }
       : { tipo: "conflito" };
 
@@ -149,7 +160,7 @@ export async function comIdempotencia<T>(
     organization_id: organizationId,
     key: chave,
     endpoint,
-    request_hash: hash,
+    request_hash: `\\x${hash}`,
     status_code: status,
     response_body: resposta as unknown as Record<string, unknown>,
     expires_at: expiraEm,

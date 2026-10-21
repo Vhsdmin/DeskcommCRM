@@ -135,7 +135,7 @@ describe("comIdempotencia", () => {
       organization_id: ORG,
       key: CHAVE,
       endpoint: ENDPOINT,
-      request_hash: hashDoCorpoPadrao,
+      request_hash: "\\x" + hashDoCorpoPadrao,
       status_code: 201,
       expires_at: new Date(RELOGIO().getTime() + TTL_MS).toISOString(),
     });
@@ -282,4 +282,16 @@ describe("comIdempotencia", () => {
 
     expect(executar).toHaveBeenCalledTimes(2);
   });
+});
+
+
+it("relê o bytea retornado pelo PostgREST sem reexecutar o efeito", async () => {
+  const executar=vi.fn();
+  const hash=hashDoCorpo({nome:"QA"});
+  for (const request_hash of ["\\x"+hash, "\\x"+Buffer.from(hash).toString("hex")]) {
+    const { db }=duble({linhas:[{organization_id:ORG,key:CHAVE,endpoint:ENDPOINT,request_hash,status_code:201,response_body:{id:"mesmo"},expires_at:"2099-01-01T00:00:00.000Z"}]});
+    const result=await comIdempotencia({db:db as never,organizationId:ORG,endpoint:ENDPOINT,chave:CHAVE,corpo:{nome:"QA"},executar});
+    expect(result.tipo).toBe("replay");
+  }
+  expect(executar).not.toHaveBeenCalled();
 });
