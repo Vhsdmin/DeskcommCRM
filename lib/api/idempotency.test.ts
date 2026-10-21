@@ -295,3 +295,37 @@ it("relê o bytea retornado pelo PostgREST sem reexecutar o efeito", async () =>
   }
   expect(executar).not.toHaveBeenCalled();
 });
+
+
+describe("comIdempotencia — falha de servidor que se compensa", () => {
+  it("com persistirErrosDoServidor=false, um 5xx não grava recibo e a mesma chave executa de novo", async () => {
+    const { db, inseridos } = duble();
+    const executar = vi
+      .fn()
+      .mockResolvedValueOnce({ resposta: { erro: "auth fora" }, status: 500 })
+      .mockResolvedValueOnce({ resposta: { user_id: "novo" }, status: 201 });
+    const entrada = {
+      db: db as never,
+      organizationId: ORG,
+      endpoint: ENDPOINT,
+      chave: CHAVE,
+      corpo: CORPO,
+      executar,
+      agora: RELOGIO,
+      persistirErrosDoServidor: false,
+    };
+    expect((await comIdempotencia(entrada)).tipo).toBe("executou");
+    expect(inseridos).toHaveLength(0);
+    const segunda = await comIdempotencia(entrada);
+    expect(segunda).toMatchObject({ tipo: "executou", status: 201 });
+    expect(executar).toHaveBeenCalledTimes(2);
+    expect(inseridos).toHaveLength(1);
+  });
+
+  it("sem a opção, o 5xx continua gravado (um 5xx comum pode ter deixado efeito)", async () => {
+    const { db, inseridos } = duble();
+    const executar = vi.fn().mockResolvedValue({ resposta: { erro: "x" }, status: 500 });
+    await comIdempotencia({ db: db as never, organizationId: ORG, endpoint: ENDPOINT, chave: CHAVE, corpo: CORPO, executar, agora: RELOGIO });
+    expect(inseridos).toHaveLength(1);
+  });
+});

@@ -109,6 +109,9 @@ export async function POST(req: Request): Promise<Response> {
       acessos,
       senha_hmac: createHmac("sha256", env.SUPABASE_SERVICE_ROLE_KEY).update(senha).digest("hex"),
     },
+    // `criar` remove a conta que acabou de criar quando o vínculo falha: um 5xx
+    // não deixa efeito, então a mesma chave precisa poder tentar de novo.
+    persistirErrosDoServidor: false,
     executar: async () => {
       const response = await criar();
       return {

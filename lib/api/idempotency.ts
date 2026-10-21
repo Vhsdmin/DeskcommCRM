@@ -113,6 +113,13 @@ export type EntradaDaIdempotencia<T> = {
   executar: () => Promise<{ resposta: T; status: number }>;
   /** Relógio injetado — o repo testa janela de tempo assim, não com sleep. */
   agora?: () => Date;
+  /**
+   * `false` = resposta 5xx não vira recibo. Só para efeitos que COMPENSAM a
+   * própria falha (nada fica gravado quando devolvem 5xx): sem isto, a mesma
+   * chave repetiria o erro por 24h e a nova tentativa nunca executaria.
+   * Padrão `true`, porque um 5xx comum pode ter deixado efeito pelo caminho.
+   */
+  persistirErrosDoServidor?: boolean;
 };
 
 /** PostgREST serializa bytea como \xHEX. Recibos anteriores gravavam o
@@ -154,6 +161,9 @@ export async function comIdempotencia<T>(
   if (anterior) return classificar(anterior);
 
   const { resposta, status } = await executar();
+  if (status >= 500 && entrada.persistirErrosDoServidor === false) {
+    return { tipo: "executou", resposta, status };
+  }
 
   const expiraEm = new Date(agora().getTime() + TTL_MS).toISOString();
   const { error } = await db.from("idempotency_keys").insert({
