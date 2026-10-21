@@ -34,6 +34,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      acesso_modulo_recursos: {
+        Row: { escrita: string[] | null; leitura: string[]; padrao: boolean; prioridade: number; recurso: string }
+        Insert: { escrita?: string[] | null; leitura: string[]; padrao?: boolean; prioridade: number; recurso: string }
+        Update: { escrita?: string[] | null; leitura?: string[]; padrao?: boolean; prioridade?: number; recurso?: string }
+        Relationships: []
+      }
       ai_reply_drafts: {
         Row: {
           id: string;
@@ -7930,6 +7936,10 @@ export type Database = {
     }
     Functions: {
       fn_modulos_do_recurso: { Args: { p_resource: string }; Returns: string[] }
+      fn_modulos_de_escrita: { Args: { p_resource: string }; Returns: string[] }
+      fn_orgs_com_acesso: { Args: { p_resource: string; p_write?: boolean }; Returns: string[] }
+      fn_aplicar_acesso_modulo: { Args: Record<PropertyKey, never>; Returns: number }
+      fn_recurso_do_evento: { Args: { p_event_type: string; p_entity_kind: string; p_entity_id: string }; Returns: string }
       fn_acesso_modulo: { Args: { p_org: string; p_resource: string; p_write?: boolean }; Returns: boolean }
       fn_modulo_rpc_permitido: { Args: { p_resource: string }; Returns: boolean }
       fn_pgrst_validar_acessos: { Args: Record<PropertyKey, never>; Returns: undefined }
