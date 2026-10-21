@@ -66,6 +66,9 @@ jobs:
       # (issue #191): dois defeitos que tornavam a instalação impossível —
       # escolher OpenRouter travava o instalador num laço, escolher OpenAI
       # deixava o .env pela metade — passaram por todos os checks verdes. 15s.
+      - name: Guardas do Easypanel (Python)
+        run: python3 -m unittest discover -s tests/easypanel -p 'test_*.py'
+
       - name: Kit self-host (bash)
         run: pnpm test:shell
 
