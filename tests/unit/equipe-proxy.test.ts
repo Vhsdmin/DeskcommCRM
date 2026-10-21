@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { proxy } from "@/proxy";
+import { config, proxy } from "@/proxy";
 const h = vi.hoisted(() => ({ getUser: vi.fn(), memberships: vi.fn() }));
 vi.mock("@/lib/env", () => ({
   env: { NEXT_PUBLIC_SUPABASE_URL: "https://example.test", NEXT_PUBLIC_SUPABASE_ANON_KEY: "test" },
@@ -61,5 +61,28 @@ describe("gate real do proxy", () => {
     );
     expect(response.status).toBe(200);
     expect(h.getUser).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("proxy — cobertura e custo", () => {
+  it("API e app sempre passam pelo proxy, mesmo com extensão no fim do caminho", () => {
+    const casa = (caminho: string) =>
+      config.matcher.some((m) =>
+        m.endsWith(":path*")
+          ? caminho.startsWith(m.replace("/:path*", "/"))
+          : new RegExp(`^${m}$`).test(caminho),
+      );
+    expect(casa("/api/v1/conversations/x/media/foto.png")).toBe(true);
+    expect(casa("/app/contacts/relatorio.js")).toBe(true);
+    expect(casa("/_next/static/chunk.js")).toBe(false);
+  });
+
+  it("rota sempre liberada (notificações, sessão, perfil) não consulta o vínculo", async () => {
+    for (const caminho of ["/api/v1/notifications", "/api/v1/auth/interface", "/app/settings/profile"]) {
+      const response = await proxy(new NextRequest(`http://localhost${caminho}`));
+      expect(response.status).toBe(200);
+    }
+    expect(h.memberships).not.toHaveBeenCalled();
   });
 });

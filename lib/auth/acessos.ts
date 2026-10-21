@@ -126,6 +126,15 @@ export function destinosDaRota(pathname: string): string[] {
     .find((d) => path === d.href || path.startsWith(d.href + "/"));
   return found ? [found.href] : [];
 }
+/**
+ * Rota que qualquer vínculo pode usar (perfil, segurança, notificações, sessão,
+ * versão). O proxy pula a consulta de vínculo nelas: são as chamadas de
+ * polling mais frequentes, e a resposta seria sempre "pode".
+ */
+export function rotaSempreLiberada(pathname: string): boolean {
+  const destinos = destinosDaRota(pathname);
+  return destinos.length > 0 && destinos.every((d) => DESTINOS_PESSOAIS.includes(d));
+}
 export function podeAcessarRota(acessos: Acessos | undefined, role: Role, path: string): boolean {
   if (role === "admin" || acessos == null) return true;
   return destinosDaRota(path).some((d) => podeAcessar(acessos, role, d));

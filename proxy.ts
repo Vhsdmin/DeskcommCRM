@@ -1,4 +1,4 @@
-import { podeAcessarRota } from "@/lib/auth/acessos";
+import { podeAcessarRota, rotaSempreLiberada } from "@/lib/auth/acessos";
 import type { Role } from "@/lib/auth/types";
 import { supabaseFetch } from "@/lib/supabase/fetch";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
@@ -101,7 +101,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/app") || pathname.startsWith("/api/v1/")) {
+  if (
+    (pathname.startsWith("/app") || pathname.startsWith("/api/v1/")) &&
+    !rotaSempreLiberada(pathname)
+  ) {
     const { data: memberships, error: membershipError } = await supabase
       .from("user_organizations")
       .select("organization_id, role, module_access, accepted_at")
@@ -179,5 +182,11 @@ export const config = {
   matcher: [
     // Run on all paths except static assets / Next internals.
     "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
+    // API e app SEMPRE passam pelo proxy, mesmo com extensão no fim (ex.: um
+    // parâmetro `foto.png`): é aqui que `x-pathname` é reescrito, e
+    // `requireRole` decide o módulo por ele. Sem isto, o cabeçalho enviado
+    // pelo cliente chegaria intacto à rota.
+    "/api/:path*",
+    "/app/:path*",
   ],
 };
