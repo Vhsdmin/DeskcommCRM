@@ -10,6 +10,7 @@
  * Casos: J1.1–J1.13 do docs/testing/user-journey-map.md. Tudo pelo frontend;
  * banco só para PROVAR estado (nunca para atalhar a jornada).
  */
+import { CONVITES_DE_EQUIPE_ATIVOS } from "../../lib/auth/acessos";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -304,13 +305,14 @@ test.describe("J1 — onboarding do dono numa instalação fresca", () => {
     await snap(page, "j1.24-testar-rascunho");
 
     await page.getByRole("button", { name: /^continuar$/i }).click();
-    await page.waitForURL(/\/onboarding\/invite-team/, { timeout: 20_000 });
+    await page.waitForURL(CONVITES_DE_EQUIPE_ATIVOS ? /\/onboarding\/invite-team/ : /\/onboarding\/done/, { timeout: 20_000 });
 
     const org = await orgRow();
     expect((org.onboarding_state as { teste?: unknown })?.teste).toBeTruthy();
   });
 
   test("J1.8 convite SEM Resend: a UI não pode mentir que enviou email", async ({ page }) => {
+    test.skip(!CONVITES_DE_EQUIPE_ATIVOS, "Convites estão em standby.");
     await login(page);
     await page.waitForURL(/\/onboarding\/invite-team/);
 

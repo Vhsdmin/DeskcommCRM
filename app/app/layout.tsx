@@ -1,3 +1,4 @@
+import { podeAcessar } from "@/lib/auth/acessos";
 import { InterfaceRefresh } from "@/hooks/auth/InterfaceRefresh";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -90,7 +91,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .select("onboarded_at, status, settings")
         .eq("id", activeOrg.orgId)
         .maybeSingle(),
-      listarConexoesCaidas(admin, activeOrg.orgId),
+      podeAcessar(activeOrg.module_access, activeOrg.role, "/app/connections") || podeAcessar(activeOrg.module_access, activeOrg.role, "/app/inbox")
+        ? listarConexoesCaidas(admin, activeOrg.orgId)
+        : Promise.resolve([] as ConexaoCaida[]),
       isMfaEnrolled(),
       requiresMfa(
         activeOrg.role,

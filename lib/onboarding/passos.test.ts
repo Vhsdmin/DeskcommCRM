@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+vi.mock("@/lib/auth/acessos", () => ({ CONVITES_DE_EQUIPE_ATIVOS: true }));
 /**
  * O wizard não pode culpar a pessoa por uma tela que nunca lhe ofereceu.
  *

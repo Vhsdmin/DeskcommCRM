@@ -2131,3 +2131,13 @@ Validação integral do mesmo produto: 733 arquivos unitários / 7.911 casos apr
 - QBR 13/10 10h–11h: criação pela tela, confirmação e bloqueio do slot na agenda.
 - Achado corrigido: agendamento de contato sem lead não emitia atividade. Agora ancora no contato e preserva autoria; EBR 14/10 10h–10h30 criada pela tela e verificada no Histórico.
 - Histórico → Ver agendamento: acesso à reunião pela agenda existente. Evidência: docs/vendepay-agenda-historico.jpg.
+
+### Equipe com cadastro direto — VendePay (21/10/2026)
+
+- [P0] Administrador abre Equipe → Novo usuário e encontra nome, e-mail, senha inicial, confirmação, papel e seleção de áreas; convite não aparece. Evidência: `evidence/vendepay-equipe/cadastro-direto.png`.
+- [P0] API local cria conta sintética confirmada, sem SMTP; login funciona imediatamente. Replay conserva o usuário; outro cadastro com o mesmo e-mail retorna 409. Senha não vai à auditoria.
+- [P0] Usuário restrito a Tarefas entra nessa tela e só vê esse destino no CRM. Abrir Clientes pela URL leva a 403. Evidência: `evidence/vendepay-equipe/usuario-restrito.png`.
+- [P0] Administrador altera acessos pela API local; a mesma sessão perde Tarefas e ganha Clientes na requisição seguinte. SQL real prova isolamento entre tenants, restrições de escrita e bloqueio de RPC.
+- Achado corrigido: helper de idempotência comparava hexadecimal textual com o `bytea` retornado pelo PostgREST e tratava replay como conflito.
+- Achado corrigido: saída de 403 apontava sempre ao Inbox; agora usa `/app`, que resolve a área inicial permitida.
+- Limite da prova: browser validou formulário/editor e navegação; criação e alteração persistente foram exercitadas via HTTP local. Não se executou a jornada com banco fresco Docker nesta máquina.

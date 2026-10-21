@@ -14,6 +14,7 @@
  * entrega a organização compartilhada já onboardada, e zerar o estado dela para
  * testar o wizard mandaria todas as specs seguintes para dentro do onboarding.
  */
+import { CONVITES_DE_EQUIPE_ATIVOS } from "../../lib/auth/acessos";
 import { randomUUID } from "node:crypto";
 
 import { test, expect, type Page } from "@playwright/test";
@@ -419,8 +420,10 @@ test.describe("o wizard monta um funcionário", () => {
     await page.waitForURL(/\/onboarding\/testar/, { timeout: 30_000 });
     await page.getByRole("button", { name: /^continuar$/i }).click();
 
-    await page.waitForURL(/\/onboarding\/invite-team/, { timeout: 30_000 });
-    await page.getByRole("button", { name: /pular por enquanto/i }).click();
+    if (CONVITES_DE_EQUIPE_ATIVOS) {
+      await page.waitForURL(/\/onboarding\/invite-team/, { timeout: 30_000 });
+      await page.getByRole("button", { name: /pular por enquanto/i }).click();
+    }
     await page.waitForURL(/\/onboarding\/done/, { timeout: 30_000 });
 
     // O tour: as peças apresentadas pelo que fazem.

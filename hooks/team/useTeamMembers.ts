@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 
 export interface TeamMember {
+  module_access?: string[] | null;
   interface_settings?: InterfaceSettings;
   user_id: string;
   role: string;

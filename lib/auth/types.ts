@@ -64,6 +64,7 @@ export type VisibilityMode = "all" | "own_and_unassigned" | "own";
 export const DEFAULT_VISIBILITY_MODE: VisibilityMode = "own_and_unassigned"; // G1-06a
 
 export interface UserOrgMembership {
+  module_access?: string[] | null;
   interface_settings?: InterfaceSettings;
   organization_id: string;
   organization_name: string;
@@ -137,6 +138,7 @@ export interface AuthUser {
 }
 
 export interface ActiveOrg {
+  module_access?: string[] | null;
   interface_settings?: InterfaceSettings;
   orgId: string;
   name: string;

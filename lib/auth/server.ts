@@ -1,4 +1,6 @@
 import { cache } from "react";
+import { podeAcessar } from "@/lib/auth/acessos";
+import { NAV_CATALOG } from "@/lib/navigation/catalogo";
 import { lerInterface } from "@/lib/navigation/interface";
 /**
  * Server-side auth helpers — load AuthUser, resolve active org, gate routes.
@@ -21,6 +23,7 @@ import type { AuthUser, Role, UserOrgMembership, ActiveOrg } from "./types";
 const ACTIVE_ORG_COOKIE = "active_org";
 
 interface RawMembershipRow {
+  module_access?: string[] | null;
   interface_settings?: unknown;
   organization_id: string;
   role: string;
@@ -166,7 +169,7 @@ export const loadAuthUser = cache(async (): Promise<AuthUser | null> => {
       supabase
         .from("user_organizations")
         .select(
-          "organization_id, role, interface_settings, accepted_at, organizations(display_name, locale)",
+          "organization_id, role, module_access, interface_settings, accepted_at, organizations(display_name, locale)",
         )
         .eq("user_id", user.id)
         .is("revoked_at", null)
@@ -214,7 +217,10 @@ export const loadAuthUser = cache(async (): Promise<AuthUser | null> => {
       organization_id: row.organization_id,
       organization_name: org?.display_name ?? "—",
       role: row.role as Role,
-      interface_settings: lerInterface(row.interface_settings).settings,
+      module_access: row.module_access ?? null,
+      interface_settings: row.module_access == null || row.role === "admin"
+        ? lerInterface(row.interface_settings).settings
+        : { preset: "completa", destinos: NAV_CATALOG.filter(d => podeAcessar(row.module_access, row.role as Role, d.href)).map(d => d.href) },
       locale: org?.locale ?? null,
     };
   });
@@ -271,6 +277,7 @@ export const resolveActiveOrg = cache(async (authUser: AuthUser): Promise<Active
     name: ativo.organization_name,
     role: ativo.role,
     interface_settings: ativo.interface_settings,
+    module_access: ativo.module_access,
   };
 });
 
