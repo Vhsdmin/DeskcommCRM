@@ -9,7 +9,7 @@ import { env } from "@/lib/env";
 import { audit } from "@/lib/audit";
 import { signInviteToken, INVITE_TTL_SECONDS } from "@/lib/auth/invite-token";
 import { buildInviteEmail } from "@/lib/email/templates/invite";
-import { sendEmail } from "@/lib/email/resend";
+import { sendEmail } from "@/lib/email/roteador";
 import { marcaDaSaida } from "@/lib/branding/saida";
 
 /** Link sempre existe, inclusive quando a instalação não configurou e-mail. */
@@ -47,6 +47,9 @@ export async function issueInvite(input: {
   });
   const acceptUrl = `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/team/accept-invite/${token}`;
   let dispatched = false;
+  // Por onde o e-mail tentou sair e por que falhou: sem isto, "não chegou" não diz onde olhar.
+  let via: string | null = null;
+  let motivo: string | null = null;
   // Falhas de infraestrutura não desfazem a organização já criada nem o link.
   if (input.dispatch !== false) {
     try {
@@ -69,6 +72,8 @@ export async function issueInvite(input: {
         ],
       });
       dispatched = result.ok;
+      via = result.via ?? null;
+      motivo = result.ok ? null : (result.error ?? null);
     } catch {
       /* A superfície de recuperação é o link devolvido abaixo. */
     }
@@ -79,7 +84,7 @@ export async function issueInvite(input: {
       resourceType: "membership",
       resourceId: inviteId,
       requestId: input.requestId,
-      metadata: { email, role: input.role, email_dispatched: dispatched },
+      metadata: { email, role: input.role, email_dispatched: dispatched, email_via: via, email_error: motivo },
     });
   }
   return {

@@ -260,6 +260,40 @@ const schema = z.object({
   RESEND_FROM_EMAIL: z.string().optional().default(""),
 
   /**
+   * SMTP — alternativa à Resend (ex.: Google Workspace). Com `SMTP_HOST` e
+   * `SMTP_FROM_EMAIL` preenchidos, TODO e-mail transacional sai pelo SMTP; sem
+   * eles, segue pela Resend. A escolha é por configuração, nunca por falha —
+   * ver `lib/email/roteador.ts`. Os nomes são os que o gerador do Easypanel
+   * (`docker/easypanel/gerar-env.py`) já grava no ambiente.
+   */
+  SMTP_HOST: z.string().optional().default(""),
+  // Valor inválido não derruba o app (mesma regra de `diasDeRetencao`): avisa e usa o padrão.
+  SMTP_PORT: z
+    .preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.coerce.number().int().min(1).max(65535).default(587),
+    )
+    .catch(() => {
+      console.warn(`[env] SMTP_PORT inválida (${JSON.stringify(process.env.SMTP_PORT)}) — usando 587.`);
+      return 587;
+    }),
+  SMTP_SECURITY: z
+    .preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.enum(["starttls", "tls", "none"]).default("starttls"),
+    )
+    .catch(() => {
+      console.warn(
+        `[env] SMTP_SECURITY inválida (${JSON.stringify(process.env.SMTP_SECURITY)}) — usando starttls.`,
+      );
+      return "starttls" as const;
+    }),
+  SMTP_USERNAME: z.string().optional().default(""),
+  SMTP_PASSWORD: z.string().optional().default(""),
+  SMTP_FROM_EMAIL: z.string().optional().default(""),
+  SMTP_FROM_NAME: z.string().optional().default(""),
+
+  /**
    * E-mail de suporte que a instalação mostra ao CLIENTE FINAL (tela de conta
    * suspensa, tela de cobrança).
    *

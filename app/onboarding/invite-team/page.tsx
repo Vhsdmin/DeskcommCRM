@@ -1,4 +1,4 @@
-import { isEmailConfigured } from "@/lib/email/resend";
+import { isEmailConfigured } from "@/lib/email/roteador";
 import { InviteTeamForm } from "./_form";
 import { requireAuth } from "@/lib/auth/server";
 import { traduzir } from "@/lib/i18n/dicionario";
