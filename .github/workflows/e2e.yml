@@ -585,7 +585,7 @@ jobs:
         agenda-google-sync.spec.ts
         agenda-google-meet.spec.ts
         encerramento-atendimento.spec.ts
-        interface-por-vinculo.spec.ts
+        interface-por-vinculo.spec.ts equipe-cadastro-direto.spec.ts
         olhar-telas-do-epico.spec.ts
         pipelines-gestao.spec.ts
         qa-agente-usa-as-maos.spec.ts

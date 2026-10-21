@@ -344,3 +344,13 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 
 | `20261016150000` | `0274_carteira_por_faixa` | Faixas de carteira por GMV 30 dias (suporte/CSM), entrada automática, alerta de subida com "assumir", sinais só para faixas de CSM. |
 | `20261017120000` | `0275_playbooks_de_cs` | Playbooks por tipo de sinal: passos viram tarefas (escada por severidade), canceladas quando o sinal se resolve. |
+
+| `20261021120000` | `0276_acessos_por_modulo` | Acessos por vínculo, RLS restritiva e guarda PostgREST para módulos e RPCs; preserva os direitos legados e a guarda de replay. |
+
+| `20261021130000` | `0277_canais_para_inbox_restrito` | Permite ao Inbox consultar seus canais, mantendo escrita exclusiva de Conexões. |
+
+| `20261021140000` | `0278_dependencias_de_modulos` | Classifica dependências de IA e relatórios; Tarefas não concede consulta geral de clientes. |
+
+| `20261021150000` | `0279_acessos_globais_legados` | Mantém as policies anteriores para registros globais e vínculos legados/admin, sem conceder acesso implícito aos restritos. |
+
+| `20261021160000` | `0280_acessos_por_tabela_e_consulta` | Classificação de módulos em `acesso_modulo_recursos`; policies restritivas por consulta (initplan) em vez de por linha; `emit_event` classifica pela entidade + domínio do tipo; `fn_aplicar_acesso_modulo()` para tabelas novas; LGPD classificada. |

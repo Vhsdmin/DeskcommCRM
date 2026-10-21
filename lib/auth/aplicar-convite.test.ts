@@ -1,3 +1,5 @@
+// O fluxo legado permanece testado com o recurso ligado.
+vi.mock("@/lib/auth/acessos", () => ({ CONVITES_DE_EQUIPE_ATIVOS: true }));
 /**
  * CONVITE REVOGADO NÃO VIRA VÍNCULO — a porta onde a LINHA é consultada.
  *

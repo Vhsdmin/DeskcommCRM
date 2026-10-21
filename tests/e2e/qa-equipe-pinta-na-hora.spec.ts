@@ -76,7 +76,7 @@ test("revogar pinta a linha ANTES de o servidor responder", async ({ page }) => 
   // versão deste caso reprovou por isso, dizendo "a pintura otimista saiu"
   // quando a pintura estava lá, atrás do modal.
   const linha = page.locator("tr").filter({ hasText: alvo.email });
-  await expect(linha.getByText("Aceito", { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(linha.getByText("Ativo", { exact: true })).toBeVisible({ timeout: 20_000 });
 
   // ── Segura a resposta do POST. Nada de `setTimeout`: a resposta só sai
   //    quando ESTE teste mandar, então "ainda não respondeu" é fato, não aposta.
@@ -94,7 +94,7 @@ test("revogar pinta a linha ANTES de o servidor responder", async ({ page }) => 
   await page.getByRole("button", { name: "Revogar", exact: true }).click();
 
   // A MEDIDA. O POST está pendente (a resposta está presa acima) e a linha já
-  // mudou. Sem `onMutate`, aqui ainda se leria "Aceito".
+  // mudou. Sem `onMutate`, aqui ainda se leria "Ativo".
   await expect(
     linha.getByText("Revogado", { exact: true }),
     "a linha não mudou enquanto o servidor ainda não respondeu — a pintura otimista saiu",
@@ -152,7 +152,7 @@ test("a recusa do servidor DESFAZ a pintura de devolver acesso", async ({ page }
 
   // 1) pintou na hora (o servidor ainda está pensando)
   await expect(
-    linha.getByText("Aceito", { exact: true }),
+    linha.getByText("Ativo", { exact: true }),
     "devolver acesso não pintou a linha antes da resposta",
   ).toBeVisible({ timeout: 1_000 });
 

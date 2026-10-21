@@ -34,6 +34,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      acesso_modulo_recursos: {
+        Row: { escrita: string[] | null; leitura: string[]; padrao: boolean; prioridade: number; recurso: string }
+        Insert: { escrita?: string[] | null; leitura: string[]; padrao?: boolean; prioridade: number; recurso: string }
+        Update: { escrita?: string[] | null; leitura?: string[]; padrao?: boolean; prioridade?: number; recurso?: string }
+        Relationships: []
+      }
       ai_reply_drafts: {
         Row: {
           id: string;
@@ -7434,6 +7440,7 @@ export type Database = {
       }
       user_organizations: {
         Row: {
+          module_access: string[] | null
           interface_settings: Json
           accepted_at: string | null
           calendar_trilha: number | null
@@ -7448,6 +7455,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          module_access?: string[] | null
           interface_settings?: Json
           accepted_at?: string | null
           calendar_trilha?: number | null
@@ -7462,6 +7470,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          module_access?: string[] | null
           interface_settings?: Json
           accepted_at?: string | null
           calendar_trilha?: number | null
@@ -7926,6 +7935,14 @@ export type Database = {
       }
     }
     Functions: {
+      fn_modulos_do_recurso: { Args: { p_resource: string }; Returns: string[] }
+      fn_modulos_de_escrita: { Args: { p_resource: string }; Returns: string[] }
+      fn_orgs_com_acesso: { Args: { p_resource: string; p_write?: boolean }; Returns: string[] }
+      fn_aplicar_acesso_modulo: { Args: Record<PropertyKey, never>; Returns: number }
+      fn_recurso_do_evento: { Args: { p_event_type: string; p_entity_kind: string; p_entity_id: string }; Returns: string }
+      fn_acesso_modulo: { Args: { p_org: string; p_resource: string; p_write?: boolean }; Returns: boolean }
+      fn_modulo_rpc_permitido: { Args: { p_resource: string }; Returns: boolean }
+      fn_pgrst_validar_acessos: { Args: Record<PropertyKey, never>; Returns: undefined }
       fn_cs_nps_dashboard: { Args: { p_org: string; p_from: string; p_to: string; p_status?: string; p_class?: string; p_offset?: number; p_owner?: string | null }; Returns: Json }
       fn_cs_recalcular_sinais: { Args: { p_org: string }; Returns: Json }
       fn_cs_aplicar_playbooks: { Args: { p_org: string }; Returns: Json }

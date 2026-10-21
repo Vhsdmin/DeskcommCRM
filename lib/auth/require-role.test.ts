@@ -24,6 +24,9 @@ vi.mock("@/lib/auth/server", () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => undefined) }));
 
+const route = vi.hoisted(() => ({ pathname: "/api/v1/tasks" }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-pathname": route.pathname }) }));
+
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const ORG_ID = "22222222-2222-4222-8222-222222222222";
 
@@ -63,6 +66,7 @@ function session(role: Role | null, opts: { dbRole?: string | null; platformAdmi
 
 beforeEach(() => {
   vi.clearAllMocks();
+  route.pathname = "/api/v1/tasks";
 });
 
 describe("requireRole — helper único (spec 13 §4)", () => {
@@ -200,5 +204,32 @@ describe("requireRole — helper único (spec 13 §4)", () => {
     session("viewer", { platformAdmin: true });
     const granted = await requireRole("admin", { allowPlatformAdmin: true });
     expect(granted.ok).toBe(true);
+  });
+});
+
+
+describe("requireRole verifica os módulos, inclusive em override de organização", () => {
+  it("nega uma rota não autorizada mesmo com papel suficiente", async () => {
+    session("agent");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({orgId:ORG_ID,name:"Org",role:"agent",module_access:["/app/tasks"]});
+    route.pathname="/api/v1/contacts";
+    const result=await requireRole("viewer");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+  });
+  it("preserva a restrição da membership da organização do recurso", async () => {
+    session("agent");
+    const user=authUserFixture("agent");
+    user.organizations[0]!.module_access=["/app/tasks"];
+    vi.mocked(loadAuthUser).mockResolvedValue(user);
+    route.pathname="/api/v1/contacts";
+    const result=await requireRole("viewer",{organizationId:ORG_ID});
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+  });
+  it("continua exigindo o papel mínimo quando o módulo foi concedido",async()=>{
+    session("agent");
+    vi.mocked(resolveActiveOrg).mockResolvedValue({orgId:ORG_ID,name:"Org",role:"agent",module_access:["/app/tasks"]});
+    expect((await requireRole("manager")).ok).toBe(false);
   });
 });

@@ -3,6 +3,8 @@ import { mkdirSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 import { test, expect, type Page } from "@playwright/test";
 import { credenciaisSupabaseDeTeste } from "../../scripts/lib/env-de-teste";
+import { CONVITES_DE_EQUIPE_ATIVOS } from "../../lib/auth/acessos";
+test.skip(!CONVITES_DE_EQUIPE_ATIVOS, "Personalização visual legada em standby; permissões reais em equipe-cadastro-direto.spec.ts.");
 const credentials = credenciaisSupabaseDeTeste();
 const db = createClient(credentials.url, credentials.serviceRole, {
   auth: { persistSession: false },
@@ -178,7 +180,7 @@ test("interface por membro atualiza ao vivo, preserva formulário e convite apli
     // A coluna também descreve a seleção para quem só pode consultar a equipe.
     await customize(page, emails[2]!, "Produtos");
     await page.getByRole("combobox", { name: `Papel de ${emails[2]}` }).click();
-    await page.getByRole("option", { name: "manager", exact: true }).click();
+    await page.getByRole("option", { name: "Gerente", exact: true }).click();
     await expect(page.getByText("Papel atualizado.", { exact: true })).toBeVisible();
     await other.goto("/app/team");
     await expect(other.getByRole("row").filter({ hasText: emails[2] }).getByText("Personalizada", { exact: true })).toBeVisible();

@@ -1,3 +1,4 @@
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
 import { cookies } from "next/headers";
 
 import { audit } from "@/lib/audit";
@@ -50,6 +51,7 @@ export async function aplicarConvite(params: {
   payload: InvitePayload;
   requestId?: string | null;
 }): Promise<ResultadoDoConvite> {
+  if (!CONVITES_DE_EQUIPE_ATIVOS) return { ok: false, motivo: "invalid_or_expired" };
   const { userId, payload, requestId } = params;
 
   const admin = createAdminClient();

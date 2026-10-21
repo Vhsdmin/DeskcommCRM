@@ -138,3 +138,13 @@ it("redige o fragmento do link NPS em URL e navegação", () => {
   const event = sentryScrubHooks.beforeBreadcrumb({ data: { from: url, to: url } });
   expect(JSON.stringify(event)).not.toContain(token);
 });
+
+
+it("remove o corpo de requisição com senha antes da telemetria", () => {
+  const event = sentryScrubHooks.beforeSend({ request: {
+    url: "https://crm.exemplo.test/api/v1/team/users",
+    data: { nome: "QA", senha: "SenhaInicialSomenteTeste!" },
+  } });
+  expect(event.request).not.toHaveProperty("data");
+  expect(JSON.stringify(event)).not.toContain("SenhaInicialSomenteTeste!");
+});

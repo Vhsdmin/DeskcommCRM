@@ -77,9 +77,18 @@ export async function changeMemberRole(
     }
   }
 
+  // Administrador não tem lista de acessos (vale tudo). Rebaixá-lo sem lista
+  // deixaria `module_access` nulo, que é o modo legado SEM restrição — a
+  // pessoa veria todos os módulos do novo papel. Rebaixar começa restrito às
+  // áreas pessoais; quem rebaixou define as Permissões em seguida.
+  const acessosRedefinidos = target.role === "admin" && input.role !== "admin";
   const { error: updErr } = await supabase
     .from("user_organizations")
-    .update({ role: input.role, updated_at: new Date().toISOString() })
+    .update({
+      role: input.role,
+      ...(acessosRedefinidos ? { module_access: [] as string[] } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", target.id);
   if (updErr) return fail("internal_error", updErr.message, 500, { requestId });
 
@@ -94,8 +103,12 @@ export async function changeMemberRole(
       target_user_id: targetUserId,
       old_role: target.role,
       new_role: input.role,
+      ...(acessosRedefinidos ? { acessos_redefinidos: true } : {}),
     },
   });
 
-  return ok({ user_id: targetUserId, role: input.role }, { requestId });
+  return ok(
+    { user_id: targetUserId, role: input.role, acessos_redefinidos: acessosRedefinidos },
+    { requestId },
+  );
 }

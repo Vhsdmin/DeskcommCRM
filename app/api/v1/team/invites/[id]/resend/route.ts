@@ -1,3 +1,4 @@
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
 /**
  * POST /api/v1/team/invites/[id]/resend — reenvia um convite pendente.
  *
@@ -27,6 +28,7 @@ export async function POST(
   if (supportDenied) return supportDenied;
 
   const requestId = randomUUID();
+  if (!CONVITES_DE_EQUIPE_ATIVOS) return fail("forbidden", "Convites estão desativados. Use Novo usuário na equipe.", 403, { requestId });
   const { id } = await ctx.params;
 
   const authz = await requireRole("admin", { requestId, resource: "team" });

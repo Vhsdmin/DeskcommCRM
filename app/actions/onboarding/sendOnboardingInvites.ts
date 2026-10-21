@@ -1,4 +1,5 @@
 "use server";
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
 
 /**
  * Server Action: bulk-invite teammates from the onboarding wizard.
@@ -49,7 +50,7 @@ export async function sendOnboardingInvites(payload: InvitePayload): Promise<Sen
     throw err;
   }
 
-  if (payload.skip) {
+  if (payload.skip || !CONVITES_DE_EQUIPE_ATIVOS) {
     await patchOnboardingState(ctx.orgId, { team: { invites_sent: 0, skipped: true } });
     await audit({
       action: "onboarding.team_invited",

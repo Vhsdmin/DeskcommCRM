@@ -4,6 +4,7 @@
  * UPDATEs scoped explicitly by `organization_id` resolved from the validated
  * session — no body-derived ids ever).
  */
+import { roleAtLeast } from "@/lib/auth/types";
 import { supportWriteError } from "@/lib/impersonate/support";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,6 +40,7 @@ export async function requireOnboardingCtx(): Promise<OnboardingCtx> {
   if (supportWriteError(user.support)) throw new OnboardingError("forbidden", "Acompanhamento somente leitura ou encerrado.");
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) throw new OnboardingError("no_active_org", "Sem organização ativa.");
+  if (!roleAtLeast(activeOrg.role, "admin")) throw new OnboardingError("forbidden", "Somente administradores configuram a organização.");
   return {
     userId: user.id,
     orgId: activeOrg.orgId,

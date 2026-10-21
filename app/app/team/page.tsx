@@ -1,3 +1,5 @@
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
+import { CreateUserDialog } from "@/components/team/CreateUserDialog";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -51,10 +53,11 @@ export default async function TeamPage({
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{t("Equipe")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("Gestão de membros, roles e atendimento do tenant.")}
+            {t("Cadastre usuários, defina acessos e organize o atendimento da equipe.")}
           </p>
         </div>
-        {isAdmin ? (
+        {isAdmin && !CONVITES_DE_EQUIPE_ATIVOS ? <CreateUserDialog /> : null}
+        {isAdmin && CONVITES_DE_EQUIPE_ATIVOS ? (
           <Button asChild className="shrink-0">
             <Link href="/app/team/invite">{t("Convidar membros")}</Link>
           </Button>
@@ -74,7 +77,7 @@ export default async function TeamPage({
             membros", que sumia ao fechar. Manager+ vê; só admin reenvia/revoga
             (as rotas são admin-only). Ver `docs/testing/user-journey-map.md`.
           */}
-          {isManager ? <TeamInvitesClient canManage={isAdmin} /> : null}
+          {isManager && CONVITES_DE_EQUIPE_ATIVOS ? <TeamInvitesClient canManage={isAdmin} /> : null}
         </TabsContent>
         <TabsContent value="attendants" className="mt-4">
           {isManager ? (

@@ -1,5 +1,8 @@
 "use client";
 
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
+import { MemberAccessDialog } from "@/components/team/MemberAccessDialog";
+import { ROTULO_DO_PAPEL } from "@/lib/auth/types";
 import { MemberInterfaceDialog } from "@/components/team/MemberInterfaceDialog";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useState } from "react";
@@ -57,6 +60,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
   const revoke = useRevokeMember();
   const reativar = useReactivateMember();
 
+  const [accessMember, setAccessMember] = useState<TeamMember | null>(null);
   const [interfaceMember, setInterfaceMember] = useState<TeamMember | null>(null);
   const [revokeDialog, setRevokeDialog] = useState<TeamMember | null>(null);
 
@@ -78,8 +82,9 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead>{t("Membro")}</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>{t("Interface")}</TableHead>
+              <TableHead>{t("Papel")}</TableHead>
+              {canManage ? <TableHead>{t("Acessos")}</TableHead> : null}
+              {CONVITES_DE_EQUIPE_ATIVOS ? <TableHead>{t("Interface")}</TableHead> : null}
               <TableHead>{t("Status")}</TableHead>
               <TableHead>{t("Última atividade")}</TableHead>
               {canManage ? <TableHead className="w-[80px]" /> : null}
@@ -111,16 +116,17 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
                       <SelectContent>
                         {ROLES.map((r) => (
                           <SelectItem key={r} value={r}>
-                            {r}
+                            {t(ROTULO_DO_PAPEL[r])}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="secondary">{m.role}</Badge>
+                    <Badge variant="secondary">{t(ROTULO_DO_PAPEL[m.role as Role])}</Badge>
                   )}
                 </TableCell>
-                <TableCell>
+                {canManage ? <TableCell><Button variant="outline" size="sm" disabled={m.user_id === currentUserId || !!m.revoked_at} onClick={() => setAccessMember(m)}>{t("Permissões")}</Button></TableCell> : null}
+                {CONVITES_DE_EQUIPE_ATIVOS ? (                <TableCell>
                   {canManage ? (
                     <Button
                       variant="outline"
@@ -143,7 +149,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
                           : t("Completa")}
                     </span>
                   )}
-                </TableCell>
+                </TableCell>) : null}
                 <TableCell>
                   {/*
                     "Revogado" vem ANTES dos outros dois: quem foi revogado tem
@@ -155,7 +161,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
                   {m.revoked_at ? (
                     <Badge variant="destructive">{t("Revogado")}</Badge>
                   ) : m.accepted_at ? (
-                    <Badge variant="default">{t("Aceito")}</Badge>
+                    <Badge variant="default">{t("Ativo")}</Badge>
                   ) : (
                     <Badge variant="outline">{t("Pendente")}</Badge>
                   )}
@@ -210,6 +216,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
         </Table>
       </div>
 
+      {accessMember && <MemberAccessDialog member={accessMember} onClose={() => setAccessMember(null)} />}
       {interfaceMember && (
         <MemberInterfaceDialog
           key={interfaceMember.user_id}
@@ -223,7 +230,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
             <DialogTitle>{t("Revogar acesso")}</DialogTitle>
             <DialogDescription>
               {revokeDialog?.email ?? revokeDialog?.user_id}{" "}
-              {t("perderá acesso ao tenant. Esta ação pode ser desfeita reconvidando o membro.")}
+              {t("perderá acesso à organização. Para reativar, use Devolver acesso na lista.")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

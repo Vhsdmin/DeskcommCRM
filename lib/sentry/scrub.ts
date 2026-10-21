@@ -25,7 +25,7 @@ type EventLike = {
   // `unknown` de propósito nos campos que o Sentry tipa mais largo que string
   // (`query_string` é `string | Record<string,string> | Array<[string,string]>`).
   // A checagem de `typeof === "string"` acontece em runtime, logo abaixo.
-  request?: { url?: unknown; query_string?: unknown; headers?: unknown };
+  request?: { url?: unknown; query_string?: unknown; headers?: unknown; data?: unknown };
   transaction?: string;
   contexts?: { trace?: { data?: Record<string, unknown> } };
   message?: string;
@@ -130,6 +130,8 @@ function scrubHeaders(headers: unknown): void {
  */
 function scrubEventUrls<T extends EventLike>(event: T): T {
   if (event.request) {
+    // Corpos de requisição podem conter senhas iniciais e outras credenciais.
+    delete event.request.data;
     scrubHeaders(event.request.headers);
     if (typeof event.request.url === "string") {
       event.request.url = scrubUrl(event.request.url);

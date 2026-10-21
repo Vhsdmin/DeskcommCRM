@@ -113,7 +113,25 @@ export type EntradaDaIdempotencia<T> = {
   executar: () => Promise<{ resposta: T; status: number }>;
   /** Relógio injetado — o repo testa janela de tempo assim, não com sleep. */
   agora?: () => Date;
+  /**
+   * `false` = resposta 5xx não vira recibo. Só para efeitos que COMPENSAM a
+   * própria falha (nada fica gravado quando devolvem 5xx): sem isto, a mesma
+   * chave repetiria o erro por 24h e a nova tentativa nunca executaria.
+   * Padrão `true`, porque um 5xx comum pode ter deixado efeito pelo caminho.
+   */
+  persistirErrosDoServidor?: boolean;
 };
+
+/** PostgREST serializa bytea como \xHEX. Recibos anteriores gravavam o
+ * hexadecimal como bytes de texto: normalizar os dois formatos evita conflito
+ * falso no replay sem invalidar recibos ainda dentro das 24 horas. */
+function hashDoRecibo(value: string): string {
+  if (!value.startsWith("\\x")) return value;
+  const hex = value.slice(2);
+  if (hex.length === 64) return hex;
+  const texto = Buffer.from(hex, "hex").toString("utf8");
+  return /^[a-f0-9]{64}$/.test(texto) ? texto : value;
+}
 
 export async function comIdempotencia<T>(
   entrada: EntradaDaIdempotencia<T>,
@@ -135,7 +153,7 @@ export async function comIdempotencia<T>(
   };
 
   const classificar = (recibo: Recibo): DesfechoIdempotente<T> =>
-    recibo.request_hash === hash
+    hashDoRecibo(recibo.request_hash) === hash
       ? { tipo: "replay", resposta: recibo.response_body as T, status: recibo.status_code }
       : { tipo: "conflito" };
 
@@ -143,13 +161,16 @@ export async function comIdempotencia<T>(
   if (anterior) return classificar(anterior);
 
   const { resposta, status } = await executar();
+  if (status >= 500 && entrada.persistirErrosDoServidor === false) {
+    return { tipo: "executou", resposta, status };
+  }
 
   const expiraEm = new Date(agora().getTime() + TTL_MS).toISOString();
   const { error } = await db.from("idempotency_keys").insert({
     organization_id: organizationId,
     key: chave,
     endpoint,
-    request_hash: hash,
+    request_hash: `\\x${hash}`,
     status_code: status,
     response_body: resposta as unknown as Record<string, unknown>,
     expires_at: expiraEm,

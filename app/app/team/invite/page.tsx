@@ -1,3 +1,4 @@
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
 import { redirect } from "next/navigation";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
@@ -8,6 +9,7 @@ import { InviteForm } from "./_components/InviteForm";
 export const dynamic = "force-dynamic";
 
 export default async function TeamInvitePage() {
+  if (!CONVITES_DE_EQUIPE_ATIVOS) redirect("/app/team");
   const user = await requireAuth();
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg || ROLE_RANK[activeOrg.role] < ROLE_RANK.admin) {

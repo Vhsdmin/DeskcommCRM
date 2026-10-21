@@ -8981,6 +8981,29 @@ export const DICIONARIO: Traducoes = {
   "Erro ao reativar tenant": { es: "Error al reactivar el tenant" },
   "Incidente resolvido com sucesso": { es: "Incidente resuelto con éxito" },
   "Erro ao resolver incidente": { es: "Error al resolver el incidente" },
+  // Cadastro direto e permissões de equipe.
+  "Papel": { es: "Rol" },
+  "Acessos": { es: "Accesos" },
+  "Permissões": { es: "Permisos" },
+  "perderá acesso à organização. Para reativar, use Devolver acesso na lista.": { es: "perderá el acceso a la organización. Para reactivarlo, usa Devolver acceso en la lista." },
+  "Cadastre usuários, defina acessos e organize o atendimento da equipe.": { es: "Registra usuarios, define accesos y organiza la atención del equipo." },
+  "Administradores têm acesso completo à organização, incluindo a gestão da equipe.": { es: "Los administradores tienen acceso completo a la organización, incluida la gestión del equipo." },
+  "Selecione os módulos e submódulos permitidos. Perfil, segurança e notificações pessoais permanecem disponíveis.": { es: "Selecciona los módulos y submódulos permitidos. Perfil, seguridad y notificaciones personales permanecen disponibles." },
+  "Selecionar todo o módulo": { es: "Seleccionar todo el módulo" },
+  "Usuário criado. Entregue a senha inicial à pessoa por um canal privado.": { es: "Usuario creado. Entrega la contraseña inicial a la persona por un canal privado." },
+  "Senha inicial": { es: "Contraseña inicial" },
+  "Use de 12 a 128 caracteres.": { es: "Usa de 12 a 128 caracteres." },
+  "O papel define as ações disponíveis; os acessos abaixo definem em quais áreas a pessoa pode trabalhar.": { es: "El rol define las acciones disponibles; los accesos siguientes definen en qué áreas puede trabajar la persona." },
+  "O acesso fica ativo imediatamente, sem convite por e-mail.": { es: "El acceso queda activo inmediatamente, sin invitación por correo electrónico." },
+  "Criar usuário": { es: "Crear usuario" },
+  "Novo usuário": { es: "Nuevo usuario" },
+  "Cadastre a pessoa, defina a senha inicial e escolha os acessos ao CRM.": { es: "Registra a la persona, define la contraseña inicial y elige los accesos al CRM." },
+  "Acessos atualizados.": { es: "Accesos actualizados." },
+  "Permissões de acesso": { es: "Permisos de acceso" },
+  "Salvar permissões": { es: "Guardar permisos" },
+
+  "Voltar ao início": { es: "Volver al inicio" },
+  "Papel atualizado. A pessoa ficou só com as áreas pessoais: defina as Permissões dela.": { es: "Rol actualizado. La persona quedó solo con las áreas personales: define sus Permisos." },
 };
 
 /**
