@@ -166,3 +166,182 @@ do CRM existente, sem alteração neste empacotamento. O mapa da ligação está
   alterações de código TypeScript nesta entrega.
 - Sem daemon Docker nesta sessão: não foi executado o baseline em PostgreSQL
   real, nem bootstrap/login na VPS. Esses testes continuam pendentes no deploy.
+
+## Atualização controlada: cadastro de equipe (0276–0280)
+
+Este procedimento é exclusivo da produção VendePay que já roda o baseline da
+`7580dd487` (checksum `94d3e8337ccf0bbe7fa5c861bdd197dabc4d3280afd53ae6cc06ab62e1fc9979`).
+Não serve para bancos com outra origem, instalações sem recibos ou próximas
+migrações. O script recusa esses cenários. O inicializador de banco novo mantém
+suas proteções; nenhum baseline é reaplicado no banco existente.
+
+### Caminho pelo painel, sem SSH
+
+Para o projeto existente `crmvendepay`, com serviços `banco` e `crm`, há uma
+stack de manutenção separada: `docker-compose.easypanel-upgrade.yml`. Ela usa
+o mesmo volume de recibos do CRM e o mesmo banco na rede privada. Não instala
+outro Supabase nem cria outro administrador.
+
+1. No projeto `crmvendepay`, criar um serviço **Compose** chamado
+   `atualizacao-equipe`. Configurar GitHub `Vhsdmin/DeskcommCRM`, branch `main`,
+   Build Path `/` e Docker Compose File `docker-compose.easypanel-upgrade.yml`.
+   Não criar domínio e não configurar encaminhamento para um serviço interno.
+   Preparar a configuração sem clicar Implantar ainda.
+2. Em **Ambiente** desse serviço, copiar **somente** a linha `POSTGRES_PASSWORD`
+   já existente no serviço `banco` ou `crm`; manter exatamente o valor atual.
+   Marcar **Create .env file**, se essa opção estiver disponível. Não gerar
+   senha nova, JWT ou chave. A rede e o volume de recibos possuem os nomes
+   padrão desta instalação; só precisam de ajuste se o projeto foi renomeado.
+3. Reservar uma janela sem operações no CRM. No serviço **crm**, usar o botão
+   **Parar** (quadrado ao lado de Implantar). Confirmar que app, worker e
+   scheduler pararam. **Não parar o serviço banco.** Não implantar o CRM novo
+   antes de concluir a manutenção.
+4. No serviço **atualizacao-equipe**, clicar **Implantar**. Consultar o log de
+   **equipe-upgrade**. A primeira tarefa, `schema-export`, copia o baseline da
+   imagem revisada. A segunda confere o banco, salva o backup, aplica as cinco
+   migrations em uma transação e atualiza os recibos. Ambas devem terminar com
+   **Exited (0)**. A mensagem final esperada é:
+   `Atualização 0276–0280 concluída. Backup preservado. Pode implantar o CRM no Easypanel.`
+5. Só após esse sucesso, voltar ao serviço **crm** e clicar **Implantar**.
+   Manter sua origem normal, `docker-compose.easypanel.yml`, e o domínio
+   existente. Conferir `schema-init` e `bootstrap` sem erros, app saudável e
+   acesso a Equipe no CRM. O serviço `banco` não precisa ser reimplantado.
+6. Manter o serviço de manutenção e seu volume de backup preservados. Ele é
+   uma tarefa que termina, não um serviço que deve ficar reiniciando. A cópia
+   externa do backup está explicada abaixo; não excluir o serviço com seus
+   volumes antes de guardar essa cópia segura.
+
+O volume compartilhado esperado é `crmvendepay_crm_setup-state`. Se o painel
+mostrar que ele não existe, parar e conferir o nome real do projeto Compose;
+não criar um volume vazio para contornar o erro. Pode-se informar
+`CRM_SETUP_STATE_VOLUME` com o nome existente, depois de verificado. O backup
+usa `crmvendepay_crm_upgrade-backups`, e a rede é `crmvendepay_backend`.
+
+Se qualquer tarefa falhar, manter o CRM parado e consultar o log; o script não
+publica as imagens do app por conta própria. Não clicar repetidamente Implantar
+no CRM, não apagar recibos e não zerar o banco.
+
+### Preparação e publicação
+
+1. Revisar e mesclar esta preparação na homologação. Promover o mesmo código
+   para `Vhsdmin/DeskcommCRM`, mantendo `main` como origem do serviço no painel.
+   Não clicar em **Implantar** ainda: o banco precisa da etapa manual abaixo.
+2. O Compose deve usar os três digests revisados do commit do PR #9
+   `c0ef438c2657126a2077317bbf3239db1278ec1c`. Para conferir/publicar o trio na
+   preparação, usar `python3 docker/easypanel/preparar-imagens.py --commit
+   c0ef438c2657126a2077317bbf3239db1278ec1c` em uma linha. Ele verifica o rótulo
+   de procedência das três imagens antes de editar qualquer referência. Não
+   usa `latest` na implantação. O script falha se `main` já apontar para outro
+   commit: nesse caso a release precisa de nova revisão.
+3. Guardar cópia segura do Environment atual dos dois serviços. Não regenerar
+   segredos, alterar o Supabase, trocar domínio ou apagar volumes. Reservar uma
+   janela sem operações no CRM. O banco e os serviços do Supabase permanecem
+   ligados; app, worker e scheduler do CRM param durante a migração.
+4. Acessar o **terminal do servidor** (SSH ou terminal do host disponibilizado
+   pelo painel), com Docker Compose e acesso ao repositório. O terminal de
+   dentro do app e o terminal do Mac não são esse terminal. Se não houver
+   terminal do host no painel, o administrador da VPS deve executar esta etapa.
+
+### Sincronizar o código, sem implantar
+
+Na instalação desta conversa, a pasta e o projeto são:
+
+```bash
+cd /etc/easypanel/projects/crmvendepay/crm/code
+git pull --ff-only origin main
+sh docker/easypanel/atualizar-equipe.sh --check
+```
+
+Se a pasta tiver alterações locais, o pull deve ser interrompido e investigado;
+não usar reset forçado. O projeto padrão é `crmvendepay_crm`. Para outro nome,
+informar `COMPOSE_PROJECT_NAME` antes do comando. O wrapper lê também o
+`docker-compose.override.yml` gerado pelo painel, quando existir. O check
+consulta os recibos e o banco, mas não aplica migrations nem para a aplicação.
+O Compose pode criar o serviço temporário e seu volume de backup vazio.
+
+Se aparecer incompatibilidade de versão/cluster/recibos, **não contornar a
+guarda**. Enviar o log sem Environment ou senhas e identificar a origem real.
+
+### Executar na janela de manutenção
+
+```bash
+sh docker/easypanel/atualizar-equipe.sh --apply
+```
+
+O procedimento baixa as imagens e confere o baseline da imagem contra o código
+antes de parar o CRM. Depois faz backup **do banco inteiro**, incluindo Auth e
+Storage (metadados), em formato custom, mais as roles, os recibos anteriores e
+checksums. Os arquivos físicos do Storage e do WhatsApp estão em volumes à
+parte: este dump não os inclui nem os modifica.
+
+O backup fica no volume `crmvendepay_crm_upgrade-backups`, em uma pasta cujo
+nome aparece no log. Contém dados pessoais, hashes de senhas e credenciais de
+roles; só o administrador deve acessá-lo. Não anexar o arquivo a PRs ou chats.
+O catálogo do dump é validado, mas isso **não equivale a um ensaio de
+restauração**. Para exigência de restauração ensaiada, fazer essa prova em
+instância isolada antes da janela. Há espaço livre suficiente na VPS para
+armazenar banco + backup? Conferir isso antes de executar.
+
+Um manifesto de checksums congela o baseline e os cinco arquivos revisados;
+arquivos alterados ou uma versão futura são recusados antes de qualquer backup.
+As cinco migrations são aplicadas numa transação com parada em qualquer erro e
+lock compartilhado com o inicializador. A verificação final confere a coluna de
+acessos, a classificação de recursos e a ausência de policies nas quatro tabelas
+só do servidor. Só após commit os recibos avançam. A senha do dono é preservada;
+o bootstrap não volta a criar/redefinir o administrador.
+
+Quando o log informar **Atualização 0276–0280 concluída**, clicar em
+**Implantar** no serviço **CRM** do Easypanel. O serviço Supabase não precisa
+ser reimplantado. `schema-init` deve reconhecer a nova versão e `bootstrap`
+deve informar que as credenciais foram preservadas.
+
+### Conferência e cópia do backup
+
+Verificar app saudável, login do administrador, clientes e carteira anteriores,
+Equipe → Novo usuário e Permissões. Criar apenas uma conta de teste autorizada;
+conferir que entra sem e-mail e que uma área negada retorna acesso proibido.
+Confirmar processamento do worker e chamadas do scheduler pelos logs do painel.
+
+Para copiar o backup para a pasta do servidor (substituir `PASTA_DO_LOG` pelo
+nome exibido; não usar um caminho inventado):
+
+```bash
+mkdir -m 700 -p /var/backups/vendepay
+cd /etc/easypanel/projects/crmvendepay/crm/code
+docker compose -p crmvendepay_crm -f docker-compose.easypanel.yml --profile maintenance run --rm --no-deps --volume /var/backups/vendepay:/dest --entrypoint /bin/sh equipe-upgrade -ec 'umask 077; cp -R /backups/PASTA_DO_LOG /dest/'
+```
+
+Copiar essa pasta também para armazenamento seguro fora da VPS. Não há retenção
+automática nem exclusão de backups nesta atualização.
+
+### Se falhar
+
+- Falha no download, na origem ou no baseline: nenhum SQL aplicado. O wrapper
+  confere essas etapas antes de parar o CRM.
+- Falha no backup: migrations não começam e recibos continuam na origem.
+- Falha no SQL: as cinco migrations revertem juntas; backup fica preservado.
+  Não clicar Implantar com as imagens novas. Corrigir a causa pelos logs.
+- Falha após o commit e antes de gravar recibos: manter a janela fechada e
+  conferir banco, backup e recibos com o administrador. Não editar recibos
+  manualmente nem remover lock sem confirmar que a execução anterior terminou.
+- A reaplicação após sucesso reconhece o recibo e não repete migrations.
+- Falha funcional após implantação: manter o CRM em manutenção para diagnóstico.
+  Não existe downgrade automático. Voltar só a imagem não desfaz o banco.
+  Restauração exige parar todos os escritores, usar o dump e recibos guardados,
+  restaurar também a versão anterior do código/imagens e validar Auth e CRM.
+  Deve ser ensaiada em instância isolada; não fornecer um `pg_restore --clean`
+  genérico contra o Supabase de produção.
+
+### Evidência desta preparação
+
+Os testes Python de guardas usam dublês de Docker/Postgres e não acessam produção.
+A execução real das cinco migrations já foi coberta pelo CI do PR #9; esta
+preparação não substitui um teste de atualização/restauração de uma cópia da VPS.
+
+Verificações locais desta preparação: 25 testes Python passaram, 41 testes de
+fragmentos/empacotamento passaram, as provas shell de atualização passaram e os
+dois Compose foram validados pelo Docker Compose 2.39.4 com ambientes
+sintéticos. Os três digests foram consultados no GHCR e seus rótulos apontaram
+para `c0ef438c2657126a2077317bbf3239db1278ec1c`; o workflow de imagens desse
+commit concluiu com sucesso. Nada foi executado na VPS; dump e restauração real
+continuam por executar na janela aprovada.

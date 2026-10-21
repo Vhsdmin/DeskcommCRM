@@ -1,0 +1,50 @@
+# Tarefa de manutenção separada, para executar pelo Easypanel.
+# Pare o serviço CRM antes de implantar esta tarefa. Mantenha o banco ligado.
+# Mesma release revisada do docker-compose.easypanel.yml (PR #9 / c0ef438c2).
+services:
+  schema-export:
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:07b581aab6c0b065fcdc709da5e726c588313a20f936a3ad520b092ff86ef1fd
+    pull_policy: missing
+    restart: 'no'
+    network_mode: none
+    entrypoint: [/bin/sh, -ec]
+    command: [cp /app/supabase/baseline.sql /schema/baseline.sql]
+    volumes:
+    - upgrade-schema:/schema
+  equipe-upgrade:
+    image: postgres:17-alpine
+    restart: 'no'
+    depends_on:
+      schema-export:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: supabase-db
+      PGPORT: '5432'
+      PGDATABASE: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Copie a senha existente do banco}
+      PGCONNECT_TIMEOUT: '5'
+    entrypoint: [/bin/sh, /setup/atualizar-equipe-db.sh]
+    command: [--apply]
+    volumes:
+    - ./docker/easypanel/atualizar-equipe-db.sh:/setup/atualizar-equipe-db.sh:ro
+    - ./docker/easypanel/equipe-0280.sha256:/setup/equipe-0280.sha256:ro
+    - ./supabase:/release:ro
+    - upgrade-schema:/schema:ro
+    - setup-state:/state
+    - upgrade-backups:/backups
+    networks:
+    - supabase_private
+volumes:
+  # Recibos da instalação EXISTENTE. external impede criar um estado vazio
+  # caso o nome esteja errado. Não é o volume de dados do PostgreSQL.
+  setup-state:
+    external: true
+    name: ${CRM_SETUP_STATE_VOLUME:-crmvendepay_crm_setup-state}
+  upgrade-schema: null
+  upgrade-backups:
+    name: ${CRM_UPGRADE_BACKUPS_VOLUME:-crmvendepay_crm_upgrade-backups}
+networks:
+  supabase_private:
+    external: true
+    name: ${SINGLE_SERVER_NETWORK:-crmvendepay_backend}
