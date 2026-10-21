@@ -25,6 +25,7 @@ import * as path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
+import { CONVITES_DE_EQUIPE_ATIVOS } from "../../lib/auth/acessos";
 import { signInviteToken } from "../../lib/auth/invite-token";
 import { generateTotp, msUntilNextTotpWindow } from "./utils/totp";
 
@@ -53,7 +54,8 @@ function load(): { base: BaseCreds; inv: InviteCreds } {
   };
 }
 
-const { base, inv } = load();
+test.skip(!CONVITES_DE_EQUIPE_ATIVOS, "Fluxo de convite preservado em standby; cobertura atual em equipe-cadastro-direto.spec.ts.");
+const { base, inv } = CONVITES_DE_EQUIPE_ATIVOS ? load() : { base: {} as BaseCreds, inv: {} as InviteCreds };
 
 // service-role client (mesmo env do dev) — pra provar estado no banco e resetar
 const svc = createClient(

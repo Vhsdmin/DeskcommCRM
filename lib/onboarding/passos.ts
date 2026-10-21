@@ -16,6 +16,7 @@
  * alimenta o roteador, o indicador e o resumo. Um passo que não se aplica não
  * aparece em lugar nenhum — nem como pendência, nem como culpa.
  */
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
 import type { OnboardingState } from "@/lib/schemas/onboarding";
 
 export interface PassoDoOnboarding {
@@ -103,7 +104,7 @@ export const PASSOS: readonly PassoDoOnboarding[] = [
   {
     segmento: "invite-team",
     rotulo: "Quem trabalha com ele",
-    existe: () => true,
+    existe: () => CONVITES_DE_EQUIPE_ATIVOS,
     cumprido: (s) => marcado(s.team),
     pulado: (s) => foiPulado(s.team),
   },

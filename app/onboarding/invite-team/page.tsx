@@ -1,3 +1,5 @@
+import { CONVITES_DE_EQUIPE_ATIVOS } from "@/lib/auth/acessos";
+import { redirect } from "next/navigation";
 import { isEmailConfigured } from "@/lib/email/roteador";
 import { InviteTeamForm } from "./_form";
 import { requireAuth } from "@/lib/auth/server";
@@ -6,6 +8,7 @@ import { traduzir } from "@/lib/i18n/dicionario";
 export const dynamic = "force-dynamic";
 
 export default async function InviteTeamPage() {
+  if (!CONVITES_DE_EQUIPE_ATIVOS) redirect("/onboarding");
   const user = await requireAuth();
   const idioma = user.idioma;
   const emailReady = isEmailConfigured();

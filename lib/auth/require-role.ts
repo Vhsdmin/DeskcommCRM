@@ -16,6 +16,8 @@
  *     verdade); falha fechada se membership foi revogado.
  *  4. Rank insuficiente → audit `authz.denied` (fire-and-forget) + 403.
  */
+import { headers } from "next/headers";
+import { podeAcessarRota } from "@/lib/auth/acessos";
 import type { NextResponse } from "next/server";
 
 import { fail, type ApiError } from "@/lib/api/wrappers";
@@ -71,6 +73,7 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
           orgId: membership.organization_id,
           name: membership.organization_name,
           role: membership.role,
+          module_access: membership.module_access,
         }
       : allowPlatformAdmin && user.is_platform_admin
         ? { orgId: organizationId, name: "—", role: "viewer" }
@@ -152,5 +155,11 @@ export async function requireRole(min: Role, opts: RequireRoleOpts = {}): Promis
     };
   }
 
+  if (org.module_access != null && effectiveRole !== "admin") {
+    const pathname = (await headers()).get("x-pathname") ?? "";
+    if (!podeAcessarRota(org.module_access, effectiveRole as Role, pathname)) {
+      return { ok: false, response: fail("forbidden", "Você não tem acesso a esta área.", 403, { requestId }) };
+    }
+  }
   return { ok: true, user, org: { ...org, role: effectiveRole as Role } };
 }

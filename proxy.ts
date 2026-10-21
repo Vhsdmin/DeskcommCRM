@@ -1,3 +1,5 @@
+import { podeAcessarRota } from "@/lib/auth/acessos";
+import type { Role } from "@/lib/auth/types";
 import { supabaseFetch } from "@/lib/supabase/fetch";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookieSecure } from "@/lib/supabase/cookie-secure";
@@ -12,7 +14,9 @@ import {
 const COOKIE_NAME = "sb-deskcomm-auth";
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({ request: { headers: request.headers } });
+  const forwardedHeaders = new Headers(request.headers);
+  forwardedHeaders.set("x-pathname", request.nextUrl.pathname);
+  const response = NextResponse.next({ request: { headers: forwardedHeaders } });
 
   // Inject X-Request-Id for downstream correlation (audit log, error wrappers).
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -30,7 +34,14 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isAdminSurface = host.startsWith("admin.") || pathname.startsWith("/admin");
 
-  if (isPublicPath(pathname)) {
+  // As rotas duais com cookie precisam do mesmo gate de módulo; Bearer sem
+  // cookie segue para a validação própria de integrações.
+  const sessionCookie = request.cookies.getAll().some((c) => c.name.startsWith(COOKIE_NAME));
+  const dualPath =
+    /^\/api\/v1\/(contacts$|messages$|conversations\/open-with-contact$|conversations\/[^/]+\/media$)/.test(
+      pathname,
+    );
+  if (isPublicPath(pathname) && !(sessionCookie && dualPath)) {
     return response;
   }
 
@@ -88,6 +99,47 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname + search);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (pathname.startsWith("/app") || pathname.startsWith("/api/v1/")) {
+    const { data: memberships, error: membershipError } = await supabase
+      .from("user_organizations")
+      .select("organization_id, role, module_access, accepted_at")
+      .eq("user_id", user.id)
+      .is("revoked_at", null)
+      .order("accepted_at", { ascending: true, nullsFirst: true })
+      .order("organization_id");
+    if (membershipError)
+      return NextResponse.json(
+        {
+          error: {
+            code: "upstream_unavailable",
+            message: "Não foi possível confirmar os acessos.",
+          },
+        },
+        { status: 503 },
+      );
+    const selectedOrg = request.cookies.get("active_org")?.value;
+    const membership =
+      memberships?.find((m) => m.organization_id === selectedOrg) ?? memberships?.[0];
+    if (
+      membership &&
+      !podeAcessarRota(membership.module_access, membership.role as Role, pathname)
+    ) {
+      if (pathname.startsWith("/api/") || request.headers.has("next-action")) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "forbidden",
+              message:
+                "Você não tem acesso a esta área. Peça ao administrador para revisar suas permissões.",
+            },
+          },
+          { status: 403 },
+        );
+      }
+      return NextResponse.redirect(new URL("/403", request.url));
+    }
   }
 
   // EPIC-11 S-11.07: validate impersonate cookie on /app/* paths. Middleware

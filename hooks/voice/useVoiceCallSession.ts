@@ -134,7 +134,7 @@ export function useVoiceCallSession(remoteAudioRef: RefObject<HTMLAudioElement |
    * telefone não precisa de painel de chamada, e um banner tocando para quem o
    * botão "Atender" vai recusar com 403 é uma promessa falsa.
    */
-  const podeLigar = usePermission("voice.call");
+  const podeLigar = usePermission("voice.call") && (activeOrg?.module_access == null || activeOrg.role === "admin");
   const orgId = podeLigar ? activeOrg?.orgId : undefined;
 
   const [call, setCall] = useState<VoiceCallRow | null>(null);
