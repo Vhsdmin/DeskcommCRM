@@ -9003,6 +9003,7 @@ export const DICIONARIO: Traducoes = {
   "Salvar permissões": { es: "Guardar permisos" },
 
   "Voltar ao início": { es: "Volver al inicio" },
+  "Papel atualizado. A pessoa ficou só com as áreas pessoais: defina as Permissões dela.": { es: "Rol actualizado. La persona quedó solo con las áreas personales: define sus Permisos." },
 };
 
 /**

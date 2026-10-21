@@ -16,7 +16,7 @@ export function useChangeRole() {
   const t = useT();
   return useMutation({
     mutationFn: async (args: { userId: string; role: Role }) =>
-      apiClient.patch<{ data: { user_id: string; role: Role } }>(
+      apiClient.patch<{ data: { user_id: string; role: Role; acessos_redefinidos?: boolean } }>(
         `/api/v1/team/${args.userId}`,
         { role: args.role },
       ),
@@ -37,8 +37,14 @@ export function useChangeRole() {
       if (context?.previous) qc.setQueryData(MEMBERS_KEY, context.previous);
       showApiError(err);
     },
-    onSuccess: () => {
-      toast.success(t("Papel atualizado."));
+    onSuccess: (res) => {
+      if (res.data.acessos_redefinidos) {
+        toast.success(
+          t("Papel atualizado. A pessoa ficou só com as áreas pessoais: defina as Permissões dela."),
+        );
+      } else {
+        toast.success(t("Papel atualizado."));
+      }
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["team"] });

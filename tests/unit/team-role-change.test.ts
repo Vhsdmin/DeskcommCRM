@@ -141,6 +141,30 @@ describe("PATCH /api/v1/team/[user_id] — guard de último admin", () => {
   });
 });
 
+describe("PATCH /api/v1/team/[user_id] — acessos ao rebaixar administrador", () => {
+  it("admin rebaixado fica só com as áreas pessoais (module_access = []), nunca no modo legado sem restrição", async () => {
+    const state = stubState({ adminCount: 2 });
+    adminSession(state);
+    const { PATCH } = await import("@/app/api/v1/team/[user_id]/route");
+    const res = await PATCH(patchReq("agent"), params);
+    expect(res.status).toBe(200);
+    expect(state.updates[0]).toMatchObject({ role: "agent", module_access: [] });
+    const body = (await res.json()) as { data: { acessos_redefinidos: boolean } };
+    expect(body.data.acessos_redefinidos).toBe(true);
+  });
+
+  it("troca entre papéis que não são admin preserva os acessos já definidos", async () => {
+    const state = stubState({
+      target: { id: MEMBERSHIP_ID, user_id: TARGET_ID, role: "agent", revoked_at: null },
+    });
+    adminSession(state);
+    const { PATCH } = await import("@/app/api/v1/team/[user_id]/route");
+    const res = await PATCH(patchReq("manager"), params);
+    expect(res.status).toBe(200);
+    expect(state.updates[0]).not.toHaveProperty("module_access");
+  });
+});
+
 describe("PATCH /api/v1/team/[user_id] — audit team.role_changed", () => {
   it("mudança audita action='team.role_changed' com actor e antes/depois", async () => {
     const state = stubState({
