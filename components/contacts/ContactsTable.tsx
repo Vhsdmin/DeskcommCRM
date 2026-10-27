@@ -278,7 +278,7 @@ export function ContactsTable({ contacts, orderBy, orderDir, onSort }: Props) {
           <AlertDialogTitle>{t("Excluir contato?")}</AlertDialogTitle>
           <AlertDialogDescription>
             {alvo
-              ? `${t("Isso remove")} ${displayName(alvo, t)} ${t("e a conversa associada, se houver. Esta ação não pode ser desfeita.")}`
+              ? `${t("Isso remove")} ${displayName(alvo, t)} ${t("e as conversas e atividades sem negócio vinculadas a este cliente. Esta ação não pode ser desfeita.")}`
               : null}
           </AlertDialogDescription>
         </AlertDialogHeader>

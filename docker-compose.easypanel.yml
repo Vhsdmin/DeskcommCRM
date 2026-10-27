@@ -1,11 +1,11 @@
 # Stack independente para EasyPanel. Leia EASYPANEL.md.
 # VendePay CRM: imagens publicadas pelo CI de filipefagundes/VendePayCRM (merge
-# do PR #9, commit c0ef438c2), fixadas por digest; schema sai da MESMA imagem do
+# do PR #11, commit 6f94ae7bd), fixadas por digest; schema sai da MESMA imagem do
 # worker. Sem build na VPS. Imagens privadas: a VPS precisa de login no GHCR.
 services:
   app:
     mem_limit: 768m
-    image: ghcr.io/filipefagundes/deskcommcrm@sha256:63628e5b466d62daddbe2e77fdb77c29bbad43db53be0c48ae45f6c4db1d5ba8
+    image: ghcr.io/filipefagundes/deskcommcrm@sha256:d2bc80b6829bec960623d32dba131db17254fb3fcb4522e0f97906e60f8e758b
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -42,7 +42,7 @@ services:
     - supabase_private
   worker:
     mem_limit: 512m
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:07b581aab6c0b065fcdc709da5e726c588313a20f936a3ad520b092ff86ef1fd
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:ec7ce724e8f0100fb6e36f362994e81a3ced003284c0c8c61f1853bbe1a48f9c
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -72,7 +72,7 @@ services:
       bootstrap:
         condition: service_completed_successfully
   scheduler:
-    image: ghcr.io/filipefagundes/deskcomm-scheduler@sha256:25e9a4a31c7bbae4b24f3c71a209baf2514dce52fd4f96b50c78899d68ecb873
+    image: ghcr.io/filipefagundes/deskcomm-scheduler@sha256:eba43e4675af36d0834b81ffe8bbd2959abf469c11c950a60ddde83508619a7c
     pull_policy: missing
     restart: unless-stopped
     depends_on:
@@ -136,7 +136,7 @@ services:
     networks:
     - internal
   schema-export:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:07b581aab6c0b065fcdc709da5e726c588313a20f936a3ad520b092ff86ef1fd
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:ec7ce724e8f0100fb6e36f362994e81a3ced003284c0c8c61f1853bbe1a48f9c
     pull_policy: missing
     restart: 'no'
     network_mode: none
@@ -172,7 +172,7 @@ services:
     - supabase_private
     logging: *id001
   bootstrap:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:07b581aab6c0b065fcdc709da5e726c588313a20f936a3ad520b092ff86ef1fd
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:ec7ce724e8f0100fb6e36f362994e81a3ced003284c0c8c61f1853bbe1a48f9c
     pull_policy: missing
     restart: 'no'
     depends_on:
@@ -206,11 +206,11 @@ services:
       PGUSER: postgres
       PGPASSWORD: ${POSTGRES_PASSWORD:?Copy the Supabase database password}
       PGCONNECT_TIMEOUT: '5'
-    entrypoint: [/bin/sh, /setup/atualizar-equipe-db.sh]
+    entrypoint: [/bin/sh, /setup/atualizar-clientes-db.sh]
     command: [--check]
     volumes:
-    - ./docker/easypanel/atualizar-equipe-db.sh:/setup/atualizar-equipe-db.sh:ro
-    - ./docker/easypanel/equipe-0280.sha256:/setup/equipe-0280.sha256:ro
+    - ./docker/easypanel/atualizar-clientes-db.sh:/setup/atualizar-clientes-db.sh:ro
+    - ./docker/easypanel/clientes-0282.sha256:/setup/clientes-0282.sha256:ro
     - ./supabase:/release:ro
     - schema-artifact:/schema:ro
     - setup-state:/state

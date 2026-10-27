@@ -1,0 +1,96 @@
+{
+  "name": "Exclusão atômica de cliente VendePay",
+  "nodes": [
+    {
+      "id": "tela",
+      "file": "components/contacts/ContactsTable.tsx",
+      "lane": "ui",
+      "label": "tela",
+      "col": 0
+    },
+    {
+      "id": "rota",
+      "file": "app/api/v1/contacts/[id]/route.ts",
+      "lane": "api",
+      "label": "rota",
+      "col": 1
+    },
+    {
+      "id": "handler",
+      "file": "app/api/v1/contacts/_handler.ts",
+      "lane": "api",
+      "label": "handler",
+      "col": 2
+    },
+    {
+      "id": "transacao",
+      "file": "supabase/migrations/20261027120000_0281_exclusao_atomica_cliente.sql",
+      "lane": "db",
+      "label": "transacao",
+      "col": 3
+    },
+    {
+      "id": "lista",
+      "file": "hooks/contacts/useDeleteContact.ts",
+      "lane": "ui",
+      "label": "lista",
+      "col": 4
+    },
+    {
+      "id": "auditoria",
+      "file": "lib/audit/index.ts",
+      "lane": "api",
+      "label": "auditoria",
+      "col": 5
+    }
+  ],
+  "edges": [
+    {
+      "from": "tela",
+      "to": "rota",
+      "label": "confirmação explícita",
+      "id": "e1"
+    },
+    {
+      "from": "rota",
+      "to": "handler",
+      "label": "papel e organização autenticados",
+      "id": "e2"
+    },
+    {
+      "from": "handler",
+      "to": "transacao",
+      "label": "RPC INVOKER com RLS",
+      "id": "e3"
+    },
+    {
+      "from": "handler",
+      "to": "auditoria",
+      "label": "sucesso ou rollback",
+      "id": "e4"
+    },
+    {
+      "from": "handler",
+      "to": "lista",
+      "label": "204 invalida lista; erro preserva diálogo",
+      "id": "e5"
+    }
+  ],
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "lanes": [
+    {
+      "id": "ui",
+      "label": "Interface"
+    },
+    {
+      "id": "api",
+      "label": "API"
+    },
+    {
+      "id": "db",
+      "label": "Banco"
+    }
+  ],
+  "mainPath": ["tela", "rota", "handler", "transacao"]
+}

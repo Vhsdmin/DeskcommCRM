@@ -6,6 +6,7 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
  *
  * Thin wrapper: auth + Zod + ok/fail. Decrypt CPF + LGPD irreversibility no handler.
  */
+import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
@@ -126,6 +127,9 @@ export async function DELETE(
 
   const requestId = randomUUID();
   const { id } = await ctx.params;
+  if (!z.uuid().safeParse(id).success) {
+    return fail("invalid_request", "ID inválido.", 400, { requestId });
+  }
 
   const authz = await requireRole("agent", { requestId, resource: "contacts" });
   if (!authz.ok) return authz.response;

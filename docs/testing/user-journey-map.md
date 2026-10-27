@@ -2141,3 +2141,7 @@ Validação integral do mesmo produto: 733 arquivos unitários / 7.911 casos apr
 - Achado corrigido: helper de idempotência comparava hexadecimal textual com o `bytea` retornado pelo PostgREST e tratava replay como conflito.
 - Achado corrigido: saída de 403 apontava sempre ao Inbox; agora usa `/app`, que resolve a área inicial permitida.
 - Limite da prova: browser validou formulário/editor e navegação; criação e alteração persistente foram exercitadas via HTTP local. Não se executou a jornada com banco fresco Docker nesta máquina.
+
+## Exclusão de cliente VendePay `[P1]` — 27/10/2026
+
+Casos: ficha com atividade CS sem negócio; compromisso na agenda bloqueia e mantém TODO o histórico; atividade com negócio sobrevive; viewer/módulo não autorizado/tenant diferente não excluem. Prova PostgreSQL isolada em `tests/vendepay/exclusao-cliente-isolada.mjs`; invariante do schema completo em `tests/invariants/contato-exclusao.test.ts`. Prova pela tela e execução do invariante completo pendentes por indisponibilidade do banco de teste/Docker. Não marcado como PASS de UX.

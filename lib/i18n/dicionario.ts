@@ -7105,8 +7105,8 @@ export const DICIONARIO: Traducoes = {
   "Rótulo do campo": { es: "Etiqueta del campo" },
   "Tipo do campo": { es: "Tipo del campo" },
   "chave (endereco)": { es: "clave (direccion)" },
-  "e a conversa associada, se houver. Esta ação não pode ser desfeita.": {
-    es: "y la conversación asociada, si la hay. Esta acción no puede deshacerse.",
+  "e as conversas e atividades sem negócio vinculadas a este cliente. Esta ação não pode ser desfeita.": {
+    es: "y las conversaciones y actividades sin negocio vinculadas a este cliente. Esta acción no puede deshacerse.",
   },
 
   // ─── Mensagens literais de `fail()` em app/api/v1/** ───

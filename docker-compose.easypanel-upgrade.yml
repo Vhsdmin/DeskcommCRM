@@ -1,9 +1,9 @@
 # Tarefa de manutenção separada, para executar pelo Easypanel.
 # Pare o serviço CRM antes de implantar esta tarefa. Mantenha o banco ligado.
-# Mesma release revisada do docker-compose.easypanel.yml (PR #9 / c0ef438c2).
+# Mesma release revisada do docker-compose.easypanel.yml (PR #11 / 6f94ae7bd).
 services:
   schema-export:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:07b581aab6c0b065fcdc709da5e726c588313a20f936a3ad520b092ff86ef1fd
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:ec7ce724e8f0100fb6e36f362994e81a3ced003284c0c8c61f1853bbe1a48f9c
     pull_policy: missing
     restart: 'no'
     network_mode: none
@@ -24,11 +24,11 @@ services:
       PGUSER: postgres
       PGPASSWORD: ${POSTGRES_PASSWORD:?Copie a senha existente do banco}
       PGCONNECT_TIMEOUT: '5'
-    entrypoint: [/bin/sh, /setup/atualizar-equipe-db.sh]
+    entrypoint: [/bin/sh, /setup/atualizar-clientes-db.sh]
     command: [--apply]
     volumes:
-    - ./docker/easypanel/atualizar-equipe-db.sh:/setup/atualizar-equipe-db.sh:ro
-    - ./docker/easypanel/equipe-0280.sha256:/setup/equipe-0280.sha256:ro
+    - ./docker/easypanel/atualizar-clientes-db.sh:/setup/atualizar-clientes-db.sh:ro
+    - ./docker/easypanel/clientes-0282.sha256:/setup/clientes-0282.sha256:ro
     - ./supabase:/release:ro
     - upgrade-schema:/schema:ro
     - setup-state:/state
