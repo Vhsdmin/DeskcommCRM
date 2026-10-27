@@ -21,6 +21,12 @@ try {
   );
   await db.query(migration);
   await db.query(migration); // idempotência
+  const guard = readFileSync(
+    "supabase/migrations/20261027130000_0282_exclusao_cliente_exige_papel.sql",
+    "utf8",
+  );
+  await db.query(guard);
+  await db.query(guard);
   await db.query(readFileSync("tests/fixtures/sql/contato-exclusao.sql", "utf8"));
   process.stdout.write(
     "PASS: exclusão CS, rollback com agenda, viewer, módulos, tenants e idempotência.\n",

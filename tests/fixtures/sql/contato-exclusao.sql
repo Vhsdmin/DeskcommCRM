@@ -33,6 +33,23 @@ do $$ begin
  exception when insufficient_privilege then null; end;
 end $$;
 reset role;
+-- A RPC não é a única porta: o PostgREST também permite DELETE de tabela.
+set local role authenticated;
+do $$ declare n integer; begin
+ delete from public.contacts where id='c2810000-0000-4000-8000-0000000000ca';
+ get diagnostics n=row_count;
+ if n <> 0 then raise exception 'Viewer excluiu ficha pelo DELETE direto'; end if;
+ if not exists(select 1 from public.crm_lead_activities where contact_id='c2810000-0000-4000-8000-0000000000ca') then raise exception 'Viewer destruiu histórico pelo trigger'; end if;
+end $$;
+reset role;
+update public.user_organizations set module_access=array['/app/contacts'] where user_id='c2810000-0000-4000-8000-000000000001';
+set local role authenticated;
+do $$ declare n integer; begin
+ delete from public.contacts where id='c2810000-0000-4000-8000-0000000000ca';
+ get diagnostics n=row_count;
+ if n <> 0 then raise exception 'Viewer com módulo Clientes excluiu ficha'; end if;
+end $$;
+reset role;
 update public.user_organizations set role='agent',module_access=array['/app/tasks'] where user_id='c2810000-0000-4000-8000-000000000001';
 set local role authenticated;
 do $$ begin
