@@ -7935,6 +7935,7 @@ export type Database = {
       }
     }
     Functions: {
+      fn_delete_contact: { Args: { p_org: string; p_contact: string }; Returns: string | null }
       fn_modulos_do_recurso: { Args: { p_resource: string }; Returns: string[] }
       fn_modulos_de_escrita: { Args: { p_resource: string }; Returns: string[] }
       fn_orgs_com_acesso: { Args: { p_resource: string; p_write?: boolean }; Returns: string[] }
