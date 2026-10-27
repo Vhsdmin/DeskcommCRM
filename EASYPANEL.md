@@ -345,3 +345,38 @@ sintéticos. Os três digests foram consultados no GHCR e seus rótulos apontara
 para `c0ef438c2657126a2077317bbf3239db1278ec1c`; o workflow de imagens desse
 commit concluiu com sucesso. Nada foi executado na VPS; dump e restauração real
 continuam por executar na janela aprovada.
+
+## Atualização da exclusão de clientes (até 0282)
+
+O Compose desta versão fixa as três imagens do commit `6f94ae7bd` (PR #11).
+O serviço de manutenção `atualizacao-equipe` conserva o nome no painel, mas passa
+ a executar `docker/easypanel/atualizar-clientes-db.sh`. A identidade e os dados
+ do Supabase existente são preservados.
+
+O pacote aceita somente os recibos conhecidos de antes da equipe (baseline
+`94d3e8337ccf0bbe7fa5c861bdd197dabc4d3280afd53ae6cc06ab62e1fc9979`)
+ou depois da equipe até 0280 (`bea5c38fa23d82b3b3d709447f922b1d2e4e37b4eb0eaa0702e6f99e41e8c156`).
+Na primeira origem aplica 0276–0282; na segunda, somente 0281–0282. Um recibo
+incompatível é recusado antes de qualquer SQL. O manifesto `clientes-0282.sha256`
+confere o baseline e cada migration; o baseline não é reaplicado.
+
+No EasyPanel: parar o serviço CRM, manter o banco ligado, implantar a tarefa
+`atualizacao-equipe` com o Git atualizado e o ambiente existente. O schema da
+imagem deve ser idêntico ao código. O runner faz dump completo e guarda os
+recibos no volume de backups antes da transação. Após a mensagem **Atualização
+até 0282 concluída**, implantar o serviço CRM. A manutenção confirma RPC,
+trigger e policy restritiva para DELETE antes de avançar os recibos. Não muda
+senhas nem esvazia volumes. Se a manutenção falhar, conferir logs antes de
+retomar a aplicação; não apagar recibos para contornar a recusa.
+
+Alternativa no terminal do servidor, a partir do código desta release:
+
+```bash
+sh docker/easypanel/atualizar-clientes.sh --check
+sh docker/easypanel/atualizar-clientes.sh --apply
+```
+
+O caminho do backup aparece no log como `/backups/clientes-0282-<data UTC>`.
+O procedimento de cópia para fora do volume/VPS descrito acima continua válido.
+O dump não inclui os arquivos físicos de WhatsApp/Storage. A leitura do catálogo
+do backup não substitui um ensaio de restauração.

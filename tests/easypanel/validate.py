@@ -14,14 +14,14 @@ with tempfile.TemporaryDirectory() as tmp:
  for f in ['generate-easypanel-env.py','.env.easypanel.example','docker-compose.easypanel.yml']:
   shutil.copy(supa_root/'docker'/f,supa/f)
  shutil.copytree(supa_root/'docker/volumes',supa/'volumes')
- for f in ['gerar-env.py','init-db.sh','bootstrap.sh','atualizar-equipe-db.sh','equipe-0280.sha256']:
+ for f in ['gerar-env.py','init-db.sh','bootstrap.sh','atualizar-equipe-db.sh','equipe-0280.sha256','atualizar-clientes-db.sh','clientes-0282.sha256']:
   shutil.copy(crm_root/'docker/easypanel'/f,crm/'docker/easypanel'/f)
  shutil.copy(crm_root/'docker-compose.easypanel.yml',crm/'docker-compose.easypanel.yml')
  shutil.copy(crm_root/'docker-compose.easypanel-upgrade.yml',crm/'docker-compose.easypanel-upgrade.yml')
  (crm/'supabase/migrations').mkdir(parents=True)
  shutil.copy(crm_root/'supabase/baseline.sql',crm/'supabase/baseline.sql')
  for migration in (crm_root/'supabase/migrations').glob('*.sql'):
-  if any(f'_{n:04}_' in migration.name for n in range(276,281)):
+  if any(f'_{n:04}_' in migration.name for n in range(276,283)):
    shutil.copy(migration,crm/'supabase/migrations'/migration.name)
  subprocess.run(['python3',str(supa/'generate-easypanel-env.py')],check=True,capture_output=True)
  subprocess.run(['python3',str(crm/'docker/easypanel/gerar-env.py'),'--supabase-env',str(supa/'.env'),'--owner-email','qa@example.com'],check=True,capture_output=True)
