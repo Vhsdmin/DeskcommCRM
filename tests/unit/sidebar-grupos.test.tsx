@@ -25,7 +25,7 @@ vi.mock("@/hooks/auth/AuthProvider", () => ({
   usePermission: () => false,
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/app/inbox",
+  usePathname: () => "/app/central",
 }));
 vi.mock("@/components/connections/ConnectionHealthDot", () => ({
   ConnectionHealthDot: () => null,
@@ -140,13 +140,16 @@ describe("Sidebar agrupado", () => {
     comoPapel("admin");
     render(<Sidebar collapsed />);
     expect(screen.queryAllByRole("heading")).toHaveLength(0);
-    expect(screen.getByRole("link", { name: /Inbox/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Central de Prioridades/ })).toBeTruthy();
   });
 
   it("marca a rota atual com aria-current", () => {
     comoPapel("admin");
     render(<Sidebar collapsed={false} />);
-    expect(screen.getByRole("link", { name: /Inbox/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /Central de Prioridades/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     // "Kanban" saiu da interface; o item da mesma URL agora se chama "Funis".
     expect(screen.getByRole("link", { name: "Funis" })).not.toHaveAttribute("aria-current");
   });
