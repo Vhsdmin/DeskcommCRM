@@ -258,3 +258,9 @@ CONFIRMADO: o menu principal é uma lista sem grupos, na ordem Central de Priori
 CONFIRMADO: `hubSections("organizacao")` recebe todos os destinos visíveis sem `sidebarOrder`, agrupados pelo assunto do catálogo e explicados por título e descrição. Os hubs antigos continuam disponíveis por URL. Radar e Respostas rápidas se somam à lista de destinos ocultos de `destinosDaInterface()`; os menus ocultados anteriormente continuam ausentes. O filtro é de apresentação, sem mudança nos guards de páginas, APIs ou banco.
 
 Living System Checklist: entrada `NAV_CATALOG` + papel e seleção do vínculo; saídas `SidebarContent`, `NavHub` e busca; porta dos recursos secundários em Configurações; destaque de Configurações também nas rotas desses recursos. Não há mutação de negócio nem novo evento a auditar. Continuidade IA/humano, próximos passos e laços do runtime não foram alterados: esta mudança reorganiza apenas a navegação.
+
+### Rolagem contida na área de conteúdo (29/10/2026)
+
+CONFIRMADO: o layout autenticado limita a casca a `100dvh`. Avisos da instalação ficam no fluxo acima da casca; a faixa superior e o menu lateral ocupam espaço próprio. O `main` encolhe com `min-h-0` e concentra a rolagem, com isolamento de empilhamento e contenção do overscroll. A lateral acompanha a altura disponível, inclusive quando há avisos no topo. Não há mudança nos dados nem nas permissões.
+
+Prova em prévia local dos componentes reais com aviso de 48px: depois de rolar 1.440px no conteúdo, a faixa superior permaneceu entre 48 e 104px, o bloco branco começou em 104px e o documento permaneceu em scroll 0, com altura de 720px. A regressão de navegação E2E mede esses limites no aplicativo; execução completa com banco não foi feita localmente por ausência de Docker/Supabase.

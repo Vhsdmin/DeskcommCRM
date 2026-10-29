@@ -214,16 +214,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       */}
       <div data-marca-org="" className="contents">
         <EstiloDaMarcaDaOrganizacao css={cssDaOrganizacao} />
-        <ImpersonateBanner impersonating={impersonating} />
-        <ConexaoCaidaBanner caidas={conexoesCaidas} />
-        {needsMfaGate ? (
-          // Gate always mounted for MFA-required roles; it latches the blocking
-          // decision client-side so the enroll Server Action's revalidation
-          // can't tear down the recovery-codes screen mid-flow.
-          <MfaEnrollGate enrolled={enrolled}>{shell}</MfaEnrollGate>
-        ) : (
-          shell
-        )}
+        {/* A faixa superior e os avisos ficam fora da área rolável do conteúdo. */}
+        <div className="flex h-dvh min-h-0 flex-col overflow-hidden" data-crm-viewport="">
+          <ImpersonateBanner impersonating={impersonating} />
+          <ConexaoCaidaBanner caidas={conexoesCaidas} />
+          {needsMfaGate ? (
+            // Gate always mounted for MFA-required roles; it latches the blocking
+            // decision client-side so the enroll Server Action's revalidation
+            // can't tear down the recovery-codes screen mid-flow.
+            <MfaEnrollGate enrolled={enrolled}>{shell}</MfaEnrollGate>
+          ) : (
+            shell
+          )}
+        </div>
       </div>
     </AuthProvider>
     </IdiomaProvider>
