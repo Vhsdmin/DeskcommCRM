@@ -130,17 +130,13 @@ describe("sidebarGroups", () => {
     expect(ids).toContain("atendimento");
   });
 
-  it("a ordem dentro do grupo de IA é a do uso real: assistente, agentes, follow-ups", () => {
+  it("a ordem dentro do grupo de IA mantém assistente e agentes", () => {
     // Provedores e Execuções NÃO entram aqui, e a razão é medida: pô-las na
     // sidebar estourou a dobra em 900px (e2e `navegacao.spec.ts`). Elas seguem
     // o padrão das outras nove telas do grupo — alcançáveis pelo hub "Ver tudo
     // em IA", que é o desenho existente para tela de configuração.
     const ia = sidebarGroups(true, null).find((g) => g.group.id === "ia");
-    expect(ia?.items.map((i) => i.href)).toEqual([
-      "/app/assistente",
-      "/app/ai/agents",
-      "/app/ai/followups",
-    ]);
+    expect(ia?.items.map((i) => i.href)).toEqual(["/app/assistente", "/app/ai/agents"]);
   });
 });
 
@@ -202,7 +198,7 @@ describe("searchable", () => {
   it("expõe todo destino visível, do sidebar ou não", () => {
     const hrefs = searchable(ADMIN.platform, ADMIN.role).map((d) => d.href);
     expect(hrefs).toContain("/app/ai/knowledge/sources");
-    expect(hrefs).toContain("/app/inbox");
+    expect(hrefs).not.toContain("/app/inbox");
   });
 
   it("respeita o papel", () => {

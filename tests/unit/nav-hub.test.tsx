@@ -26,6 +26,18 @@ describe("NavHub", () => {
     ]);
   });
 
+  it("mantém apenas Uso e orçamento em Acompanhar o agente", () => {
+    render(<NavHub group="ia" isPlatformAdmin role={null} title="Agente de IA" subtitle="" />);
+    const acompanhar = screen.getByRole("region", { name: "Acompanhar o agente" });
+    expect(
+      within(acompanhar)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/app/ai/usage"]);
+    expect(screen.queryByRole("link", { name: /Provedores/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Follow-ups/ })).toBeNull();
+  });
+
   it("desenterra Conhecimento, que só existia atrás das abas", () => {
     render(<NavHub group="ia" isPlatformAdmin role={null} title="Agente de IA" subtitle="" />);
     const link = screen.getByRole("link", { name: /Conhecimento/ });
