@@ -14,23 +14,55 @@ const simplified = { preset: "simplificada" } as const;
 const granular = { preset: "completa", destinos: ["/app/products"] } as const;
 const hrefs = (settings: unknown, role: "agent" | "admin" = "admin", platform = false) =>
   destinosDaInterface(settings, platform, role).map((d) => d.href);
+const hidden = [
+  "/app/inbox",
+  "/app/ai/followups",
+  "/app/ai/providers",
+  "/app/ai/cases",
+  "/app/ai/inbox",
+  "/app/ai/proposals",
+  "/app/ai/runs",
+  "/app/ai/evolution",
+];
 describe("interface por vínculo é apresentação", () => {
   it("legado completa acompanha catálogo e não duplica IDs", () => {
-    expect(hrefs(null)).toEqual(NAV_CATALOG.map((d) => d.href));
+    expect(hrefs(null)).toEqual(
+      NAV_CATALOG.filter((d) => !hidden.includes(d.href)).map((d) => d.href),
+    );
     expect(new Set(NAV_CATALOG.map((d) => d.href)).size).toBe(NAV_CATALOG.length);
   });
+  it.each([false, true])(
+    "oculta os menus solicitados mesmo com seleção salva (plataforma=%s)",
+    (platform) => {
+      const settings = interfaceSettingsSchema.parse({
+        preset: "completa",
+        destinos: NAV_CATALOG.map((d) => d.href),
+      });
+      for (const href of hidden) {
+        expect(hrefs(settings, "admin", platform)).not.toContain(href);
+        expect(searchable(platform, "admin", settings).map((d) => d.href)).not.toContain(href);
+        expect(
+          sidebarGroups(platform, "admin", settings).flatMap((g) => g.items.map((d) => d.href)),
+        ).not.toContain(href);
+      }
+      expect(
+        hubSections("ia", platform, "admin", settings)
+          .find((s) => s.section === "Acompanhar o agente")
+          ?.items.map((d) => d.href),
+      ).toEqual(["/app/ai/usage"]);
+      expect(
+        hubSections("analise", platform, "admin", settings).flatMap((s) =>
+          s.items.map((d) => d.href),
+        ),
+      ).not.toContain("/app/ai/evolution");
+    },
+  );
   it("simplificada tem operação e Conexões somente quando papel permite", () => {
     expect(hrefs(simplified)).toContain("/app/connections");
     expect(hrefs(simplified, "agent")).not.toContain("/app/connections");
     expect(hrefs(simplified)).not.toContain("/app/ai/credentials");
     expect(hrefs(simplified)).toEqual(
-      expect.arrayContaining([
-        "/app/inbox",
-        "/app/agenda",
-        "/app/contacts",
-        "/app/kanban",
-        "/app/tasks",
-      ]),
+      expect.arrayContaining(["/app/agenda", "/app/contacts", "/app/kanban", "/app/tasks"]),
     );
   });
   it("admin plataforma também respeita seleção; completa não promove atendente", () => {

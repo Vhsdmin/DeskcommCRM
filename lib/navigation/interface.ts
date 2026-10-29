@@ -17,6 +17,18 @@ export const interfaceSettingsSchema = z
   .strict();
 export type InterfaceSettings = z.infer<typeof interfaceSettingsSchema>;
 export const INTERFACE_COMPLETA: InterfaceSettings = { preset: "completa" };
+/** Itens ocultos na navegação da VendePay, inclusive em seleções já salvas.
+ * As rotas e suas permissões continuam disponíveis por acesso direto. */
+const DESTINOS_OCULTOS = new Set<string>([
+  "/app/inbox",
+  "/app/ai/followups",
+  "/app/ai/providers",
+  "/app/ai/cases",
+  "/app/ai/inbox",
+  "/app/ai/proposals",
+  "/app/ai/runs",
+  "/app/ai/evolution",
+]);
 const SIMPLIFICADA: readonly NavDestinationId[] = [
   "/app/inbox",
   "/app/agenda",
@@ -76,7 +88,7 @@ export function destinosDaInterface(
   role: Role | null,
 ): NavMetadata[] {
   const { settings } = lerInterface(raw);
-  const allowed = permitidos(platform, role);
+  const allowed = permitidos(platform, role).filter((d) => !DESTINOS_OCULTOS.has(d.href));
   const chosen =
     settings.destinos ?? (settings.preset === "simplificada" ? SIMPLIFICADA : undefined);
   return allowed.filter(
