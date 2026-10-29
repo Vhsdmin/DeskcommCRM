@@ -16,10 +16,12 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
   useInboundMessageAlerts();
   useCrmAlerts();
   useNotifyOpenFromServiceWorker();
+  // O layout limita a altura à janela, descontando os avisos. `min-h-0`
+  // permite que o conteúdo encolha e role no main, sem passar atrás do topo.
   return (
-    <div className="moldura-vendepay flex min-h-screen w-full">
+    <div className="moldura-vendepay flex min-h-0 w-full flex-1 overflow-hidden">
       <BarraDeProgressoNavegacao />
-      <div className="hidden md:block">
+      <div className="hidden min-h-0 md:block">
         <Sidebar collapsed={sidebarCollapsed} />
       </div>
       {/*
@@ -41,9 +43,9 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
         SEGUNDA medida da mesma coisa — a que discordava e deixava a barra por
         cima da lista.
       */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="flex-1 overflow-auto rounded-tl-2xl border-t border-l bg-background p-6">
+        <main className="isolate min-h-0 flex-1 overflow-auto overscroll-contain rounded-tl-2xl border-t border-l bg-background p-6">
           {children}
         </main>
       </div>
