@@ -1,9 +1,9 @@
 # Tarefa de manutenção separada, para executar pelo Easypanel.
 # Pare o serviço CRM antes de implantar esta tarefa. Mantenha o banco ligado.
-# Mesma release revisada do docker-compose.easypanel.yml (PR #12 / 010c848f7).
+# Mesma release revisada do docker-compose.easypanel.yml (PR #13 / d02c18a84).
 services:
   schema-export:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:76625bcc7535b1984032792a087f4957555ba741bfe4ad3170981606ec2917af
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:3459f7616f8a701dd87b817251bb516e87a1ac222202991c1ab38defac27ebf0
     pull_policy: missing
     restart: 'no'
     network_mode: none

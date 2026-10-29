@@ -381,12 +381,18 @@ O procedimento de cópia para fora do volume/VPS descrito acima continua válido
 O dump não inclui os arquivos físicos de WhatsApp/Storage. A leitura do catálogo
 do backup não substitui um ensaio de restauração.
 
-## Atualização dos menus do CRM
+## Atualização do menu principal do CRM
 
-O Compose fixa as três imagens do commit `010c848f7` (PR #12 da VendePay).
-Inbox, Follow-ups, Provedores e Evolução da IA ficam ocultos dos menus e da
-busca. Em **Ver tudo em IA → Acompanhar o agente**, fica apenas **Uso e orçamento**.
-As permissões das páginas e o acesso direto por URL continuam iguais.
+O Compose fixa as três imagens do commit `d02c18a84` (PR #13 da VendePay).
+A barra lateral segue a lista de trabalho do CS: Central de Prioridades, Agenda,
+Funil, Clientes, Tarefas, Dashboard NPS, Assistente de IA, Desempenho, Atividades
+e Configurações. O visual acompanha o Gestão, com fonte Open Sans, linhas de
+48px e ícones de contorno. Configurações reúne os demais recursos visíveis,
+organizados por assunto com título e descrição.
+
+Radar e Respostas rápidas ficam ocultos, assim como os menus ocultados na
+atualização anterior. Papéis e seleções de interface por vínculo continuam
+sendo respeitados. As permissões das páginas e o acesso direto por URL não mudam.
 
 Esta atualização mantém o mesmo baseline de banco da versão até 0282. Para uma
 instalação já atualizada até 0282, basta implantar o serviço CRM no EasyPanel
