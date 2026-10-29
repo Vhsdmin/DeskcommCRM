@@ -21,6 +21,8 @@ export const INTERFACE_COMPLETA: InterfaceSettings = { preset: "completa" };
  * As rotas e suas permissões continuam disponíveis por acesso direto. */
 const DESTINOS_OCULTOS = new Set<string>([
   "/app/inbox",
+  "/app/radar",
+  "/app/templates",
   "/app/ai/followups",
   "/app/ai/providers",
   "/app/ai/cases",

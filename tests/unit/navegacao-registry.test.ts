@@ -6,7 +6,7 @@ import {
   canSee,
   hubSections,
   searchable,
-  sidebarGroups,
+  sidebarItems,
 } from "@/lib/navigation/registry";
 
 /**
@@ -74,69 +74,50 @@ describe("canSee", () => {
   });
 });
 
-describe("sidebarGroups", () => {
-  it("devolve os grupos na ordem declarada em NAV_GROUPS", () => {
-    const ordem = sidebarGroups(true, null).map((g) => g.group.id);
-    const esperada = NAV_GROUPS.map((g) => g.id).filter((id) => ordem.includes(id));
-    expect(ordem).toEqual(esperada);
-  });
-
-  it("só inclui destino marcado como sidebar", () => {
-    const hrefs = sidebarGroups(true, null).flatMap((g) => g.items.map((i) => i.href));
-    // Conhecimento existe no registro, mas é do hub — não do sidebar.
-    expect(hrefs).not.toContain("/app/ai/knowledge/sources");
-    expect(hrefs).toContain("/app/ai/agents");
-  });
-
-  it("Etapas do funil é CRM, não Configurações — o achado que originou esta mudança", () => {
-    // ⚠️ ESTA ASSERÇÃO MUDOU DE SUPERFÍCIE, e a propriedade guardada é a mesma.
-    // Ela cobrava presença no SIDEBAR, que era só o jeito de a tela deixar de
-    // ser "um card perdido em Configurações". Com o hub do CRM (`/app/crm`),
-    // ela mora atrás de "Ver tudo em CRM" — continua sendo CRM, continua fora
-    // de Configurações, e o caminho tem um clique a mais porque desenhar as
-    // colunas do funil é trabalho de montagem, não de todo dia.
-    //
-    // O que NÃO pode voltar é o destino trocar de grupo: é isso que a primeira
-    // asserção prende, e ela não depende de onde o item é desenhado.
-    expect(dest("/app/settings/tenant/pipelines").group).toBe("crm");
-    const hub = hubSections("crm", true, null).flatMap((s) => s.items.map((i) => i.href));
-    expect(hub).toContain("/app/settings/tenant/pipelines");
-  });
-
-  it("o CRM tem hub, e o sidebar dele fica só com o uso diário", () => {
-    // A decisão que devolveu a dobra em 900px (e2e `navegacao.spec.ts`): quando
-    // Tarefas virou o quinto destino de CRM, o menu passou a rolar por 13px.
-    // O conserto foi o hub — o desenho que o grupo IA já usava —, não mais
-    // densidade raspada do `Sidebar.tsx`.
-    //
-    // A lista é EXATA de propósito. `toContain` deixaria um sexto item entrar
-    // calado no sidebar e reabrir a mesma corrida por pixel.
-    const crm = sidebarGroups(true, null).find((g) => g.group.id === "crm");
-    // A Central de Prioridades entra primeiro: é a tela inicial do CSM. O total
-    // do menu não cresceu — Roteadores e Meta Ads saíram na adaptação VendePay.
-    expect(crm?.items.map((i) => i.href)).toEqual([
-      "/app/central",
-      "/app/kanban",
-      "/app/contacts",
-      "/app/tasks",
+describe("sidebarItems", () => {
+  it("segue exatamente a hierarquia solicitada", () => {
+    expect(sidebarItems(true, null).map((d) => d.label)).toEqual([
+      "Central de Prioridades",
+      "Agenda",
+      "Funil",
+      "Clientes",
+      "Tarefas",
+      "Dashboard NPS",
+      "Assistente de IA",
+      "Desempenho",
+      "Atividades",
+      "Configurações",
     ]);
-    expect(NAV_GROUPS.find((g) => g.id === "crm")?.hub?.href).toBe("/app/crm");
   });
-
-  it("omite o grupo inteiro quando o papel não vê nenhum item dele", () => {
-    // CANAIS é todo manager+/admin: um agent não deve ver o título órfão.
-    const ids = sidebarGroups(AGENT.platform, AGENT.role).map((g) => g.group.id);
-    expect(ids).not.toContain("canais");
-    expect(ids).toContain("atendimento");
+  it("preserva permissões e não mostra configuração na lista principal", () => {
+    expect(sidebarItems(false, "viewer").map((d) => d.href)).not.toContain("/app/assistente");
+    expect(sidebarItems(false, "admin").map((d) => d.href)).not.toContain("/app/ai/agents");
+    expect(sidebarItems(false, null)).toEqual([]);
   });
-
-  it("a ordem dentro do grupo de IA mantém assistente e agentes", () => {
-    // Provedores e Execuções NÃO entram aqui, e a razão é medida: pô-las na
-    // sidebar estourou a dobra em 900px (e2e `navegacao.spec.ts`). Elas seguem
-    // o padrão das outras nove telas do grupo — alcançáveis pelo hub "Ver tudo
-    // em IA", que é o desenho existente para tela de configuração.
-    const ia = sidebarGroups(true, null).find((g) => g.group.id === "ia");
-    expect(ia?.items.map((i) => i.href)).toEqual(["/app/assistente", "/app/ai/agents"]);
+  it("configurações recebe todo destino visível que saiu da lateral", () => {
+    const main = sidebarItems(true, null).map((d) => d.href);
+    const settings = hubSections("organizacao", true, null).flatMap((s) => s.items);
+    expect(settings.map((d) => d.href).sort()).toEqual(
+      searchable(true, null)
+        .filter((d) => !main.includes(d.href))
+        .map((d) => d.href)
+        .sort(),
+    );
+    expect(settings.every((d) => d.label && d.description)).toBe(true);
+    expect(settings.map((d) => d.href)).toEqual(
+      expect.arrayContaining([
+        "/app/ai/agents",
+        "/app/connections",
+        "/app/webhooks",
+        "/app/carteira",
+        "/app/playbooks",
+        "/app/products",
+        "/app/settings/tenant/pipelines",
+        "/app/audit",
+      ]),
+    );
+    expect(settings.map((d) => d.href)).not.toContain("/app/radar");
+    expect(settings.map((d) => d.href)).not.toContain("/app/templates");
   });
 });
 

@@ -7,7 +7,7 @@ import {
   interfaceTemDestino,
   lerInterface,
 } from "@/lib/navigation/interface";
-import { sidebarGroups, searchable, hubSections } from "@/lib/navigation/registry";
+import { sidebarItems, searchable, hubSections } from "@/lib/navigation/registry";
 import { signInviteToken, verifyInviteToken } from "@/lib/auth/invite-token";
 const complete = { preset: "completa" } as const;
 const simplified = { preset: "simplificada" } as const;
@@ -16,6 +16,8 @@ const hrefs = (settings: unknown, role: "agent" | "admin" = "admin", platform = 
   destinosDaInterface(settings, platform, role).map((d) => d.href);
 const hidden = [
   "/app/inbox",
+  "/app/radar",
+  "/app/templates",
   "/app/ai/followups",
   "/app/ai/providers",
   "/app/ai/cases",
@@ -41,9 +43,7 @@ describe("interface por vínculo é apresentação", () => {
       for (const href of hidden) {
         expect(hrefs(settings, "admin", platform)).not.toContain(href);
         expect(searchable(platform, "admin", settings).map((d) => d.href)).not.toContain(href);
-        expect(
-          sidebarGroups(platform, "admin", settings).flatMap((g) => g.items.map((d) => d.href)),
-        ).not.toContain(href);
+        expect(sidebarItems(platform, "admin", settings).map((d) => d.href)).not.toContain(href);
       }
       expect(
         hubSections("ia", platform, "admin", settings)
@@ -71,10 +71,7 @@ describe("interface por vínculo é apresentação", () => {
   });
   it("granular hub-only tem porta, home e busca úteis, sem grupos vazios", () => {
     const settings = interfaceSettingsSchema.parse(granular);
-    expect(sidebarGroups(false, "admin", settings).map((g) => g.group.id)).toEqual([
-      "crm",
-      "organizacao",
-    ]);
+    expect(sidebarItems(false, "admin", settings).map((d) => d.href)).toEqual(["/app/settings"]);
     expect(
       hubSections("crm", false, "admin", settings)
         .flatMap((s) => s.items)

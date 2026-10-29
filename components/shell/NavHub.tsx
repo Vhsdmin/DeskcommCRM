@@ -75,16 +75,23 @@ export function NavHub({
         >
           <h2
             id={`hub-${group}-${slug(section)}`}
-            className="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+            className={
+              group === "organizacao"
+                ? "text-base font-semibold"
+                : "text-xs font-medium tracking-wider text-muted-foreground uppercase"
+            }
           >
-            {traduzir(section, locale)}
+            {section
+              .split(" · ")
+              .map((part) => traduzir(part, locale))
+              .join(" · ")}
           </h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="block">
-                  <Card className="flex h-full gap-3 p-4 transition-colors hover:border-border-strong">
+                  <Card className="flex h-full gap-3 p-4 shadow-none transition-colors hover:border-border-strong">
                     <Icon
                       size={20}
                       weight="regular"
@@ -92,8 +99,22 @@ export function NavHub({
                       className="mt-0.5 shrink-0 text-muted-foreground"
                     />
                     <div>
-                      <h3 className="text-sm font-semibold">{traduzir(item.label, locale)}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <h3
+                        className={
+                          group === "organizacao"
+                            ? "text-base font-semibold"
+                            : "text-sm font-semibold"
+                        }
+                      >
+                        {traduzir(item.label, locale)}
+                      </h3>
+                      <p
+                        className={
+                          group === "organizacao"
+                            ? "mt-1 text-sm leading-6 text-muted-foreground"
+                            : "mt-1 text-xs text-muted-foreground"
+                        }
+                      >
                         {traduzir(item.description, locale)}
                       </p>
                     </div>

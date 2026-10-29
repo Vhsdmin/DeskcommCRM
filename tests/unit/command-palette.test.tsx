@@ -55,8 +55,8 @@ describe("CommandPalette", () => {
     const user = userEvent.setup();
     abrir();
     // Ninguém procura "Radar" por esse nome; procura pelo problema que resolve.
-    await user.type(screen.getByRole("combobox"), "esfriou");
-    expect(screen.getByRole("option", { name: /Radar/ })).toBeTruthy();
+    await user.type(screen.getByRole("combobox"), "documentos");
+    expect(screen.getByRole("option", { name: /Assistente de IA/ })).toBeTruthy();
   });
 
   it("respeita o papel", async () => {
