@@ -1,11 +1,11 @@
 # Stack independente para EasyPanel. Leia EASYPANEL.md.
 # VendePay CRM: imagens publicadas pelo CI de filipefagundes/VendePayCRM (merge
-# do PR #13, commit d02c18a84), fixadas por digest; schema sai da MESMA imagem do
+# do PR #14, commit 5424a75b7), fixadas por digest; schema sai da MESMA imagem do
 # worker. Sem build na VPS. Imagens privadas: a VPS precisa de login no GHCR.
 services:
   app:
     mem_limit: 768m
-    image: ghcr.io/filipefagundes/deskcommcrm@sha256:fe32cde08bc04c2eae8ed8bc1478cf46242c7eb2fdac98dc33ee3c4860a9eab4
+    image: ghcr.io/filipefagundes/deskcommcrm@sha256:9929dc09f7d035e415ff2a156450aff0c450185947fbbbe415be78021f3fedd1
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -42,7 +42,7 @@ services:
     - supabase_private
   worker:
     mem_limit: 512m
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:3459f7616f8a701dd87b817251bb516e87a1ac222202991c1ab38defac27ebf0
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:0a0864fdf7b9090233e0ff4b152bdd9e7cbcc7cf2a1fe0b0b5a681ee0dadd1d8
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -72,7 +72,7 @@ services:
       bootstrap:
         condition: service_completed_successfully
   scheduler:
-    image: ghcr.io/filipefagundes/deskcomm-scheduler@sha256:3c44ddbc4e877774e08dc558e8c08a9ea1e4e00fb7df6a5593fb0c3ac7ab43bf
+    image: ghcr.io/filipefagundes/deskcomm-scheduler@sha256:e06ce368a086a1f73a558363956dccba158995b9a0fa407625cb93bff46fd697
     pull_policy: missing
     restart: unless-stopped
     depends_on:
@@ -136,7 +136,7 @@ services:
     networks:
     - internal
   schema-export:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:3459f7616f8a701dd87b817251bb516e87a1ac222202991c1ab38defac27ebf0
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:0a0864fdf7b9090233e0ff4b152bdd9e7cbcc7cf2a1fe0b0b5a681ee0dadd1d8
     pull_policy: missing
     restart: 'no'
     network_mode: none
@@ -172,7 +172,7 @@ services:
     - supabase_private
     logging: *id001
   bootstrap:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:3459f7616f8a701dd87b817251bb516e87a1ac222202991c1ab38defac27ebf0
+    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:0a0864fdf7b9090233e0ff4b152bdd9e7cbcc7cf2a1fe0b0b5a681ee0dadd1d8
     pull_policy: missing
     restart: 'no'
     depends_on:

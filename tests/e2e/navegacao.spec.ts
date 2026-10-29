@@ -224,6 +224,39 @@ test.describe("navegação principal", () => {
     expect(m.rola, "em 900px o menu inteiro tem de caber sem scroll").toBe(false);
   });
 
+  test("rolar o conteúdo mantém a faixa superior e a lateral paradas", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await loginAdmin(page);
+    await page.goto("/app/settings");
+    const measure = () =>
+      page.evaluate(() => {
+        const main = document.querySelector("main")!;
+        const shell = main.parentElement!;
+        const top = shell.querySelector(":scope > header")!.getBoundingClientRect();
+        const side = document.querySelector("aside")!.getBoundingClientRect();
+        return {
+          top: top.top,
+          bottom: top.bottom,
+          side: side.top,
+          main: main.getBoundingClientRect().top,
+          documentScroll: document.scrollingElement!.scrollTop,
+        };
+      });
+    const before = await measure();
+    await page.getByRole("main").hover();
+    await page.mouse.wheel(0, 750);
+    await expect
+      .poll(() => page.getByRole("main").evaluate((el) => el.scrollTop))
+      .toBeGreaterThan(0);
+    const after = await measure();
+    expect(after.top).toBe(before.top);
+    expect(after.bottom).toBe(before.bottom);
+    expect(after.side).toBe(before.side);
+    expect(after.main).toBeGreaterThanOrEqual(after.bottom);
+    expect(after.documentScroll).toBe(0);
+    await page.screenshot({ path: path.join(EVIDENCE, "scroll-contido-no-bloco.png") });
+  });
+
   test.describe("mobile", () => {
     test.use({ viewport: { width: 390, height: 844 } });
 

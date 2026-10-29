@@ -48,10 +48,10 @@ describe("a barra ocupa lugar, em vez de flutuar", () => {
     expect(BARRA, "a barra voltou a flutuar").not.toMatch(/\bfixed\b/);
   });
 
-  it("é `sticky` e ocupa a altura da tela", () => {
+  it("é `sticky` e ocupa a altura disponível da casca", () => {
     // O efeito visual precisa continuar: a barra não rola com a página.
     expect(BARRA).toMatch(/\bsticky\b/);
-    expect(BARRA).toMatch(/h-screen/);
+    expect(BARRA).toMatch(/h-full/);
   });
 
   it("não encolhe", () => {

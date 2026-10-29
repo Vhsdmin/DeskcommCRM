@@ -2145,3 +2145,13 @@ Validação integral do mesmo produto: 733 arquivos unitários / 7.911 casos apr
 ## Exclusão de cliente VendePay `[P1]` — 27/10/2026
 
 Casos: ficha com atividade CS sem negócio; compromisso na agenda bloqueia e mantém TODO o histórico; atividade com negócio sobrevive; viewer/módulo não autorizado/tenant diferente não excluem. Prova PostgreSQL isolada em `tests/vendepay/exclusao-cliente-isolada.mjs`; invariante do schema completo em `tests/invariants/contato-exclusao.test.ts`. Prova pela tela e execução do invariante completo pendentes por indisponibilidade do banco de teste/Docker. Não marcado como PASS de UX.
+
+## Rolagem da casca do CRM — VendePay (29/10/2026) `[P1]`
+
+| Caso | Resultado e evidência |
+|---|---|
+| Conteúdo longo rola dentro do bloco branco, mantendo faixa superior e lateral paradas | **PASS em prévia isolada dos componentes reais.** Desktop: ao rolar 1.440px no `main`, documento permaneceu em scroll 0; cabeçalho entre 48 e 104px e início do bloco em 104px, com aviso de 48px acima. Documento e viewport mantiveram 720px de altura. |
+| Contenção na largura de celular, com aviso no topo | **PASS na mesma prévia, em 390×844.** Documento permaneceu em scroll 0 e altura 844px; cabeçalho e início do bloco mantiveram os mesmos limites enquanto o `main` avançou de 2.532 para 3.157px. |
+| Regressão no aplicativo autenticado | **ADICIONADA, não executada localmente.** `tests/e2e/navegacao.spec.ts`, caso “rolar o conteúdo mantém a faixa superior e a lateral paradas”: exige rolagem real no `main` e mede posições do topo, lateral e documento. Ambiente fresco completo indisponível nesta máquina por ausência de Docker/Supabase; prévia isolada não substitui essa jornada. |
+
+Causa corrigida: altura mínima deixava o documento crescer, com cabeçalho transparente sobre o conteúdo. O viewport agora limita a casca, avisos reservam espaço no fluxo e a rolagem fica no `main`. Nenhuma mudança em schema, dados ou permissões.
