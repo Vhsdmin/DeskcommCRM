@@ -83,19 +83,22 @@ async function expectSemOverflowHorizontal(page: Page, contexto: string): Promis
 // testes que já estavam verdes passaram a estourar 30 s.
 test.describe.configure({ timeout: 120_000 });
 
-test.describe("navegação agrupada", () => {
-  test("o sidebar tem hierarquia: grupos na ordem de uso", async ({ page }) => {
+test.describe("navegação principal", () => {
+  test("o sidebar segue a lista principal na ordem solicitada", async ({ page }) => {
     await loginAdmin(page);
 
-    // Organização não aparece como título aqui: seu hub (Configurações) vive no
-    // rodapé fixo — ver o teste de dobra abaixo.
-    const titulos = sidebar(page).getByRole("heading");
-    await expect(titulos).toHaveText([
-      "Atendimento",
-      "CRM",
-      "Agente de IA",
-      "Canais",
-      "Análise",
+    await expect(sidebar(page).getByRole("heading")).toHaveCount(0);
+    await expect(sidebar(page).getByRole("link")).toHaveText([
+      "Central de Prioridades",
+      "Agenda",
+      "Funil",
+      "Clientes",
+      "Tarefas",
+      "Dashboard NPS",
+      "Assistente de IA",
+      "Desempenho",
+      "Atividades",
+      "Configurações",
     ]);
 
     await page.screenshot({
@@ -104,27 +107,15 @@ test.describe("navegação agrupada", () => {
     });
   });
 
-  test("chega nas Etapas do funil pelo CRM, sem passar por Configurações", async ({ page }) => {
+  test("chega nas Etapas do funil por Configurações", async ({ page }) => {
     await loginAdmin(page);
 
-    // O caso que originou tudo: o usuário não sabia que esta tela existia.
-    //
-    // ⚠️ O ITEM MUDOU DE NOME, e o nome antigo ("Funis") passou para o VIZINHO —
-    // a lista de funis, em /app/kanban. Um teste que continuasse clicando em
-    // "Funis" seguiria verde medindo a outra tela; por isso a asserção de URL
-    // abaixo é específica (`settings/tenant/pipelines`) e não o antigo
-    // /pipelines/, que casa com as duas.
-    //
-    // ⚠️ E O CAMINHO MUDOU: com Tarefas (PR #546), o CRM chegou a cinco telas e
-    // o menu passou a rolar em 900px. A resposta foi o hub do grupo, como o
-    // comentário de densidade do `Sidebar.tsx` já mandava — então esta tela
-    // agora mora atrás de "Ver tudo em CRM". Este teste percorre o caminho
-    // INTEIRO em vez de checar um link: hub → tela. Que a porta existe no grupo
-    // certo do sidebar é o unitário `sidebar-grupos` que prende.
-    await sidebar(page).getByRole("link", { name: "Ver tudo em CRM" }).click();
-    await page.waitForURL(/\/app\/crm$/);
-    await expect(page.getByRole("heading", { name: "O dia a dia da venda" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Preparar a venda" })).toBeVisible();
+    await sidebar(page).getByRole("link", { name: "Configurações" }).click();
+    await page.waitForURL(/\/app\/settings$/);
+    await expect(
+      page.getByRole("heading", { name: /Relacionamento e sucesso do cliente/ }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Preparar a venda/ })).toBeVisible();
 
     await page.screenshot({ path: path.join(EVIDENCE, "nav-hub-crm.png"), fullPage: true });
 
@@ -134,22 +125,19 @@ test.describe("navegação agrupada", () => {
   });
 
   test("e Produtos, que saiu do menu, continua alcançável pelo mesmo hub", async ({ page }) => {
-    // Tirar do sidebar não pode virar tela órfã: DoD 14 cobra porta, e a porta
-    // passou a ser o hub. Sem este caso, o item "some do menu" ficaria provado
-    // e o "continua alcançável" ficaria só escrito no comentário.
     await loginAdmin(page);
 
     await expect(sidebar(page).getByRole("link", { name: "Produtos" })).toHaveCount(0);
 
-    await sidebar(page).getByRole("link", { name: "Ver tudo em CRM" }).click();
-    await page.waitForURL(/\/app\/crm$/);
+    await sidebar(page).getByRole("link", { name: "Configurações" }).click();
+    await page.waitForURL(/\/app\/settings$/);
     await page.getByRole("link", { name: /Produtos/ }).click();
     await page.waitForURL(/\/app\/products/);
   });
 
   test("e a lista de funis é o item vizinho, com nome próprio", async ({ page }) => {
     await loginAdmin(page);
-    await sidebar(page).getByRole("link", { name: "Funis", exact: true }).click();
+    await sidebar(page).getByRole("link", { name: "Funil", exact: true }).click();
     await page.waitForURL(/\/app\/kanban/);
     await expect(page.getByRole("heading", { name: "Funis", level: 1 })).toBeVisible();
   });
@@ -157,13 +145,12 @@ test.describe("navegação agrupada", () => {
   test("chega em Conhecimento, que só existia atrás das abas de IA", async ({ page }) => {
     await loginAdmin(page);
 
-    await sidebar(page).getByRole("link", { name: "Ver tudo em IA" }).click();
-    await page.waitForURL(/\/app\/ai$/);
+    await sidebar(page).getByRole("link", { name: "Configurações" }).click();
+    await page.waitForURL(/\/app\/settings$/);
 
-    // O hub organiza por jornada, não numa grade solta.
-    await expect(page.getByRole("heading", { name: "Montar o agente" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Ensinar o agente" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Acompanhar o agente" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Montar o agente/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Ensinar o agente/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Acompanhar o agente/ })).toBeVisible();
 
     await page.screenshot({ path: path.join(EVIDENCE, "nav-hub-ia.png"), fullPage: true });
 
@@ -176,10 +163,11 @@ test.describe("navegação agrupada", () => {
    * A porta, portanto, é Conexões — que agora vive no grupo CANAIS do sidebar,
    * e não mais como um card perdido em Configurações.
    */
-  test("chega ao canal oficial pelo grupo Canais, não por Configurações", async ({ page }) => {
+  test("chega ao canal oficial por Configurações", async ({ page }) => {
     await loginAdmin(page);
 
-    await sidebar(page).getByRole("link", { name: "Conexões" }).click();
+    await sidebar(page).getByRole("link", { name: "Configurações" }).click();
+    await page.getByRole("link", { name: /Conexões/ }).click();
     await page.waitForURL(/\/app\/connections/);
     await expect(page.getByRole("tab", { name: /oficial/i })).toBeVisible();
   });
@@ -187,8 +175,6 @@ test.describe("navegação agrupada", () => {
   test("o ⌘K acha o canal oficial por nome, mesmo sem tela própria", async ({ page }) => {
     await loginAdmin(page);
 
-    // Ninguém procura por "Conexões" quando quer o número oficial da Meta —
-    // procura por "oficial". A busca varre a descrição além do rótulo.
     await page.keyboard.press("ControlOrMeta+k");
     await page.getByRole("combobox").fill("oficial");
     await expect(page.getByRole("option", { name: /Conexões/ })).toBeVisible();
@@ -244,7 +230,10 @@ test.describe("navegação agrupada", () => {
     test("em 390px, o sidebar vira gaveta e não cria overflow horizontal", async ({ page }) => {
       await loginAdmin(page);
 
-      await expect(sidebar(page), "o sidebar desktop fica fora da árvore acessível no mobile").toHaveCount(0);
+      await expect(
+        sidebar(page),
+        "o sidebar desktop fica fora da árvore acessível no mobile",
+      ).toHaveCount(0);
       await expectSemOverflowHorizontal(page, "shell mobile após login");
 
       await page.getByRole("button", { name: "Abrir navegação" }).click();
@@ -255,7 +244,7 @@ test.describe("navegação agrupada", () => {
         fullPage: true,
       });
 
-      await sidebar(page).getByRole("link", { name: "Funis", exact: true }).click();
+      await sidebar(page).getByRole("link", { name: "Funil", exact: true }).click();
       await page.waitForURL(/\/app\/kanban/);
       await expect(page.getByRole("dialog")).toHaveCount(0);
       await expectSemOverflowHorizontal(page, "shell mobile após navegar pelo drawer");
@@ -267,7 +256,7 @@ test.describe("navegação agrupada", () => {
     });
   });
 
-  test("Configurações fica fixo no rodapé, fora da área que rola", async ({ page }) => {
+  test("Configurações é o último item da lista principal", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 768 });
     await loginAdmin(page);
 
@@ -281,14 +270,15 @@ test.describe("navegação agrupada", () => {
       );
       return nav.contains(link!);
     });
-    expect(dentroDaNav, "Configurações não pode depender de scroll para aparecer").toBe(false);
+    expect(dentroDaNav).toBe(true);
+    await expect(sidebar(page).getByRole("link").last()).toHaveText("Configurações");
   });
 
   test("um agent não vê o cabeçalho de um grupo que a permissão esvaziou", async ({ page }) => {
     await login(page, creds.users.agent!.email);
 
-    // CANAIS é todo manager+/admin: o título não pode sobrar sozinho.
     await expect(sidebar(page).getByRole("heading", { name: "Canais" })).toHaveCount(0);
-    await expect(sidebar(page).getByRole("heading", { name: "Atendimento" })).toBeVisible();
+    await expect(sidebar(page).getByRole("heading")).toHaveCount(0);
+    await expect(sidebar(page).getByRole("link", { name: "Agenda", exact: true })).toBeVisible();
   });
 });

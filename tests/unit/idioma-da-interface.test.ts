@@ -153,7 +153,7 @@ describe("o dicionário acompanha o registro de navegação", () => {
     // certo para eles. A lista é curta de propósito — cada entrada aqui é uma
     // renúncia consciente, não um lugar para esconder rótulo esquecido.
     const NOMES_PROPRIOS = ["Nuvemshop"];
-    const semTraducao = NAV_DESTINATIONS.filter((d) => d.sidebar)
+    const semTraducao = NAV_DESTINATIONS.filter((d) => d.sidebarOrder !== undefined)
       .filter((d) => !NOMES_PROPRIOS.includes(d.label))
       .filter((d) => !(d.label in DICIONARIO));
     expect(
