@@ -40,9 +40,9 @@ export interface NavMetadata {
   section?: string;
   /** Ausente = viewer. Ver a regra de escolha abaixo. */
   minRole?: Role;
-  /** Ausente = só no hub. `true` = uso diário, sobe para o sidebar. */
-  sidebar?: boolean;
   healthDot?: boolean;
+  /** Posição na lista principal, sem grupos. Ausente = Configurações. */
+  sidebarOrder?: number;
 }
 
 /**
@@ -110,7 +110,6 @@ export const NAV_CATALOG = [
     description: "As conversas de WhatsApp, com você e a IA atendendo lado a lado.",
     icon: "Inbox",
     group: "atendimento",
-    sidebar: true,
   },
   {
     href: "/app/radar",
@@ -118,7 +117,6 @@ export const NAV_CATALOG = [
     description: "Quem esfriou e ainda está aberto — o que corre risco de morrer sem resposta.",
     icon: "ClockCountdown",
     group: "atendimento",
-    sidebar: true,
   },
   {
     // Entra em "atendimento", e não em "organizacao", porque a Agenda é onde o
@@ -134,11 +132,11 @@ export const NAV_CATALOG = [
     // tela, quando o que faltava era o CAMINHO até ela. O aviso da Agenda agora
     // aponta para `/app/team?aba=atendimento`.
     href: "/app/agenda",
+    sidebarOrder: 1,
     label: "Agenda",
     description: "O que está marcado, com quem, e quem atende — seu e da equipe.",
     icon: "CalendarBlank",
     group: "atendimento",
-    sidebar: true,
   },
   {
     // Renomeado de "Templates": estes são scripts do atendente, consumidos pelo
@@ -149,7 +147,6 @@ export const NAV_CATALOG = [
     description: "Scripts salvos para responder mais rápido, seus ou da equipe.",
     icon: "FileText",
     group: "atendimento",
-    sidebar: true,
   },
 
   // ---- CRM — relacionamento ----
@@ -157,13 +154,13 @@ export const NAV_CATALOG = [
     // A tela inicial do CSM: os sinais de CS (migration 0273) ordenados por
     // severidade e prazo — onde trabalhar hoje.
     href: "/app/central",
+    sidebarOrder: 0,
     label: "Central de Prioridades",
     description: "Clientes críticos, sem contato, sem vender, tarefas vencidas e detratores — onde trabalhar hoje.",
     icon: "Flag",
     group: "crm",
     section: "Relacionamento e sucesso do cliente",
     minRole: "viewer",
-    sidebar: true,
   },
   {
     // Carteira por faixa de faturamento (migration 0274): quem cuida de cada
@@ -190,6 +187,7 @@ export const NAV_CATALOG = [
   },
   {
     href: "/app/nps",
+    sidebarOrder: 5,
     label: "Dashboard NPS",
     description: "Notas, comentários e pesquisas respondidas ou pendentes por período.",
     icon: "Gauge",
@@ -208,21 +206,21 @@ export const NAV_CATALOG = [
     // abre o quadro de cada um. "Pipeline" é palavra de quem construiu o
     // sistema; "funil de vendas" é palavra de quem vende.
     href: "/app/kanban",
-    label: "Funis",
+    sidebarOrder: 2,
+    label: "Funil",
     description: "Seus funis de venda — clique em um para abrir o quadro de clientes.",
     icon: "Kanban",
     group: "crm",
     section: "O dia a dia da venda",
-    sidebar: true,
   },
   {
     href: "/app/contacts",
+    sidebarOrder: 3,
     label: "Clientes",
     description: "Clientes e histórico de relacionamento com a VendePay.",
     icon: "Users",
     group: "crm",
     section: "O dia a dia da venda",
-    sidebar: true,
   },
   {
     // Extraída do PR #418 (@clinicacentrodosorrisosc-code). Fica no CRM e no
@@ -231,12 +229,12 @@ export const NAV_CATALOG = [
     // o que o time combinou (é informação de operação), e a criação é cobrada
     // pela rota, com `requireRole("agent")`.
     href: "/app/tasks",
+    sidebarOrder: 4,
     label: "Tarefas",
     description: "O que ficou combinado, com prazo — e o que já venceu sem ninguém fazer.",
     icon: "ListChecks",
     group: "crm",
     section: "O dia a dia da venda",
-    sidebar: true,
   },
   {
     // ⚠️ Esta tela nasceu porque a FERRAMENTA já existia sem ela. O agente de IA
@@ -321,13 +319,13 @@ export const NAV_CATALOG = [
   {
     // A conversa do CSM com o assistente interno (lib/ai/agents/assistente-cs.ts).
     href: "/app/assistente",
-    label: "Assistente",
+    sidebarOrder: 6,
+    label: "Assistente de IA",
     description: "Pergunte sobre produto, processos, empresa e clientes; ele consulta os documentos e o CRM.",
     icon: "Lightbulb",
     group: "ia",
     section: "Usar o assistente",
     minRole: "agent",
-    sidebar: true,
   },
   {
     href: "/app/ai/agents",
@@ -337,7 +335,6 @@ export const NAV_CATALOG = [
     group: "ia",
     section: "Montar o agente",
     minRole: "manager",
-    sidebar: true,
   },
   {
     href: "/app/ai/followups",
@@ -347,7 +344,6 @@ export const NAV_CATALOG = [
     group: "ia",
     section: "Montar o agente",
     minRole: "manager",
-    sidebar: true,
   },
   {
     href: "/app/ai/credentials",
@@ -467,7 +463,6 @@ export const NAV_CATALOG = [
     icon: "PlugsConnected",
     group: "canais",
     minRole: "admin",
-    sidebar: true,
     healthDot: true,
   },
   {
@@ -501,7 +496,6 @@ export const NAV_CATALOG = [
     icon: "WebhooksLogo",
     group: "canais",
     minRole: "manager",
-    sidebar: true,
   },
 
   // ---- Análise — olhar o sistema funcionando ----
@@ -525,12 +519,12 @@ export const NAV_CATALOG = [
   // frase que explica para que servem. O ⌘K também as acha por nome.
   {
     href: "/app/metrics",
+    sidebarOrder: 7,
     label: "Desempenho",
     description: "Atendimentos, reuniões e clientes para acompanhar por responsável.",
     icon: "ChartBar",
     group: "analise",
     section: "Os números do período",
-    sidebar: true,
   },
   {
     // Irmã de "Desempenho", não a mesma coisa: lá é DESFECHO (funil agora,
@@ -539,13 +533,13 @@ export const NAV_CATALOG = [
     // mês inteiro atendido pela equipe têm o mesmo desfecho e histórias
     // opostas — só esta tela distingue as duas.
     href: "/app/activities",
+    sidebarOrder: 8,
     label: "Atividades",
     description:
       "Relatório do que a equipe e os agentes fizeram no período: quanto, quem e de que tipo.",
     icon: "ClockCounterClockwise",
     group: "analise",
     section: "Os números do período",
-    sidebar: true,
   },
   {
     // Observabilidade, não configuração: por isso não fica junto dos agentes.

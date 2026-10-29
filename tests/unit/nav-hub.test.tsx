@@ -97,6 +97,19 @@ describe("NavHub", () => {
     ).toBeTruthy();
   });
 
+  it("Configurações explica os recursos movidos da lateral", () => {
+    render(
+      <NavHub group="organizacao" isPlatformAdmin role={null} title="Configurações" subtitle="" />,
+    );
+    expect(screen.getByRole("link", { name: /Conexões/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Conhecimento/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Carteira/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Agentes/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Radar/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Respostas rápidas/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Agenda/ })).toBeNull();
+  });
+
   it("todo texto registrado no hub de IA tem tradução em espanhol", () => {
     const textos = hubSections("ia", true, "admin").flatMap(({ section, items }) => [
       section,

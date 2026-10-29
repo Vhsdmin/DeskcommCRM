@@ -116,10 +116,10 @@ Uma feature que responde "nenhum" a *quem eu alimento* ou *onde apareço na tela
 
 ### Regras de navegação que a doutrina passa a exigir
 
-- **Todo destino declara seu grupo** em `lib/navigation/registry.ts`. Sem grupo, sem merge.
-- **Configuração e observabilidade são grupos diferentes.** Desenhar como o sistema funciona (Agentes, Roteadores) não é a mesma atividade que olhar o sistema funcionando (Evolução da IA, Desempenho) — e quem procura uma não está procurando a outra.
-- **Hub a partir de 5 telas.** Abaixo disso o grupo cabe inteiro no sidebar; um hub de 3 itens é só um clique a mais para chegar onde já dava.
-- **O sidebar carrega o uso diário; o hub carrega o inventário.** Na dúvida, `sidebar: false` — o hub e o ⌘K já garantem a descoberta.
+- **Todo destino declara seu grupo** em `lib/navigation/catalogo.ts`; `registry.ts` projeta os destinos. Sem grupo, sem merge.
+- **O menu principal segue o trabalho diário.** `sidebarOrder` declara a ordem da lista; os demais destinos visíveis são descobertos em Configurações e no ⌘K. A seleção do vínculo e os papéis continuam filtrando a apresentação.
+- **Configurações organiza os recursos por assunto.** Cada destino conserva título e descrição. Configuração e observabilidade mantêm sua classificação no catálogo, mesmo compartilhando a porta de Configurações.
+- **Os hubs antigos preservam URLs salvas.** A barra principal não precisa exibir um link para cada hub: Configurações reúne os recursos que ficam fora da lista principal.
 - **Mudar o lugar na navegação não exige mudar a URL.** Rota só se renomeia quando o path mente sobre o conteúdo, e cada renomeação paga um redirect permanente.
 
 ---
