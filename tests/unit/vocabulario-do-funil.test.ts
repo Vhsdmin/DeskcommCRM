@@ -119,7 +119,7 @@ describe("o vocabulário do funil na interface", () => {
     // passava a falhar por AMBIGUIDADE — um modo de falha que não parece
     // vocabulário, e sim teste quebrado.
     const porGrupo = new Map<string, string[]>();
-    for (const d of NAV_DESTINATIONS.filter((x) => x.sidebar)) {
+    for (const d of NAV_DESTINATIONS.filter((x) => x.sidebarOrder !== undefined)) {
       porGrupo.set(d.group, [...(porGrupo.get(d.group) ?? []), d.label]);
     }
     for (const [grupo, labels] of porGrupo) {

@@ -17,6 +17,7 @@ import {
   FlowArrow,
   Funnel,
   Gauge,
+  Gear,
   Inbox,
   Kanban,
   Key,
@@ -40,13 +41,7 @@ import {
   WebhooksLogo,
 } from "@/lib/ui/icons";
 
-import {
-  NAV_CATALOG,
-  NAV_GROUPS,
-  type NavMetadata,
-  type NavGroup,
-  type NavGroupId,
-} from "./catalogo";
+import { NAV_CATALOG, NAV_GROUPS, type NavMetadata, type NavGroupId } from "./catalogo";
 import { destinosDaInterface, type InterfaceSettings } from "./interface";
 export { NAV_GROUPS, GRUPO_NO_RODAPE } from "./catalogo";
 export type { NavGroup, NavGroupId } from "./catalogo";
@@ -66,6 +61,7 @@ const ICONS = {
   FlowArrow,
   Funnel,
   Gauge,
+  Gear,
   Inbox,
   Kanban,
   Key,
@@ -104,25 +100,22 @@ export const NAV_DESTINATIONS: NavDestination[] = NAV_CATALOG.map((d) => ({
  */
 export { canSee } from "./interface";
 
-/** Projeção do sidebar: só o uso diário, agrupado, sem grupo vazio. */
-export function sidebarGroups(
+export type SidebarItem = Pick<NavDestination, "href" | "label" | "icon">;
+
+/** Lista principal na ordem do catálogo, respeitando papel e seleção salva. */
+export function sidebarItems(
   isPlatformAdmin: boolean,
   role: Role | null,
   settings?: InterfaceSettings,
-): Array<{ group: NavGroup; items: NavDestination[] }> {
-  const visible = new Set<string>(
-    destinosDaInterface(settings, isPlatformAdmin, role).map((d) => d.href),
-  );
-  return NAV_GROUPS.map((group) => ({
-    group,
-    items: NAV_DESTINATIONS.filter(
-      (d) => d.group === group.id && (d.sidebar || (!group.hub && !!settings?.destinos)) && visible.has(d.href),
-    ),
-  })).filter(
-    (g) =>
-      g.items.length > 0 ||
-      (g.group.hub && NAV_DESTINATIONS.some((d) => d.group === g.group.id && visible.has(d.href))),
-  );
+): SidebarItem[] {
+  const visible = new Set(destinosDaInterface(settings, isPlatformAdmin, role).map((d) => d.href));
+  const items: SidebarItem[] = NAV_DESTINATIONS.filter(
+    (d) => d.sidebarOrder !== undefined && visible.has(d.href),
+  ).sort((a, b) => a.sidebarOrder! - b.sidebarOrder!);
+  if (visible.size > 0) {
+    items.push({ href: "/app/settings", label: "Configurações", icon: Gear });
+  }
+  return items;
 }
 
 /**
@@ -143,8 +136,16 @@ export function hubSections(
     destinosDaInterface(settings, isPlatformAdmin, role).map((d) => d.href),
   );
   for (const d of NAV_DESTINATIONS) {
-    if (d.group !== group || !visible.has(d.href)) continue;
-    const secao = d.section ?? "";
+    if (!visible.has(d.href)) continue;
+    // Configurações reúne tudo que não está na lista principal. Os hubs antigos
+    // continuam disponíveis por URL, sem criar outra lista de destinos.
+    if (group === "organizacao") {
+      if (d.sidebarOrder !== undefined) continue;
+    } else if (d.group !== group) continue;
+    const secao =
+      group === "organizacao" && d.group !== "organizacao"
+        ? [NAV_GROUPS.find((g) => g.id === d.group)?.label, d.section].filter(Boolean).join(" · ")
+        : (d.section ?? "");
     const atual = porSecao.get(secao);
     if (atual) atual.push(d);
     else porSecao.set(secao, [d]);

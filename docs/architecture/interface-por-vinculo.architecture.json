@@ -70,14 +70,14 @@
       "lane": "app",
       "col": 5,
       "type": "service",
-      "label": "Catálogo puro → projeção RBAC ∩ interface"
+      "label": "Catálogo → RBAC ∩ vínculo ∩ destinos visíveis"
     },
     {
       "id": "navigation",
       "lane": "humano",
       "col": 6,
       "type": "ui",
-      "label": "Sidebar / mobile / hubs / busca / home / sino"
+      "label": "Lista principal / mobile / Configurações / busca / home"
     },
     {
       "id": "refresh",

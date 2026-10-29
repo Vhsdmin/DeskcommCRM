@@ -250,3 +250,11 @@ Cobertura de regressão de interface: `tests/e2e/equipe-cadastro-direto.spec.ts`
 - Migration 0282 adiciona `contacts_agent_delete_guard`, policy restritiva de DELETE para `authenticated`, exigindo agent+ ou administrador de plataforma. Soma aos controles existentes de tenant, módulo e suporte somente leitura; não amplia os direitos do caller nem muda bypass de rotinas internas.
 - Prova PostgreSQL isolada ampliada: antes da 0282, viewer exclui ficha e atividades pelo DELETE direto (reproduzido e revertido); após a 0282, DELETE direto afeta zero linhas, RPC recusa com 42501, histórico fica intacto e agent continua excluindo. A fixture do invariante completo cobre viewer legado e viewer com módulo Clientes; execução no schema completo ainda depende do ambiente indisponível.
 - Publicação exige backup e **0281 + 0282**, nessa ordem, antes da nova imagem do app. A 0281 não foi alterada após o commit; a revisão sai numa migration adicional.
+
+### Menu principal e Configurações (29/10/2026)
+
+CONFIRMADO: o menu principal é uma lista sem grupos, na ordem Central de Prioridades → Agenda → Funil → Clientes → Tarefas → Dashboard NPS → Assistente de IA → Desempenho → Atividades → Configurações. A ordem é declarada em `NAV_CATALOG.sidebarOrder` e projetada por `sidebarItems()`, para desktop e gaveta mobile. O visual usa a fonte Open Sans existente, ícones de contorno de 20px, texto de 15px e linhas de 48px.
+
+CONFIRMADO: `hubSections("organizacao")` recebe todos os destinos visíveis sem `sidebarOrder`, agrupados pelo assunto do catálogo e explicados por título e descrição. Os hubs antigos continuam disponíveis por URL. Radar e Respostas rápidas se somam à lista de destinos ocultos de `destinosDaInterface()`; os menus ocultados anteriormente continuam ausentes. O filtro é de apresentação, sem mudança nos guards de páginas, APIs ou banco.
+
+Living System Checklist: entrada `NAV_CATALOG` + papel e seleção do vínculo; saídas `SidebarContent`, `NavHub` e busca; porta dos recursos secundários em Configurações; destaque de Configurações também nas rotas desses recursos. Não há mutação de negócio nem novo evento a auditar. Continuidade IA/humano, próximos passos e laços do runtime não foram alterados: esta mudança reorganiza apenas a navegação.

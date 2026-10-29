@@ -585,6 +585,8 @@ export const DICIONARIO: Traducoes = {
   Agentes: { es: "Agentes" },
   "Follow-ups": { es: "Seguimientos" },
   Roteadores: { es: "Enrutadores" },
+  "Assistente de IA": { es: "Asistente de IA" },
+  "Sua conta, sua empresa e os recursos para configurar a operação.": { es: "Tu cuenta, tu empresa y los recursos para configurar la operación." },
   "Ver tudo em IA": { es: "Ver todo en IA" },
   "Ver tudo em CRM": { es: "Ver todo en CRM" },
   "Ver tudo em Análise": { es: "Ver todo en Análisis" },
