@@ -380,3 +380,15 @@ O caminho do backup aparece no log como `/backups/clientes-0282-<data UTC>`.
 O procedimento de cópia para fora do volume/VPS descrito acima continua válido.
 O dump não inclui os arquivos físicos de WhatsApp/Storage. A leitura do catálogo
 do backup não substitui um ensaio de restauração.
+
+## Atualização dos menus do CRM
+
+O Compose fixa as três imagens do commit `010c848f7` (PR #12 da VendePay).
+Inbox, Follow-ups, Provedores e Evolução da IA ficam ocultos dos menus e da
+busca. Em **Ver tudo em IA → Acompanhar o agente**, fica apenas **Uso e orçamento**.
+As permissões das páginas e o acesso direto por URL continuam iguais.
+
+Esta atualização mantém o mesmo baseline de banco da versão até 0282. Para uma
+instalação já atualizada até 0282, basta implantar o serviço CRM no EasyPanel
+com a `main` atualizada e o ambiente existente; não é necessário executar a
+tarefa de manutenção do banco por causa desta mudança de menus.
