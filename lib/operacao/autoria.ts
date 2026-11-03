@@ -92,3 +92,21 @@ export function autorNaTela(kind: string | null): string | null {
 export function mudadoPorAgente(kind: string | null): boolean {
   return kind === "ai";
 }
+
+/**
+ * Quem agiu, no formato que `audit()` grava: pessoa em `actor_user_id`; token de
+ * API, ou agente que chegou por um token, em `actor_api_token_id`. Mandar o id de
+ * um token como `actorUserId` estourava a FK `api_audit_log_actor_user_id_fkey`
+ * (ver `lib/mcp/audit.ts`), e omitir o token deixava a linha sem autor.
+ */
+export function atorParaAuditoria(actor: Actor): {
+  actorUserId: string | null;
+  actorApiTokenId: string | null;
+} {
+  if (actor.type === "user") return { actorUserId: actor.id, actorApiTokenId: null };
+  if (actor.type === "api_token") return { actorUserId: null, actorApiTokenId: actor.id };
+  if (actor.type === "ai_agent") {
+    return { actorUserId: null, actorApiTokenId: actor.api_token_id ?? null };
+  }
+  return { actorUserId: null, actorApiTokenId: null };
+}

@@ -49,6 +49,12 @@ const SCOPES: { id: string; label: string }[] = [
   // O papel viaja junto dos escopos (ver lib/mcp/auth.ts) e também não
   // aparecia em lugar nenhum da interface.
   { id: "role:manager", label: "Tratar o token como gerente (necessário p/ criar e atribuir)" },
+  // Configurar o CRM por fora da tela: funis e campos, regras automáticas, entradas
+  // automáticas, dados da empresa, agenda, equipe, produtos e leituras de gestão.
+  // É operado por PESSOA: o token efêmero do agente nunca carrega este escopo e as
+  // capacidades são `apenasHumano` no catálogo (lib/mcp/tools/catalogo/configuracao.ts).
+  { id: "mcp:config", label: "Pode CONFIGURAR o CRM (MCP): funis, campos, regras, entradas, produtos e equipe" },
+  { id: "role:admin", label: "Tratar o token como administrador (papel da equipe e dados da empresa)" },
   { id: "contacts:read", label: "Ler contatos" },
   { id: "contacts:write", label: "Criar e editar contatos" },
   { id: "leads:read", label: "Ler leads" },

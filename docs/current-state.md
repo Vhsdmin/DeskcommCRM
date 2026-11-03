@@ -95,7 +95,8 @@ correspondentes localizados no repo):
 - **CRM & pedidos** — kanban com vocabulário configurável por nicho (fractional indexing),
   customer 360, contatos, tags, Nuvemshop.
 - **IA nativa** — agentes com RAG por tenant (pgvector), sentiment, handoff IA→humano,
-  budget por org, MCP server interno.
+  budget por org, MCP server interno — inclusive capacidades de configuração operadas por pessoa
+  (escopo `mcp:config`, spec 11 §3.4).
 - **LGPD** — export e redact via workers, anonimização em cascata, consentimento auditado.
 - **Self-host** — `hostgator-setup-kit`, `baseline.sql` auto-curativo, runbook de produção.
 - **Webhooks & automação** — captação + regras QUANDO/SE/ENTÃO + gatilhos externos.

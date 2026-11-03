@@ -42,132 +42,21 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listaTiposDeAtendimento } from "@/lib/agenda/consulta";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { slugDoTipo, tipoDeAtendimentoSchema } from "@/lib/agenda/tipos-de-atendimento";
 
 export const dynamic = "force-dynamic";
 
-/** As dez do CHECK da tabela. Fora daqui o Postgres recusa — melhor recusar antes. */
-const CATEGORIAS = [
-  "consulta", "procedimento", "retorno", "visita", "vistoria",
-  "reuniao", "call", "orcamento", "demonstracao", "outro",
-] as const;
-
-const LOCAIS = ["in_person", "phone", "whatsapp", "video_link", "google_meet"] as const;
-
-/**
- * Os limites são os MESMOS do CHECK do banco, e isso é deliberado.
- *
- * Zod aqui não substitui a constraint: ela é a verdade e continua valendo para
- * quem escrever por SQL. O que a validação faz é transformar um 500 de constraint
- * — que aparece como "erro interno" para quem está usando — numa recusa 422 que
- * diz o que está fora.
- */
-const camposDoTipo = {
-  name: z.string().trim().min(2).max(80),
-  category: z.enum(CATEGORIAS),
-  duration_minutes: z.number().int().min(5).max(1440),
-  location_kind: z.enum(LOCAIS),
-  description: z.string().trim().max(500).nullish(),
-  location_details: z.string().trim().max(300).nullish(),
-  default_owner_user_id: z.string().uuid().nullish(),
-  requires_confirmation: z.boolean().optional(),
-  buffer_before_minutes: z.number().int().min(0).max(720).optional(),
-  buffer_after_minutes: z.number().int().min(0).max(720).optional(),
-  minimum_notice_minutes: z.number().int().min(0).max(43_200).optional(),
-  booking_window_days: z.number().int().min(1).max(365).optional(),
-  /**
-   * O LEMBRETE — os dois campos que o cron `agenda-reminder` lê e que ninguém
-   * conseguia escrever.
-   *
-   * A 0177 criou as colunas, a 0194 as pôs em `default false` deixando escrito
-   * que ligar por padrão "fica com o dono do produto NO DIA em que o disparador
-   * nascer", e o `99c33257` fez o disparador nascer. Faltava a outra metade do
-   * par: `reminder_enabled` não estava em schema nenhum aqui nem na tela, então
-   * a rodada do cron devolvia zero linhas em TODA instalação — capacidade que
-   * existe e não tem como ser usada (invariante 6 do Sistema Vivo).
-   *
-   * **Continua nascendo desligado.** Não há `.default(true)`: quem não manda o
-   * campo não liga nada, e o default da coluna segue sendo `false`. Mandar
-   * mensagem para o telefone de um cliente é irreversível.
-   */
-  reminder_enabled: z.boolean().optional(),
-  /**
-   * ⚠️ ESTA FAIXA É MAIS ESTREITA QUE O CHECK DO BANCO, E ISSO CONTRARIA O
-   * PARÁGRAFO ACIMA DE PROPÓSITO.
-   *
-   * A coluna aceita `between 0 and 43200`, e os campos vizinhos copiam o CHECK
-   * porque lá a borda do banco É a borda do sentido: `buffer_after_minutes = 0`
-   * é "sem folga", uma configuração legítima. Aqui as duas bordas do CHECK
-   * produzem lembrete que não lembra:
-   *
-   * - **0 min** nunca sai. `estaNaHora` recusa `comeca <= agora`, então um
-   *   lembrete marcado para o próprio instante do compromisso é descartado em
-   *   toda rodada até a linha sair da varredura. O piso é 15 min porque o cron
-   *   roda a cada 5: abaixo de três ciclos, uma rodada atrasada come a
-   *   antecedência inteira e o aviso chega depois de a pessoa já ter saído.
-   * - **43200 min (30 dias)** não é lembrete, é convite. O teto é 10080 (7
-   *   dias), que cobre o "semana que vem" de clínica e imobiliária.
-   *
-   * A borda continua sendo do banco para quem escreve por SQL — aqui a recusa é
-   * só antes, com nome. Uma linha semeada fora desta faixa (só por SQL direto;
-   * o default da 0177 é 1440) segue valendo no banco e o cron a respeita: o que
-   * ela perde é poder ser reenviada por esta rota sem entrar na faixa.
-   */
-  reminder_minutes_before: z
-    .number()
-    .int()
-    .min(15, { message: "O lembrete precisa sair pelo menos 15 minutos antes do compromisso." })
-    .max(10_080, { message: "O lembrete não pode sair mais de 7 dias (10080 minutos) antes." })
-    .optional(),
-  /**
-   * Os degraus ADICIONAIS — o "e de novo três horas antes" que faltava.
-   *
-   * `reminder_minutes_before` continua sendo o degrau principal; estes somam a
-   * ele. Vazio é o comportamento anterior, um lembrete só, e por isso o campo
-   * não tem `.default()`: quem não manda não ganha aviso nenhum a mais.
-   *
-   * O teto de 3 é o mesmo do CHECK da 0241, e existe para que "lembrar" não
-   * vire "insistir". A faixa de cada degrau é a do principal, pelo mesmo motivo
-   * escrito acima dele: 0 min nunca sai e 30 dias não é lembrete, é convite.
-   */
-  reminder_extra_offsets_minutes: z
-    .array(
-      z
-        .number()
-        .int()
-        .min(15, { message: "O lembrete precisa sair pelo menos 15 minutos antes do compromisso." })
-        .max(10_080, { message: "O lembrete não pode sair mais de 7 dias (10080 minutos) antes." }),
-    )
-    .max(3, { message: "No máximo 3 lembretes adicionais por tipo." })
-    // Duplicata não é erro de quem preenche, é ruído: dois degraus iguais
-    // produziriam o mesmo aviso duas vezes se algum dia alguém lesse a lista
-    // sem deduplicar. Some aqui, uma vez, em vez de virar guarda em cada leitor.
-    .transform((v) => [...new Set(v)].sort((a, b) => b - a))
-    .optional(),
-};
-
-const criarSchema = z.object(camposDoTipo);
+// Os campos, as categorias, os locais e o slug vivem em
+// `lib/agenda/tipos-de-atendimento.ts`: a capacidade de configuração operada por
+// pessoa pela MCP usa o MESMO schema, senão a tela e a MCP divergiriam no
+// primeiro limite alterado. Um `route.ts` não pode exportar nada além dos
+// handlers, por isso a verdade saiu daqui.
+const criarSchema = tipoDeAtendimentoSchema;
 // `.partial()` em vez de repetir os doze campos como opcionais: repetir criaria
 // duas listas para manter em sincronia, e a segunda envelhece calada.
 const alterarSchema = criarSchema.partial().extend({ id: z.string().uuid() });
 const desativarSchema = z.object({ id: z.string().uuid() });
-
-/**
- * O slug sai do NOME, e é estável depois de criado.
- *
- * A ferramenta MCP aceita `event_type_slug`, então o slug é endereço público: se
- * ele mudasse ao renomear o tipo, todo playbook e toda automação que o citam
- * parariam de achar — em silêncio, porque a busca por slug devolve "não existe"
- * e não "mudou de nome". Por isso o PATCH nunca o toca.
- */
-function slugDe(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "tipo";
-}
+const slugDe = slugDoTipo;
 
 export async function GET(req: NextRequest): Promise<Response> {
   const requestId = req.headers.get("x-request-id") ?? undefined;

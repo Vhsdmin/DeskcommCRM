@@ -85,6 +85,26 @@ import {
   crmCloseDemand,
   crmProposeReactivation,
 } from "./retencao";
+import {
+  crmCreatePipeline,
+  crmUpdatePipeline,
+  crmGetPipelineConfig,
+  crmSetPipelineFields,
+  crmGetAutomationRule,
+  crmCreateAutomationRule,
+  crmUpdateAutomationRule,
+  crmUpdateWebhookSource,
+  crmGetOrgSettings,
+  crmUpdateOrgSettings,
+  crmSetCanonicalTags,
+  crmCreateEventType,
+  crmSetMemberRole,
+  crmCreateProduct,
+  crmUpdateProduct,
+  crmGetPerformance,
+  crmListActivities,
+  crmListAudit,
+} from "./configuracao";
 
 // Cast via `unknown` porque McpToolDefinition<TInput> nao e covariante
 // em TInput (handler usa TInput em posicao contravariante). Coletar
@@ -158,6 +178,25 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmResumeAiAttendance,
   // handoff (special)
   crmRequestHumanHandoff,
+  // configuração — operadas por PESSOA (escopo mcp:config, apenasHumano no catálogo)
+  crmCreatePipeline,
+  crmUpdatePipeline,
+  crmGetPipelineConfig,
+  crmSetPipelineFields,
+  crmGetAutomationRule,
+  crmCreateAutomationRule,
+  crmUpdateAutomationRule,
+  crmUpdateWebhookSource,
+  crmGetOrgSettings,
+  crmUpdateOrgSettings,
+  crmSetCanonicalTags,
+  crmCreateEventType,
+  crmSetMemberRole,
+  crmCreateProduct,
+  crmUpdateProduct,
+  crmGetPerformance,
+  crmListActivities,
+  crmListAudit,
 ] as unknown as ReadonlyArray<McpToolDefinition>;
 
 // Sanity: catalogo estatico (importavel por client) deve cobrir 1:1 os handlers.
