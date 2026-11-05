@@ -40,6 +40,10 @@ const CATALOGO = TOOL_CATALOG.map((t) => ({
   name: t.name,
   risco: t.risco,
   pacotes: t.pacotes,
+  // A marca faz parte do contrato de seleção: capacidade de pessoa não entra
+  // por pacote nem conta vaga (lib/mcp/tools/selecao-por-pacote.ts). Sem ela
+  // aqui, a fixture mediria um catálogo que o produto não oferece ao agente.
+  apenasHumano: t.apenasHumano,
 }));
 
 /** Pacotes que realmente têm crítica — os únicos onde a reserva muda algo. */

@@ -60,6 +60,8 @@ export interface CapacidadeSelecionavel {
   name: string;
   risco: ToolRisk;
   pacotes: ReadonlyArray<ToolBundle>;
+  /** Operada por PESSOA (catálogo): nunca entra na seleção do agente, por pacote ou individualmente. */
+  apenasHumano?: boolean;
 }
 
 export type EstadoPacote = "ligado" | "parcial" | "desligado";
@@ -68,7 +70,13 @@ function doPacote(
   catalogo: ReadonlyArray<CapacidadeSelecionavel>,
   pacote: ToolBundle,
 ): CapacidadeSelecionavel[] {
-  return catalogo.filter((c) => c.pacotes.includes(pacote));
+  // Capacidade `apenasHumano` declara um pacote para o catálogo dizer a que
+  // jornada pertence, mas não é do agente: a ponte do turno não a monta
+  // (`lib/ai/runtime/tools.ts`), e ligá-la por pacote só inflaria o teto com
+  // ferramentas que nunca chegam ao modelo. Medido quando o domínio de
+  // configuração entrou: "organizar" passou a 27 capacidades contra um teto de
+  // 25, sem que o agente ganhasse nenhuma. Por isso ela sai da seleção aqui.
+  return catalogo.filter((c) => c.pacotes.includes(pacote) && !c.apenasHumano);
 }
 
 /** As que o toggle do pacote liga sozinho — tudo que não é `critico`. */

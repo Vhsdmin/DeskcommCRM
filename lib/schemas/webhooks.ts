@@ -111,7 +111,22 @@ export const createAutomationRuleSchema = z.object({
   conditions: z.array(conditionSchema).max(10).default([]),
   actions: z.array(actionSchema).min(1).max(10),
 });
-export const updateAutomationRuleSchema = createAutomationRuleSchema.partial().extend({
+/**
+ * ⚠️ NÃO É `createAutomationRuleSchema.partial()`, e a diferença custou caro.
+ *
+ * No Zod 4, `.partial()` mantém o `.default([])` de `conditions`: um PATCH sem
+ * o campo, como o do interruptor "Ativa" da tela (`{ is_active: true }`), saía
+ * do parse com `conditions: []` e a rota gravava a regra SEM condições. Medido
+ * em laboratório em 2026-11-02: as quatro regras de uma carga dispararam para
+ * todos os cards depois de serem ligadas pela tela.
+ *
+ * Aqui cada campo é opcional e sem default: ausente significa "não mexa".
+ */
+export const updateAutomationRuleSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  trigger_event: z.enum(TRIGGER_EVENTS).optional(),
+  conditions: z.array(conditionSchema).max(10).optional(),
+  actions: z.array(actionSchema).min(1).max(10).optional(),
   is_active: z.boolean().optional(),
 });
 

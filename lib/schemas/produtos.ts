@@ -118,8 +118,29 @@ export const produtoCreateSchema = z.object({
   imagem_url: z.string().trim().url().max(2000).optional(),
 });
 
-/** Tudo opcional: o PATCH muda o que veio e não encosta no resto. */
-export const produtoPatchSchema = produtoCreateSchema.partial();
+/**
+ * Tudo opcional: o PATCH muda o que veio e não encosta no resto.
+ *
+ * ⚠️ NÃO É `produtoCreateSchema.partial()`. No Zod 4, `.partial()` mantém os
+ * `.default()` de `controla_estoque`, `quantidade` e `ativo`: um PATCH que só
+ * trocava o preço saía do parse com `quantidade: 0` e `ativo: true`, e a rota
+ * gravava os três por cima do que estava no banco (medido em 2026-11-03, no
+ * mesmo parse que zerava as condições das regras automáticas). Por isso cada
+ * campo com default é reescrito aqui sem ele: ausente significa "não mexa".
+ */
+export const produtoPatchSchema = z.object({
+  codigo: produtoCreateSchema.shape.codigo.optional(),
+  nome: produtoCreateSchema.shape.nome.optional(),
+  descricao: produtoCreateSchema.shape.descricao,
+  marca: produtoCreateSchema.shape.marca,
+  categoria: produtoCreateSchema.shape.categoria,
+  preco_cents: produtoCreateSchema.shape.preco_cents.optional(),
+  custo_cents: produtoCreateSchema.shape.custo_cents,
+  controla_estoque: produtoCreateSchema.shape.controla_estoque.removeDefault().optional(),
+  quantidade: produtoCreateSchema.shape.quantidade.removeDefault().optional(),
+  ativo: produtoCreateSchema.shape.ativo.removeDefault().optional(),
+  imagem_url: produtoCreateSchema.shape.imagem_url,
+});
 
 export type ProdutoCreate = z.infer<typeof produtoCreateSchema>;
 export type ProdutoPatch = z.infer<typeof produtoPatchSchema>;
