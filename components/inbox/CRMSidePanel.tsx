@@ -20,6 +20,7 @@ import type { ConversationWithContact } from "@/hooks/inbox/useConversationsReal
 import { activityLabel, actorLabel, actorShape } from "@/lib/leads/activity-vocabulary";
 import { ConversationTagsEditor } from "./ConversationTagsEditor";
 import { ContactTagsEditor } from "./ContactTagsEditor";
+import { TarefasDaConversa } from "./TarefasDaConversa";
 import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
@@ -654,6 +655,19 @@ export function CRMSidePanel({ conversation }: Props) {
       )}
 
       <Separator />
+
+      {contactId && (
+        <>
+          <TarefasDaConversa
+            contactId={contactId}
+            // O lead que o painel está mostrando em "Leads recentes".
+            leadId={leadAtivoId ?? leads?.[0]?.id ?? null}
+            usuarioId={user.id}
+            somenteLeitura={readonly}
+          />
+          <Separator />
+        </>
+      )}
 
       {!readonly && <ConversationTagsEditor
         conversationId={conversation.id}
