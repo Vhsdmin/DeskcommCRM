@@ -6,7 +6,7 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 import type { Locale } from "date-fns";
 import Link from "next/link";
 import { useT } from "@/hooks/i18n/useT";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,12 +24,22 @@ import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 
 interface Props {
   conversation: ConversationWithContact | null;
+}
+
+/** Nota interna escrita em qualquer conversa deste contato. */
+interface NotaDaConversa {
+  id: string;
+  body: string;
+  created_at: string;
+  created_by_name: string | null;
+  conversation_id: string;
 }
 
 interface LeadRow {
@@ -422,6 +432,18 @@ export function CRMSidePanel({ conversation }: Props) {
   const [demandas, setDemandas] = useState<DemandaRow[] | null>(null);
   const [fatos, setFatos] = useState<Array<{ id: string; headline: string; body: string }>>([]);
   const [historico, setHistorico] = useState<Array<{ id: string; desfecho: string; fechada_em: string }>>([]);
+  const [notasDaConversa, setNotasDaConversa] = useState<NotaDaConversa[]>([]);
+  // Só OBSERVA o cache que a thread já preenche (mesma chave, `enabled: false`):
+  // não busca nada nem abre outra assinatura de tempo real. A assinatura é o
+  // conjunto de ids, não a contagem — apagar uma e criar outra mantém a
+  // contagem e mudaria a Memória.
+  const notasDestaConversa = useQuery<{ data?: Array<{ id?: string }> }>({
+    queryKey: ["notes", conversation?.id ?? null],
+    enabled: false,
+  });
+  const assinaturaDasNotas = notasDestaConversa.data?.data
+    ? notasDestaConversa.data.data.map((n) => n.id ?? "").join(",")
+    : null;
   const [summaryContactId, setSummaryContactId] = useState<string | null>(null);
   /**
    * O TERCEIRO ESTADO. Antes existiam dois — carregando e "tem N itens" — e a
@@ -450,7 +472,7 @@ export function CRMSidePanel({ conversation }: Props) {
       setOrders(null);
       setActivities(null);
       setDemandas(null);
-      setFatos([]); setHistorico([]);
+      setFatos([]); setHistorico([]); setNotasDaConversa([]);
       setLeadAtivoId(null);
       return;
     }
@@ -471,6 +493,7 @@ export function CRMSidePanel({ conversation }: Props) {
             demandas: DemandaRow[];
             fatos?: Array<{ id: string; headline: string; body: string }>;
             historico?: Array<{ id: string; desfecho: string; fechada_em: string }>;
+            notas_da_conversa?: NotaDaConversa[];
           };
         }>(`/api/v1/contacts/${contactId}/crm-summary`);
         if (cancelled) return;
@@ -484,6 +507,7 @@ export function CRMSidePanel({ conversation }: Props) {
         // que é o caso saudável.
         setDemandas(r.data.demandas ?? []);
         setFatos(r.data.fatos ?? []); setHistorico(r.data.historico ?? []);
+        setNotasDaConversa(r.data.notas_da_conversa ?? []);
       } catch {
         if (cancelled) return;
         // Falha NÃO vira lista vazia. Os dados ficam `null` e o painel diz que
@@ -493,7 +517,7 @@ export function CRMSidePanel({ conversation }: Props) {
         setOrders(null);
         setActivities(null);
         setDemandas(null);
-        setFatos([]); setHistorico([]);
+        setFatos([]); setHistorico([]); setNotasDaConversa([]);
       }
     }
 
@@ -521,6 +545,21 @@ export function CRMSidePanel({ conversation }: Props) {
   // que falhou depois — e escrita que parece ter dado certo é o defeito que
   // esta tela inteira combate.
   const recarregar = useCallback(() => setTentativa((n) => n + 1), []);
+
+  // A PRIMEIRA leitura das notas de uma conversa não recarrega: o resumo já as
+  // trouxe do banco, e recarregar ali buscaria tudo duas vezes a cada conversa
+  // aberta. Só a mudança DEPOIS dela (nota criada ou apagada aqui, ou por outra
+  // pessoa via tempo real) traz a Memória de novo.
+  const ultimaAssinatura = useRef<{ conversa: string | null; assinatura: string } | null>(null);
+  useEffect(() => {
+    if (assinaturaDasNotas === null) return;
+    const conversa = conversation?.id ?? null;
+    const anterior = ultimaAssinatura.current;
+    ultimaAssinatura.current = { conversa, assinatura: assinaturaDasNotas };
+    if (anterior && anterior.conversa === conversa && anterior.assinatura !== assinaturaDasNotas) {
+      recarregar();
+    }
+  }, [assinaturaDasNotas, conversation?.id, recarregar]);
 
   const tags = contact?.tags ?? [];
   const displayName = rotuloDoContato(contact, t);
@@ -693,6 +732,20 @@ export function CRMSidePanel({ conversation }: Props) {
         <p className="mt-1 text-xs text-muted-foreground">{t("Fatos duráveis registrados nas notas. Pendências pertencem à demanda vigente.")}</p>
         {!sectionsLoading && fatos.map((f) => <details key={f.id} className="mt-2 text-xs"><summary>{f.headline}</summary><p className="mt-1 whitespace-pre-wrap">{f.body}</p></details>)}
         {!sectionsLoading && fatos.length === 0 && <p className="mt-2 text-xs text-muted-foreground">{t("Nenhum fato durável registrado.")}</p>}
+        {!sectionsLoading && notasDaConversa.length > 0 && (
+          <div className="mt-3 text-xs" data-testid="inbox-memoria-notas">
+            <h4 className="font-semibold">{t("Notas internas das conversas")}</h4>
+            {notasDaConversa.map((n) => (
+              <div key={n.id} className="mt-2 rounded-sm border border-warning/40 bg-warning-bg px-2 py-1.5 text-warning-fg">
+                <p className="text-[11px] opacity-80">
+                  {n.created_by_name ?? t("Alguém")} · {shortDate(n.created_at, localeDaData)}
+                  {n.conversation_id === conversation?.id ? ` · ${t("nesta conversa")}` : ""}
+                </p>
+                <p className="mt-0.5 whitespace-pre-wrap">{n.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
         {!sectionsLoading && historico.length > 0 && <div className="mt-3 text-xs"><h4>{t("Histórico encerrado — sem tarefas pendentes")}</h4>{historico.map((h) => <p key={h.id}>{t(DESFECHO_LEGIVEL[h.desfecho] ?? h.desfecho)}{h.fechada_em ? ` · ${shortDate(h.fechada_em, localeDaData)}` : ""}</p>)}</div>}
       </section>
       <Separator />

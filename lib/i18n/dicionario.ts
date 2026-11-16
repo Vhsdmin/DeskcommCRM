@@ -521,6 +521,8 @@ export const DICIONARIO: Traducoes = {
   "Memória do contato": { es: "Memoria del contacto" },
   "Fatos duráveis registrados nas notas. Pendências pertencem à demanda vigente.": { es: "Hechos duraderos registrados en las notas. Las tareas pendientes pertenecen a la solicitud vigente." },
   "Nenhum fato durável registrado.": { es: "No hay hechos duraderos registrados." },
+  "Notas internas das conversas": { es: "Notas internas de las conversaciones" },
+  "nesta conversa": { es: "en esta conversación" },
   "Histórico encerrado — sem tarefas pendentes": { es: "Historial cerrado — sin tareas pendientes" },
 
   "Interface": { es: "Interfaz" },
