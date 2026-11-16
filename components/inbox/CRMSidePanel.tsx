@@ -25,6 +25,7 @@ import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import { cn } from "@/lib/utils";
+import { EtapaDoFunil, type EtapaDoLead } from "./EtapaDoFunil";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 
@@ -40,8 +41,11 @@ interface LeadRow {
   currency: string | null;
   updated_at: string;
   pipeline_id: string;
+  stage_id: string | null;
   custom_fields: Record<string, unknown> | null;
   field_defs: CustomFieldDef[];
+  /** As etapas ativas do funil DESTE lead, na ordem das colunas. */
+  etapas?: EtapaDoLead[];
 }
 
 interface OrderRow {
@@ -337,6 +341,14 @@ function InboxLeadEditor({
           {ativo.title} · {ativo.status}
         </p>
       )}
+      <EtapaDoFunil
+        key={`etapa-${ativo.id}`}
+        leadId={ativo.id}
+        status={ativo.status}
+        etapaAtualId={ativo.stage_id ?? null}
+        etapas={ativo.etapas ?? []}
+        onMovido={onSalvo}
+      />
       <CamposDoFunil
         key={ativo.id}
         leadId={ativo.id}
