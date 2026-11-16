@@ -13,6 +13,8 @@ import { EtapaDoFunil, type EtapaDoLead } from "@/components/inbox/EtapaDoFunil"
 const { post, showApiError } = vi.hoisted(() => ({ post: vi.fn(), showApiError: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({ apiClient: { post } }));
 vi.mock("@/components/feedback/ApiErrorToast", () => ({ showApiError }));
+const { usePermission } = vi.hoisted(() => ({ usePermission: vi.fn() }));
+vi.mock("@/hooks/auth/AuthProvider", () => ({ usePermission }));
 
 const ETAPAS: EtapaDoLead[] = [
   { id: "s-entrada", name: "Entrada", is_won: false, is_lost: false },
@@ -25,6 +27,8 @@ beforeEach(() => {
   post.mockReset();
   post.mockResolvedValue({ data: { updated_count: 1 } });
   showApiError.mockReset();
+  usePermission.mockReset();
+  usePermission.mockReturnValue(true);
 });
 
 function renderSeletor(props: Partial<React.ComponentProps<typeof EtapaDoFunil>> = {}) {
@@ -81,5 +85,39 @@ describe("EtapaDoFunil", () => {
   it("funil sem etapas não desenha nada", () => {
     renderSeletor({ etapas: [] });
     expect(screen.queryByTestId("inbox-etapa-do-funil")).toBeNull();
+  });
+
+  it("etapa de ganho pede confirmação antes de fechar o negócio", async () => {
+    const { onMovido } = renderSeletor();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "s-ganho" } });
+
+    const aviso = screen.getByTestId("inbox-etapa-confirmar-ganho");
+    expect(aviso.textContent).toContain("“Ganho” fecha o negócio como ganho.");
+    expect(post).not.toHaveBeenCalled();
+
+    fireEvent.click(within(aviso).getByRole("button", { name: "Confirmar" }));
+    await waitFor(() => expect(onMovido).toHaveBeenCalledTimes(1));
+    expect(post).toHaveBeenCalledWith("/api/v1/leads/bulk", {
+      action: "move",
+      lead_ids: ["l-1"],
+      params: { stage_id: "s-ganho" },
+    });
+  });
+
+  it("cancelar a confirmação de ganho não move nada", () => {
+    renderSeletor();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "s-ganho" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByTestId("inbox-etapa-confirmar-ganho")).toBeNull();
+    expect(post).not.toHaveBeenCalled();
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("s-entrada");
+  });
+
+  it("quem não pode mover cards só vê a etapa", () => {
+    usePermission.mockImplementation((acao: string) => acao !== "pipeline.move_card");
+    renderSeletor();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByText("Entrada")).toBeTruthy();
   });
 });
