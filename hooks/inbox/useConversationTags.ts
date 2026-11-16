@@ -45,3 +45,22 @@ export function useConversationTagVocabulary(orgId: string | null) {
     },
   });
 }
+
+/**
+ * Vocabulário dos EDITORES de etiqueta do Inbox: o da conversa somado às
+ * etiquetas em uso em clientes e leads. O filtro da lista segue com
+ * `useConversationTagVocabulary`, que só oferece o que existe em conversa.
+ */
+export const CHAVE_DE_TODAS_AS_TAGS = "tag-vocabulary-todas";
+
+export function useTodasAsTags(orgId: string | null) {
+  return useQuery({
+    queryKey: [CHAVE_DE_TODAS_AS_TAGS, orgId],
+    enabled: !!orgId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<string[]> => {
+      const res = await apiClient.get<{ data: string[] }>("/api/v1/conversation-tags?todas=1");
+      return res.data;
+    },
+  });
+}
