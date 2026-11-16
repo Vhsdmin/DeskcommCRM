@@ -635,7 +635,7 @@ export function CRMSidePanel({ conversation }: Props) {
               </Button>
             )}
           </div>
-          {tagEditorOpen && contactId && <ContactTagsEditor contactId={contactId} tags={tags} />}
+          {tagEditorOpen && contactId && <ContactTagsEditor contactId={contactId} orgId={conversation?.organization_id ?? null} tags={tags} />}
         </Card>
       </section>
 
