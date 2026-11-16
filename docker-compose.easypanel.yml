@@ -5,7 +5,7 @@
 services:
   app:
     mem_limit: 768m
-    image: ghcr.io/vhsdmin/deskcommcrm@sha256:81c87191295999e5be4d7ae0c031d731e3e2b8ed59f3694b62a40538f2e0a70d
+    image: ghcr.io/vhsdmin/deskcommcrm@sha256:e70cba121c2af77859a0fca11c136e0e1b754fd932b7a50718510ac3f6343030
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -42,7 +42,7 @@ services:
     - supabase_private
   worker:
     mem_limit: 512m
-    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:5bd9cf132fedc7fe70266315a833b8293690eee7069d52539a481dd5cb617981
+    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:3a9c1768542f411a890ab82796198516e77477249ddb9b4163e2d2d35a99172a
     pull_policy: missing
     restart: unless-stopped
     env_file: .env
@@ -72,7 +72,7 @@ services:
       bootstrap:
         condition: service_completed_successfully
   scheduler:
-    image: ghcr.io/vhsdmin/deskcomm-scheduler@sha256:af0146b4e6630a8315b28a6a095d9680cfac50e7796dfe5a94efaf79c7923c4a
+    image: ghcr.io/vhsdmin/deskcomm-scheduler@sha256:5c306e6a280daca6c3295d22f4ea5425d88dc65962faec4dc222ef7ad57c4939
     pull_policy: missing
     restart: unless-stopped
     depends_on:
@@ -136,7 +136,7 @@ services:
     networks:
     - internal
   schema-export:
-    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:5bd9cf132fedc7fe70266315a833b8293690eee7069d52539a481dd5cb617981
+    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:3a9c1768542f411a890ab82796198516e77477249ddb9b4163e2d2d35a99172a
     pull_policy: missing
     restart: 'no'
     network_mode: none
@@ -172,7 +172,7 @@ services:
     - supabase_private
     logging: *id001
   bootstrap:
-    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:5bd9cf132fedc7fe70266315a833b8293690eee7069d52539a481dd5cb617981
+    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:3a9c1768542f411a890ab82796198516e77477249ddb9b4163e2d2d35a99172a
     pull_policy: missing
     restart: 'no'
     depends_on:
