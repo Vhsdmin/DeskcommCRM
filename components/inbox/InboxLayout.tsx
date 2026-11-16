@@ -19,6 +19,7 @@ import { InboxFilters, type InboxFiltersValue, type InboxTab } from "./InboxFilt
 import { ChatThread } from "./ChatThread";
 import { Composer, type ComposerHandle } from "./Composer";
 import { ConversationHeader } from "./ConversationHeader";
+import { AvisoQuemJaAtende } from "./AvisoQuemJaAtende";
 import { RetentionNotice } from "./RetentionNotice";
 import { CRMSidePanel } from "./CRMSidePanel";
 import type { Message as ConversationMensagem } from "@/lib/types/messaging";
@@ -476,6 +477,10 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
         {selectedConversation ? (
           <>
             <ConversationHeader conversation={selectedConversation} />
+            <AvisoQuemJaAtende
+              conversationId={selectedConversation.id}
+              donoAtualId={selectedConversation.assigned_to_user_id ?? null}
+            />
             <div className="min-h-0 flex-1 overflow-hidden">
               <ChatThread conversationId={selectedConversation.id} onResponder={setRespondendo} />
             </div>

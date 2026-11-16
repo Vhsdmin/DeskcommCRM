@@ -30,15 +30,19 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
+import { requireRole } from "@/lib/auth/require-role";
 import { camposDoFunil, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
 
 export const dynamic = "force-dynamic";
 
-/** Sem o embed do funil o painel não consegue montar os campos customizados. */
+/**
+ * Sem o embed do funil o painel não consegue montar os campos customizados — nem
+ * o seletor de etapa, que precisa das etapas do funil DO LEAD (não do padrão).
+ */
 const LEAD_COLS =
-  "id, title, status, value_cents, currency, updated_at, pipeline_id, custom_fields, crm_pipelines(settings)";
+  "id, title, status, value_cents, currency, updated_at, pipeline_id, stage_id, custom_fields, crm_pipelines(settings, crm_stages(id, name, position, is_won, is_lost, is_archived))";
 const ORDER_COLS = "id, external_id, status, total_cents, currency, created_at";
 /** Acompanha o que a timeline mostra — `reason` e `actor_kind` inclusive. */
 /**
@@ -90,7 +94,22 @@ export async function GET(
     .eq("id", contactId).maybeSingle();
   if (scopeError) return fail("internal_error", scopeError.message, 500, { requestId });
   if (!contactScope) return fail("not_found", "Contato não encontrado.", 404, { requestId });
-  const [leads, orders, activities, demandas, fatos, historico] = await Promise.all([
+
+  // Nota interna da conversa é lida a partir de `agent` — o mesmo piso de
+  // `GET /api/v1/conversations/[id]/notes`. Esta rota aceita qualquer sessão, então
+  // sem esta guarda quem só visualiza (ou o acompanhamento, resolvido como
+  // `viewer`) leria aqui o que a rota das notas lhe nega. A checagem é a do
+  // `requireRole`, não uma comparação local: ele lê o papel EFETIVO do banco
+  // (rebaixado não passa com o snapshot da sessão) e cobra a verificação em
+  // duas etapas pendente. Negado aqui só esconde as notas; o resto do resumo
+  // segue. A org é a do contato, e não a do cookie, para nunca redirecionar.
+  const gateDasNotas = await requireRole("agent", {
+    requestId,
+    resource: "conversation_notes",
+    organizationId: contactScope.organization_id,
+  });
+  const podeVerNotasDaConversa = gateDasNotas.ok;
+  const [leads, orders, activities, demandas, fatos, historico, notasDaConversa] = await Promise.all([
     supabase
       .from("crm_leads")
       .select(LEAD_COLS)
@@ -127,11 +146,26 @@ export async function GET(
       .limit(5),
     supabase.from("lead_notes").select("id, headline, body").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).order("created_at", { ascending: false }).limit(20),
     supabase.from("demandas").select("id, desfecho, fechada_em").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).not("fechada_em", "is", null).order("fechada_em", { ascending: false }).limit(5),
+    // As notas internas escritas na CONVERSA também são memória do contato. Elas
+    // moram em `conversation_notes`, que não tem `contact_id`: o vínculo vem pela
+    // conversa, e o `!inner` faz o filtro valer de verdade (sem ele, a nota de
+    // outro contato voltaria com o embed nulo).
+    podeVerNotasDaConversa
+      ? supabase
+          .from("conversation_notes")
+          .select("id, body, created_at, created_by_name, conversation_id, conversations!inner(contact_id)")
+          .eq("conversations.contact_id", contactId)
+          .eq("organization_id", contactScope.organization_id)
+          .order("created_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   // A falha SOBE. Engolir aqui devolveria lista vazia ao cliente e recriaria,
   // do lado do servidor, exatamente a mentira que esta rota veio desfazer.
-  const falha = leads.error ?? orders.error ?? activities.error ?? demandas.error ?? fatos.error ?? historico.error;
+  const falha =
+    leads.error ?? orders.error ?? activities.error ?? demandas.error ?? fatos.error ?? historico.error ??
+    notasDaConversa.error;
   if (falha) {
     return fail("internal_error", falha.message, 500, { requestId });
   }
@@ -162,6 +196,13 @@ export async function GET(
       demandas: demandas.data ?? [],
       fatos: fatos.data ?? [], historico: historico.data ?? [],
       cliente_gestao: clienteDoGestao(contactScope, csmId ? (nomes.get(csmId) ?? null) : null),
+      notas_da_conversa: (notasDaConversa.data ?? []).map((n) => ({
+        id: n.id,
+        body: n.body,
+        created_at: n.created_at,
+        created_by_name: n.created_by_name,
+        conversation_id: n.conversation_id,
+      })),
     },
     { requestId },
   );
@@ -172,6 +213,7 @@ function comCamposDoFunil(row: Record<string, unknown>) {
   return {
     ...lead,
     field_defs: camposDoFunil(settingsDoEmbed(crm_pipelines)),
+    etapas: etapasDoEmbed(crm_pipelines),
   };
 }
 
@@ -191,4 +233,23 @@ function clienteDoGestao(contato: Record<string, unknown>, nomeDoCsm: string | n
     faixa: ((faixa as { nome?: string } | null)?.nome ?? null) as string | null,
     csm_nome: nomeDoCsm,
   };
+}
+
+interface EtapaDoEmbed {
+  id: string;
+  name: string;
+  position: number;
+  is_won: boolean;
+  is_lost: boolean;
+  is_archived: boolean;
+}
+
+/** As etapas ativas do funil do lead, na ordem das colunas. */
+function etapasDoEmbed(embed: unknown) {
+  const funil = Array.isArray(embed) ? embed[0] : embed;
+  const etapas = (funil as { crm_stages?: EtapaDoEmbed[] } | null)?.crm_stages ?? [];
+  return etapas
+    .filter((e) => !e.is_archived)
+    .sort((a, b) => a.position - b.position)
+    .map((e) => ({ id: e.id, name: e.name, is_won: e.is_won, is_lost: e.is_lost }));
 }
