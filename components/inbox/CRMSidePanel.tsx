@@ -25,6 +25,7 @@ import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import { cn } from "@/lib/utils";
+import { ClienteDoGestao, type ClienteGestao } from "./ClienteDoGestao";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 
@@ -430,6 +431,7 @@ export function CRMSidePanel({ conversation }: Props) {
    * de "não consegui ler" é a diferença entre informar e mentir.
    */
   const [erro, setErro] = useState(false);
+  const [clienteGestao, setClienteGestao] = useState<ClienteGestao | null>(null);
   const [tentativa, setTentativa] = useState(0);
 
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
@@ -452,6 +454,7 @@ export function CRMSidePanel({ conversation }: Props) {
       setDemandas(null);
       setFatos([]); setHistorico([]);
       setLeadAtivoId(null);
+      setClienteGestao(null);
       return;
     }
     let cancelled = false;
@@ -471,10 +474,12 @@ export function CRMSidePanel({ conversation }: Props) {
             demandas: DemandaRow[];
             fatos?: Array<{ id: string; headline: string; body: string }>;
             historico?: Array<{ id: string; desfecho: string; fechada_em: string }>;
+            cliente_gestao?: ClienteGestao | null;
           };
         }>(`/api/v1/contacts/${contactId}/crm-summary`);
         if (cancelled) return;
         setSummaryContactId(contactId);
+        setClienteGestao(r.data.cliente_gestao ?? null);
         setLeads(r.data.leads);
         setOrders(r.data.orders);
         setActivities(r.data.activities);
@@ -489,6 +494,7 @@ export function CRMSidePanel({ conversation }: Props) {
         // Falha NÃO vira lista vazia. Os dados ficam `null` e o painel diz que
         // não conseguiu ler — nunca que não há.
         setErro(true);
+        setClienteGestao(null);
         setLeads(null);
         setOrders(null);
         setActivities(null);
@@ -555,6 +561,14 @@ export function CRMSidePanel({ conversation }: Props) {
           <div className="font-medium">{displayName}</div>
           {contact?.phone_number && (
             <div className="text-xs text-muted-foreground">{phoneForDisplay(contact.phone_number)}</div>
+          )}
+          {contactId && !erro && (
+            <ClienteDoGestao
+              contactId={contactId}
+              cliente={summaryContactId === contactId ? clienteGestao : null}
+              carregando={summaryContactId !== contactId}
+              onVinculado={recarregar}
+            />
           )}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
