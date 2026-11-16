@@ -9,7 +9,7 @@ import { CRMSidePanel } from "@/components/inbox/CRMSidePanel";
  *
  * Ela lia só `lead_notes`; a nota escrita no compositor da conversa vai para
  * `conversation_notes` e nunca aparecia ali. A rota `crm-summary` agora devolve
- * as duas, e o painel recarrega quando a thread ganha nota nova.
+ * as duas, e o painel recarrega quando as notas da thread mudam.
  */
 
 const CONTACT = "c0000000-0000-4000-8000-000000000001";
@@ -108,14 +108,36 @@ describe("Memória do contato — notas internas das conversas", () => {
     expect(screen.queryByTestId("inbox-memoria-notas")).toBeNull();
   });
 
-  it("recarrega o resumo quando a thread ganha uma nota nova", async () => {
+  it("a primeira leitura das notas pela thread não busca o resumo de novo", async () => {
     const client = renderPainel();
     await screen.findByTestId("inbox-memoria-notas");
     const chamadasAntes = get.mock.calls.length;
 
-    // É o que acontece quando a thread refaz a consulta depois de criar a nota.
-    act(() => {
+    // O react-query entrega a notificação no tique seguinte; esperar separa a
+    // leitura inicial da mudança, como acontece na tela.
+    await act(async () => {
+      client.setQueryData(["notes", "cv-1"], { data: [{ id: "n-1" }] });
+      await new Promise((r) => setTimeout(r, 20));
+    });
+
+    expect(get.mock.calls.length).toBe(chamadasAntes);
+  });
+
+  it("recarrega quando uma nota é trocada por outra, mesmo com a contagem igual", async () => {
+    const client = renderPainel();
+    await screen.findByTestId("inbox-memoria-notas");
+    // O react-query entrega a notificação no tique seguinte; esperar separa a
+    // leitura inicial da mudança, como acontece na tela.
+    await act(async () => {
+      client.setQueryData(["notes", "cv-1"], { data: [{ id: "n-1" }] });
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    const chamadasAntes = get.mock.calls.length;
+
+    // Apagou a n-1 e escreveu outra: a contagem segue 1, a Memória mudou.
+    await act(async () => {
       client.setQueryData(["notes", "cv-1"], { data: [{ id: "nova" }] });
+      await new Promise((r) => setTimeout(r, 20));
     });
 
     await waitFor(() => expect(get.mock.calls.length).toBeGreaterThan(chamadasAntes));
