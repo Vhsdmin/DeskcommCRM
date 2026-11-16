@@ -5,7 +5,7 @@ const { useTasks, criarTarefa } = vi.hoisted(() => ({ useTasks: vi.fn(), criarTa
 vi.mock("@/hooks/tasks/useTasks", () => ({ useTasks }));
 vi.mock("./ListaDeTarefas", () => ({ ListaDeTarefas: () => null }));
 vi.mock("./CalendarioDeTarefas", () => ({ CalendarioDeTarefas: () => null }));
-vi.mock("./FormularioDeTarefa", () => ({
+vi.mock("@/components/tasks/FormularioDeTarefa", () => ({
   FormularioDeTarefa: ({
     aberto,
     aoSalvar,
