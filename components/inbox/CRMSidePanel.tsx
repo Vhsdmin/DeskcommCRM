@@ -408,7 +408,12 @@ export function CRMSidePanel({ conversation }: Props) {
   const localeDaData = useLocaleDeData();
   const t = useT();
   const contact = conversation?.contacts ?? null;
-  const contactId = contact?.id ?? null;
+  // Depois de vincular ao Gestão, este contato vira lápide da fusão e a conversa
+  // passa a apontar para o cliente que ficou — mas o `conversation` só chega
+  // relido um instante depois. Até lá o painel já lê o cliente que ficou; sem
+  // isto, o resumo da lápide (sem vínculo) mostrava "Contato novo" de novo.
+  const [fusao, setFusao] = useState<{ de: string; para: string } | null>(null);
+  const contactId = contact?.id && fusao?.de === contact.id ? fusao.para : (contact?.id ?? null);
   const [desfechoDraft, setDesfechoDraft] = useState<DesfechoDraft | null>(null);
   // A saída do filtro produz null enquanto o detalhe carrega. O rascunho não
   // some nessa lacuna; outra conversa/contato real o descarta, sem expô-lo.
@@ -567,7 +572,7 @@ export function CRMSidePanel({ conversation }: Props) {
               contactId={contactId}
               cliente={summaryContactId === contactId ? clienteGestao : null}
               carregando={summaryContactId !== contactId}
-              onVinculado={recarregar}
+              onVinculado={(clienteQueFicou) => setFusao({ de: contactId, para: clienteQueFicou })}
             />
           )}
           {tags.length > 0 && (

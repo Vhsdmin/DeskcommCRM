@@ -69,7 +69,7 @@ describe("selo do cliente do Gestão", () => {
     expect(screen.getByText(/peça a um gestor/)).toBeTruthy();
   });
 
-  it("vincula buscando só clientes do Gestão e mantém o cadastro de lá", async () => {
+  it("vincula buscando pelo vínculo com o Gestão e mantém o cadastro de lá", async () => {
     get.mockResolvedValue({
       data: [
         { id: "c-gestao", name: "Loja da Ana", display_name: null, email: "ana@loja.com", phone_number: null },
@@ -85,12 +85,14 @@ describe("selo do cliente do Gestão", () => {
     const opcao = await screen.findByText("Loja da Ana");
     // O próprio contato não aparece como alvo.
     expect(screen.queryByText("O próprio")).toBeNull();
-    expect(get.mock.calls[0]![0]).toBe("/api/v1/contacts?search=ana&source=gestao&limit=10");
+    expect(get.mock.calls[0]![0]).toBe("/api/v1/contacts?search=ana&vinculo=gestao&limit=10");
 
     fireEvent.click(opcao);
     fireEvent.click(screen.getByRole("button", { name: "Vincular" }));
 
-    await waitFor(() => expect(onVinculado).toHaveBeenCalledTimes(1));
+    // Devolve o cliente que ficou: o painel passa a lê-lo na hora, sem esperar a
+    // conversa ser relida apontando para ele.
+    await waitFor(() => expect(onVinculado).toHaveBeenCalledWith("c-gestao"));
     expect(mutate.mock.calls[0]![0]).toEqual({
       primary_contact_id: "c-gestao",
       secondary_contact_ids: ["c-whats"],

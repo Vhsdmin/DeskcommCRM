@@ -60,7 +60,8 @@ export function ClienteDoGestao({
   contactId: string;
   cliente: ClienteGestao | null;
   carregando: boolean;
-  onVinculado: () => void;
+  /** Recebe o id do cliente do Gestão que absorveu este contato. */
+  onVinculado: (clienteQueFicou: string) => void;
 }) {
   const t = useT();
   const localeDaData = useLocaleDeData();
@@ -115,9 +116,9 @@ export function ClienteDoGestao({
         <VincularAoGestao
           contactId={contactId}
           onFechar={() => setVinculando(false)}
-          onVinculado={() => {
+          onVinculado={(clienteQueFicou) => {
             setVinculando(false);
-            onVinculado();
+            onVinculado(clienteQueFicou);
           }}
         />
       )}
@@ -132,7 +133,7 @@ function VincularAoGestao({
 }: {
   contactId: string;
   onFechar: () => void;
-  onVinculado: () => void;
+  onVinculado: (clienteQueFicou: string) => void;
 }) {
   const t = useT();
   const [busca, setBusca] = useState("");
@@ -144,7 +145,10 @@ function VincularAoGestao({
     queryKey: ["contatos-do-gestao", termo],
     enabled: termo.length >= 2,
     queryFn: async () => {
-      const qs = new URLSearchParams({ search: termo, source: "gestao", limit: "10" });
+      // Pelo VÍNCULO (`gestao_account_id`), a mesma régua do selo — e não pela
+      // origem: um contato criado à mão e depois ligado ao Gestão é cliente, e
+      // um que veio de lá e perdeu o vínculo não é.
+      const qs = new URLSearchParams({ search: termo, vinculo: "gestao", limit: "10" });
       const r = await apiClient.get<{ data: ContatoDoGestao[] }>(`/api/v1/contacts?${qs}`);
       return r.data.filter((c) => c.id !== contactId);
     },
@@ -207,7 +211,7 @@ function VincularAoGestao({
               onClick={() =>
                 juntar.mutate(
                   { primary_contact_id: escolhido.id, secondary_contact_ids: [contactId] },
-                  { onSuccess: onVinculado },
+                  { onSuccess: () => onVinculado(escolhido.id) },
                 )
               }
             >

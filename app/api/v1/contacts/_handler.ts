@@ -167,6 +167,9 @@ export async function listContactsHandler(
   }
   if (q.tag) query = query.contains("tags", [q.tag]);
   if (q.source) query = query.eq("source", q.source);
+  if (q.vinculo === "gestao") {
+    query = query.not("gestao_account_id", "is", null).eq("is_anonymized", false);
+  }
 
   if (q.cursor) {
     const c = decodeCursor(q.cursor);
