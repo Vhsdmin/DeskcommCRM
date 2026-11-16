@@ -30,8 +30,7 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
-import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
-import { ROLE_RANK } from "@/lib/auth/types";
+import { requireRole } from "@/lib/auth/require-role";
 import { camposDoFunil, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
@@ -91,13 +90,17 @@ export async function GET(
   // Nota interna da conversa é lida a partir de `agent` — o mesmo piso de
   // `GET /api/v1/conversations/[id]/notes`. Esta rota aceita qualquer sessão, então
   // sem esta guarda quem só visualiza (ou o acompanhamento, resolvido como
-  // `viewer`) leria aqui o que a rota das notas lhe nega.
-  const authUser = await loadAuthUser();
-  const orgAtiva = authUser ? await resolveActiveOrg(authUser) : null;
-  const podeVerNotasDaConversa =
-    !!orgAtiva &&
-    orgAtiva.orgId === contactScope.organization_id &&
-    ROLE_RANK[orgAtiva.role] >= ROLE_RANK.agent;
+  // `viewer`) leria aqui o que a rota das notas lhe nega. A checagem é a do
+  // `requireRole`, não uma comparação local: ele lê o papel EFETIVO do banco
+  // (rebaixado não passa com o snapshot da sessão) e cobra a verificação em
+  // duas etapas pendente. Negado aqui só esconde as notas; o resto do resumo
+  // segue. A org é a do contato, e não a do cookie, para nunca redirecionar.
+  const gateDasNotas = await requireRole("agent", {
+    requestId,
+    resource: "conversation_notes",
+    organizationId: contactScope.organization_id,
+  });
+  const podeVerNotasDaConversa = gateDasNotas.ok;
   const [leads, orders, activities, demandas, fatos, historico, notasDaConversa] = await Promise.all([
     supabase
       .from("crm_leads")
