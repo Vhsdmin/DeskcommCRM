@@ -13,12 +13,19 @@
  *
  * Leitura pela sessão: a RLS de `conversations` e `contacts` isola a
  * organização, e o filtro explícito por `organization_id` escolhe a org ativa.
+ *
+ * `pode_receber` diz se a transferência seria aceita: a rota de transferência
+ * exige membro ATIVO `agent`+ da org, e a CSM desligada ou rebaixada a
+ * `viewer` continua gravada no contato. O aviso segue valendo (é fato que ela
+ * está ligada ao cliente), mas o botão que só levaria 422 não aparece.
  */
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
 
+import { isServiceRoleConfigured } from "@/lib/audit";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
 
@@ -35,6 +42,8 @@ export interface QuemJaAtende {
   motivos: MotivoDeQuemJaAtende[];
   /** A conversa aberta com essa pessoa, quando o motivo é `conversa_aberta`. */
   conversation_id: string | null;
+  /** A transferência para essa pessoa seria aceita (membro ativo `agent`+). */
+  pode_receber: boolean;
 }
 
 export async function GET(
@@ -88,17 +97,56 @@ export async function GET(
       nome: null,
       motivos: ["conversa_aberta"],
       conversation_id: c.id,
+      pode_receber: false,
     });
   }
   const csm = (contato.data?.cs_owner_user_id as string | null) ?? null;
   if (csm && csm !== dono) {
     const ja = porPessoa.get(csm);
     if (ja) ja.motivos.push("csm");
-    else porPessoa.set(csm, { user_id: csm, nome: null, motivos: ["csm"], conversation_id: null });
+    else
+      porPessoa.set(csm, {
+        user_id: csm,
+        nome: null,
+        motivos: ["csm"],
+        conversation_id: null,
+        pode_receber: false,
+      });
   }
 
-  const nomes = await nomesDosAtendentes([...porPessoa.keys()]);
-  const lista = [...porPessoa.values()].map((p) => ({ ...p, nome: nomes.get(p.user_id) ?? null }));
+  const ids = [...porPessoa.keys()];
+  const recebem = await quemPodeReceber(orgId, ids);
+  if (recebem instanceof Error) return fail("internal_error", recebem.message, 500, { requestId });
+
+  const nomes = await nomesDosAtendentes(ids);
+  const lista = [...porPessoa.values()].map((p) => ({
+    ...p,
+    nome: nomes.get(p.user_id) ?? null,
+    pode_receber: recebem === null || recebem.has(p.user_id),
+  }));
 
   return ok(lista, { requestId });
+}
+
+/**
+ * Os membros ativos `agent`+ da org entre `ids` — a MESMA regra da rota de
+ * transferência. Pelo admin client filtrado pela org da sessão, porque a RLS
+ * de `user_organizations` só mostra a um agent o próprio vínculo. Sem service
+ * role a transferência também não confere, e devolver `null` (todos podem)
+ * mantém as duas rotas de acordo.
+ */
+async function quemPodeReceber(orgId: string, ids: string[]): Promise<Set<string> | null | Error> {
+  if (ids.length === 0 || !isServiceRoleConfigured()) return null;
+  const { data, error } = await createAdminClient()
+    .from("user_organizations")
+    .select("user_id, role")
+    .eq("organization_id", orgId)
+    .in("user_id", ids)
+    .is("revoked_at", null);
+  if (error) return new Error(error.message);
+  return new Set(
+    ((data ?? []) as Array<{ user_id: string; role: string }>)
+      .filter((m) => m.role !== "viewer")
+      .map((m) => m.user_id),
+  );
 }

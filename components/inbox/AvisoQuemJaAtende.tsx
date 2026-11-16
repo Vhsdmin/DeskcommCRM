@@ -16,6 +16,8 @@ interface QuemJaAtende {
   nome: string | null;
   motivos: Array<"conversa_aberta" | "csm">;
   conversation_id: string | null;
+  /** Membro ativo `agent`+: a transferência seria aceita. */
+  pode_receber: boolean;
 }
 
 /**
@@ -83,7 +85,7 @@ export function AvisoQuemJaAtende({
                 {t("Ver conversa")}
               </Link>
             )}
-            {podeTransferir && (
+            {podeTransferir && p.pode_receber && (
               <Button
                 size="sm"
                 variant="outline"
