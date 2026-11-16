@@ -37,9 +37,12 @@ import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
 
 export const dynamic = "force-dynamic";
 
-/** Sem o embed do funil o painel não consegue montar os campos customizados. */
+/**
+ * Sem o embed do funil o painel não consegue montar os campos customizados — nem
+ * o seletor de etapa, que precisa das etapas do funil DO LEAD (não do padrão).
+ */
 const LEAD_COLS =
-  "id, title, status, value_cents, currency, updated_at, pipeline_id, custom_fields, crm_pipelines(settings)";
+  "id, title, status, value_cents, currency, updated_at, pipeline_id, stage_id, custom_fields, crm_pipelines(settings, crm_stages(id, name, position, is_won, is_lost, is_archived))";
 const ORDER_COLS = "id, external_id, status, total_cents, currency, created_at";
 /** Acompanha o que a timeline mostra — `reason` e `actor_kind` inclusive. */
 /**
@@ -200,5 +203,25 @@ function comCamposDoFunil(row: Record<string, unknown>) {
   return {
     ...lead,
     field_defs: camposDoFunil(settingsDoEmbed(crm_pipelines)),
+    etapas: etapasDoEmbed(crm_pipelines),
   };
+}
+
+interface EtapaDoEmbed {
+  id: string;
+  name: string;
+  position: number;
+  is_won: boolean;
+  is_lost: boolean;
+  is_archived: boolean;
+}
+
+/** As etapas ativas do funil do lead, na ordem das colunas. */
+function etapasDoEmbed(embed: unknown) {
+  const funil = Array.isArray(embed) ? embed[0] : embed;
+  const etapas = (funil as { crm_stages?: EtapaDoEmbed[] } | null)?.crm_stages ?? [];
+  return etapas
+    .filter((e) => !e.is_archived)
+    .sort((a, b) => a.position - b.position)
+    .map((e) => ({ id: e.id, name: e.name, is_won: e.is_won, is_lost: e.is_lost }));
 }
