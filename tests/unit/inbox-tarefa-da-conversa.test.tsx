@@ -12,6 +12,8 @@ import { TarefasDaConversa } from "@/components/inbox/TarefasDaConversa";
 
 const { useTasks, criarTarefa } = vi.hoisted(() => ({ useTasks: vi.fn(), criarTarefa: vi.fn() }));
 vi.mock("@/hooks/tasks/useTasks", () => ({ useTasks }));
+const { usePermission } = vi.hoisted(() => ({ usePermission: vi.fn() }));
+vi.mock("@/hooks/auth/AuthProvider", () => ({ usePermission }));
 
 const AGORA = Date.now();
 const TAREFAS = [
@@ -27,6 +29,8 @@ const TAREFAS = [
 beforeEach(() => {
   criarTarefa.mockReset();
   criarTarefa.mockResolvedValue({ task: { id: "nova" } });
+  usePermission.mockReset();
+  usePermission.mockReturnValue(true);
   useTasks.mockReset();
   useTasks.mockReturnValue({ tarefas: TAREFAS, carregando: false, falhou: false, criarTarefa });
 });
@@ -77,6 +81,12 @@ describe("Tarefas da conversa", () => {
 
   it("no acompanhamento só de leitura, não oferece criar", () => {
     renderSecao({ somenteLeitura: true });
+    expect(screen.queryByRole("button", { name: /Nova tarefa/ })).toBeNull();
+  });
+
+  it("quem só visualiza não vê o botão que a rota negaria", () => {
+    usePermission.mockImplementation((acao: string) => acao !== "task.create");
+    renderSecao();
     expect(screen.queryByRole("button", { name: /Nova tarefa/ })).toBeNull();
   });
 });

@@ -112,6 +112,8 @@ const ACTION_MIN_ROLE: Record<string, Role> = {
   "inbox.view": "viewer",
   "inbox.reply": "agent",
   "inbox.claim": "agent",
+  // Criar tarefa é `agent` na rota (`POST /api/v1/tasks`).
+  "task.create": "agent",
   "contact.view": "viewer",
   "contact.create": "agent",
   "contact.update": "agent",

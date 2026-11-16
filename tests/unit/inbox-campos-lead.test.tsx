@@ -148,4 +148,7 @@ describe("painel do inbox — campos do lead", () => {
   });
 });
 
-vi.mock("@/hooks/auth/AuthProvider", () => ({ useAuth: () => ({ user: { support: null } }) }));
+vi.mock("@/hooks/auth/AuthProvider", () => ({
+  useAuth: () => ({ user: { support: null } }),
+  usePermission: () => false,
+}));

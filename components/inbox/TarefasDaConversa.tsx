@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FormularioDeTarefa } from "@/components/tasks/FormularioDeTarefa";
+import { usePermission } from "@/hooks/auth/AuthProvider";
 import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { useTasks } from "@/hooks/tasks/useTasks";
@@ -37,6 +38,9 @@ export function TarefasDaConversa({
 }) {
   const t = useT();
   const localeDaData = useLocaleDeData();
+  // Criar tarefa é `agent` na rota; quem só visualiza preencheria o formulário
+  // para levar 403 no fim.
+  const podeCriar = usePermission("task.create");
   const { tarefas, carregando, falhou, criarTarefa } = useTasks({
     contact_id: contactId,
     aberto: true,
@@ -54,7 +58,7 @@ export function TarefasDaConversa({
     <section data-testid="inbox-tarefas">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold text-text">{t("Tarefas pendentes")}</h3>
-        {!somenteLeitura && (
+        {!somenteLeitura && podeCriar && (
           <Button
             size="sm"
             variant="outline"
