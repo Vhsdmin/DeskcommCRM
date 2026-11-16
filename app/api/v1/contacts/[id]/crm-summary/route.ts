@@ -85,8 +85,13 @@ export async function GET(
     return fail("unauthenticated", "Auth required.", 401, { requestId });
   }
 
+  // Junto com o escopo vem o que o Gestão diz deste contato: é o "endpoint
+  // oficial" de quem é cliente VendePay, e o painel mostra isso no selo.
   const { data: contactScope, error: scopeError } = await supabase.from("contacts")
-    .select("organization_id").eq("id", contactId).maybeSingle();
+    .select(
+      "organization_id, gestao_account_id, gestao_gmv_30d_centavos, gestao_ultima_venda_em, cs_owner_user_id, cs_carteira_faixas(nome)",
+    )
+    .eq("id", contactId).maybeSingle();
   if (scopeError) return fail("internal_error", scopeError.message, 500, { requestId });
   if (!contactScope) return fail("not_found", "Contato não encontrado.", 404, { requestId });
 
@@ -172,7 +177,11 @@ export async function GET(
     performed_by_user_id?: string | null;
     [k: string]: unknown;
   }>;
-  const nomes = await nomesDosAtendentes(linhas.map((a) => a.performed_by_user_id ?? null));
+  const csmId = (contactScope.cs_owner_user_id as string | null) ?? null;
+  const nomes = await nomesDosAtendentes([
+    ...linhas.map((a) => a.performed_by_user_id ?? null),
+    csmId,
+  ]);
 
   return ok(
     {
@@ -186,6 +195,7 @@ export async function GET(
       })),
       demandas: demandas.data ?? [],
       fatos: fatos.data ?? [], historico: historico.data ?? [],
+      cliente_gestao: clienteDoGestao(contactScope, csmId ? (nomes.get(csmId) ?? null) : null),
       notas_da_conversa: (notasDaConversa.data ?? []).map((n) => ({
         id: n.id,
         body: n.body,
@@ -204,6 +214,24 @@ function comCamposDoFunil(row: Record<string, unknown>) {
     ...lead,
     field_defs: camposDoFunil(settingsDoEmbed(crm_pipelines)),
     etapas: etapasDoEmbed(crm_pipelines),
+  };
+}
+
+/**
+ * O que o Gestão VendePay diz deste contato, ou `null` quando ele não veio de
+ * lá. Só `gestao_account_id` decide: é o vínculo que o webhook do Gestão grava.
+ */
+function clienteDoGestao(contato: Record<string, unknown>, nomeDoCsm: string | null) {
+  if (!contato.gestao_account_id) return null;
+  const faixa = Array.isArray(contato.cs_carteira_faixas)
+    ? contato.cs_carteira_faixas[0]
+    : contato.cs_carteira_faixas;
+  return {
+    conta_id: contato.gestao_account_id as string,
+    gmv_30d_centavos: (contato.gestao_gmv_30d_centavos as number | null) ?? null,
+    ultima_venda_em: (contato.gestao_ultima_venda_em as string | null) ?? null,
+    faixa: ((faixa as { nome?: string } | null)?.nome ?? null) as string | null,
+    csm_nome: nomeDoCsm,
   };
 }
 

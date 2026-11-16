@@ -27,6 +27,7 @@ import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/C
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { ClienteDoGestao, type ClienteGestao } from "./ClienteDoGestao";
 import { EtapaDoFunil, type EtapaDoLead } from "./EtapaDoFunil";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
@@ -430,7 +431,12 @@ export function CRMSidePanel({ conversation }: Props) {
   const localeDaData = useLocaleDeData();
   const t = useT();
   const contact = conversation?.contacts ?? null;
-  const contactId = contact?.id ?? null;
+  // Depois de vincular ao Gestão, este contato vira lápide da fusão e a conversa
+  // passa a apontar para o cliente que ficou — mas o `conversation` só chega
+  // relido um instante depois. Até lá o painel já lê o cliente que ficou; sem
+  // isto, o resumo da lápide (sem vínculo) mostrava "Contato novo" de novo.
+  const [fusao, setFusao] = useState<{ de: string; para: string } | null>(null);
+  const contactId = contact?.id && fusao?.de === contact.id ? fusao.para : (contact?.id ?? null);
   const [desfechoDraft, setDesfechoDraft] = useState<DesfechoDraft | null>(null);
   // A saída do filtro produz null enquanto o detalhe carrega. O rascunho não
   // some nessa lacuna; outra conversa/contato real o descarta, sem expô-lo.
@@ -465,6 +471,7 @@ export function CRMSidePanel({ conversation }: Props) {
    * de "não consegui ler" é a diferença entre informar e mentir.
    */
   const [erro, setErro] = useState(false);
+  const [clienteGestao, setClienteGestao] = useState<ClienteGestao | null>(null);
   const [tentativa, setTentativa] = useState(0);
 
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
@@ -487,6 +494,7 @@ export function CRMSidePanel({ conversation }: Props) {
       setDemandas(null);
       setFatos([]); setHistorico([]); setNotasDaConversa([]);
       setLeadAtivoId(null);
+      setClienteGestao(null);
       return;
     }
     let cancelled = false;
@@ -506,11 +514,13 @@ export function CRMSidePanel({ conversation }: Props) {
             demandas: DemandaRow[];
             fatos?: Array<{ id: string; headline: string; body: string }>;
             historico?: Array<{ id: string; desfecho: string; fechada_em: string }>;
+            cliente_gestao?: ClienteGestao | null;
             notas_da_conversa?: NotaDaConversa[];
           };
         }>(`/api/v1/contacts/${contactId}/crm-summary`);
         if (cancelled) return;
         setSummaryContactId(contactId);
+        setClienteGestao(r.data.cliente_gestao ?? null);
         setLeads(r.data.leads);
         setOrders(r.data.orders);
         setActivities(r.data.activities);
@@ -526,6 +536,7 @@ export function CRMSidePanel({ conversation }: Props) {
         // Falha NÃO vira lista vazia. Os dados ficam `null` e o painel diz que
         // não conseguiu ler — nunca que não há.
         setErro(true);
+        setClienteGestao(null);
         setLeads(null);
         setOrders(null);
         setActivities(null);
@@ -607,6 +618,14 @@ export function CRMSidePanel({ conversation }: Props) {
           <div className="font-medium">{displayName}</div>
           {contact?.phone_number && (
             <div className="text-xs text-muted-foreground">{phoneForDisplay(contact.phone_number)}</div>
+          )}
+          {contactId && !erro && (
+            <ClienteDoGestao
+              contactId={contactId}
+              cliente={summaryContactId === contactId ? clienteGestao : null}
+              carregando={summaryContactId !== contactId}
+              onVinculado={(clienteQueFicou) => setFusao({ de: contactId, para: clienteQueFicou })}
+            />
           )}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">

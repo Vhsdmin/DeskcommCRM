@@ -118,6 +118,8 @@ const ACTION_MIN_ROLE: Record<string, Role> = {
   "contact.create": "agent",
   "contact.update": "agent",
   "contact.delete": "manager",
+  // Juntar cadastros é `manager` na rota (`POST /api/v1/contacts/merge`).
+  "contact.merge": "manager",
   "pipeline.view": "viewer",
   "pipeline.create": "manager",
   "pipeline.move_card": "agent",
