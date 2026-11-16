@@ -24,12 +24,22 @@ import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
 import { CustomFieldsEditor, type CustomFieldDef } from "@/components/contacts/CustomFieldsEditor";
 import { useEditLead } from "@/hooks/kanban/useUpdateLead";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 
 interface Props {
   conversation: ConversationWithContact | null;
+}
+
+/** Nota interna escrita em qualquer conversa deste contato. */
+interface NotaDaConversa {
+  id: string;
+  body: string;
+  created_at: string;
+  created_by_name: string | null;
+  conversation_id: string;
 }
 
 interface LeadRow {
@@ -422,6 +432,16 @@ export function CRMSidePanel({ conversation }: Props) {
   const [demandas, setDemandas] = useState<DemandaRow[] | null>(null);
   const [fatos, setFatos] = useState<Array<{ id: string; headline: string; body: string }>>([]);
   const [historico, setHistorico] = useState<Array<{ id: string; desfecho: string; fechada_em: string }>>([]);
+  const [notasDaConversa, setNotasDaConversa] = useState<NotaDaConversa[]>([]);
+  // Só OBSERVA o cache que a thread já preenche (mesma chave, `enabled: false`):
+  // a nota recém-escrita invalida essa consulta, e a contagem nova recarrega o
+  // resumo — sem isto a nota só apareceria na Memória depois de trocar de
+  // conversa. Não busca nada nem abre outra assinatura de tempo real.
+  const notasDestaConversa = useQuery<{ data?: unknown[] }>({
+    queryKey: ["notes", conversation?.id ?? null],
+    enabled: false,
+  });
+  const quantasNotasDestaConversa = notasDestaConversa.data?.data?.length ?? 0;
   const [summaryContactId, setSummaryContactId] = useState<string | null>(null);
   /**
    * O TERCEIRO ESTADO. Antes existiam dois — carregando e "tem N itens" — e a
@@ -450,7 +470,7 @@ export function CRMSidePanel({ conversation }: Props) {
       setOrders(null);
       setActivities(null);
       setDemandas(null);
-      setFatos([]); setHistorico([]);
+      setFatos([]); setHistorico([]); setNotasDaConversa([]);
       setLeadAtivoId(null);
       return;
     }
@@ -471,6 +491,7 @@ export function CRMSidePanel({ conversation }: Props) {
             demandas: DemandaRow[];
             fatos?: Array<{ id: string; headline: string; body: string }>;
             historico?: Array<{ id: string; desfecho: string; fechada_em: string }>;
+            notas_da_conversa?: NotaDaConversa[];
           };
         }>(`/api/v1/contacts/${contactId}/crm-summary`);
         if (cancelled) return;
@@ -484,6 +505,7 @@ export function CRMSidePanel({ conversation }: Props) {
         // que é o caso saudável.
         setDemandas(r.data.demandas ?? []);
         setFatos(r.data.fatos ?? []); setHistorico(r.data.historico ?? []);
+        setNotasDaConversa(r.data.notas_da_conversa ?? []);
       } catch {
         if (cancelled) return;
         // Falha NÃO vira lista vazia. Os dados ficam `null` e o painel diz que
@@ -493,7 +515,7 @@ export function CRMSidePanel({ conversation }: Props) {
         setOrders(null);
         setActivities(null);
         setDemandas(null);
-        setFatos([]); setHistorico([]);
+        setFatos([]); setHistorico([]); setNotasDaConversa([]);
       }
     }
 
@@ -513,7 +535,7 @@ export function CRMSidePanel({ conversation }: Props) {
     // Depender do DADO que muda é mais honesto que um contador de invalidação:
     // `assigned_to_user_id` cobre assumir/transferir/liberar e `bot_silenced_until`
     // cobre pausar e devolver — que são exatamente os quatro gestos que geram linha.
-  }, [contactId, tentativa, conversation?.assigned_to_user_id, conversation?.bot_silenced_until, conversation?.service_revision, conversation?.current_demanda_id]);
+  }, [contactId, tentativa, conversation?.assigned_to_user_id, conversation?.bot_silenced_until, conversation?.service_revision, conversation?.current_demanda_id, quantasNotasDestaConversa]);
 
   // Recarrega o resumo pelo MESMO caminho do "Tentar de novo": o efeito depende
   // de `tentativa`, então a demanda recém-marcada volta do servidor em vez de
@@ -693,6 +715,20 @@ export function CRMSidePanel({ conversation }: Props) {
         <p className="mt-1 text-xs text-muted-foreground">{t("Fatos duráveis registrados nas notas. Pendências pertencem à demanda vigente.")}</p>
         {!sectionsLoading && fatos.map((f) => <details key={f.id} className="mt-2 text-xs"><summary>{f.headline}</summary><p className="mt-1 whitespace-pre-wrap">{f.body}</p></details>)}
         {!sectionsLoading && fatos.length === 0 && <p className="mt-2 text-xs text-muted-foreground">{t("Nenhum fato durável registrado.")}</p>}
+        {!sectionsLoading && notasDaConversa.length > 0 && (
+          <div className="mt-3 text-xs" data-testid="inbox-memoria-notas">
+            <h4 className="font-semibold">{t("Notas internas das conversas")}</h4>
+            {notasDaConversa.map((n) => (
+              <div key={n.id} className="mt-2 rounded-sm border border-warning/40 bg-warning-bg px-2 py-1.5 text-warning-fg">
+                <p className="text-[11px] opacity-80">
+                  {n.created_by_name ?? t("Alguém")} · {shortDate(n.created_at, localeDaData)}
+                  {n.conversation_id === conversation?.id ? ` · ${t("nesta conversa")}` : ""}
+                </p>
+                <p className="mt-0.5 whitespace-pre-wrap">{n.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
         {!sectionsLoading && historico.length > 0 && <div className="mt-3 text-xs"><h4>{t("Histórico encerrado — sem tarefas pendentes")}</h4>{historico.map((h) => <p key={h.id}>{t(DESFECHO_LEGIVEL[h.desfecho] ?? h.desfecho)}{h.fechada_em ? ` · ${shortDate(h.fechada_em, localeDaData)}` : ""}</p>)}</div>}
       </section>
       <Separator />

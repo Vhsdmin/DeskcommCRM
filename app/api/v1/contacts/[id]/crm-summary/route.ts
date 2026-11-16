@@ -30,6 +30,8 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { ok, fail } from "@/lib/api/wrappers";
+import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
+import { ROLE_RANK } from "@/lib/auth/types";
 import { camposDoFunil, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
 import { createClient } from "@/lib/supabase/server";
 import { nomesDosAtendentes } from "@/lib/users/nome-do-atendente";
@@ -85,7 +87,18 @@ export async function GET(
     .select("organization_id").eq("id", contactId).maybeSingle();
   if (scopeError) return fail("internal_error", scopeError.message, 500, { requestId });
   if (!contactScope) return fail("not_found", "Contato não encontrado.", 404, { requestId });
-  const [leads, orders, activities, demandas, fatos, historico] = await Promise.all([
+
+  // Nota interna da conversa é lida a partir de `agent` — o mesmo piso de
+  // `GET /api/v1/conversations/[id]/notes`. Esta rota aceita qualquer sessão, então
+  // sem esta guarda quem só visualiza (ou o acompanhamento, resolvido como
+  // `viewer`) leria aqui o que a rota das notas lhe nega.
+  const authUser = await loadAuthUser();
+  const orgAtiva = authUser ? await resolveActiveOrg(authUser) : null;
+  const podeVerNotasDaConversa =
+    !!orgAtiva &&
+    orgAtiva.orgId === contactScope.organization_id &&
+    ROLE_RANK[orgAtiva.role] >= ROLE_RANK.agent;
+  const [leads, orders, activities, demandas, fatos, historico, notasDaConversa] = await Promise.all([
     supabase
       .from("crm_leads")
       .select(LEAD_COLS)
@@ -122,11 +135,26 @@ export async function GET(
       .limit(5),
     supabase.from("lead_notes").select("id, headline, body").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).order("created_at", { ascending: false }).limit(20),
     supabase.from("demandas").select("id, desfecho, fechada_em").eq("contact_id", contactId).eq("organization_id", contactScope.organization_id).not("fechada_em", "is", null).order("fechada_em", { ascending: false }).limit(5),
+    // As notas internas escritas na CONVERSA também são memória do contato. Elas
+    // moram em `conversation_notes`, que não tem `contact_id`: o vínculo vem pela
+    // conversa, e o `!inner` faz o filtro valer de verdade (sem ele, a nota de
+    // outro contato voltaria com o embed nulo).
+    podeVerNotasDaConversa
+      ? supabase
+          .from("conversation_notes")
+          .select("id, body, created_at, created_by_name, conversation_id, conversations!inner(contact_id)")
+          .eq("conversations.contact_id", contactId)
+          .eq("organization_id", contactScope.organization_id)
+          .order("created_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   // A falha SOBE. Engolir aqui devolveria lista vazia ao cliente e recriaria,
   // do lado do servidor, exatamente a mentira que esta rota veio desfazer.
-  const falha = leads.error ?? orders.error ?? activities.error ?? demandas.error ?? fatos.error ?? historico.error;
+  const falha =
+    leads.error ?? orders.error ?? activities.error ?? demandas.error ?? fatos.error ?? historico.error ??
+    notasDaConversa.error;
   if (falha) {
     return fail("internal_error", falha.message, 500, { requestId });
   }
@@ -152,6 +180,13 @@ export async function GET(
       })),
       demandas: demandas.data ?? [],
       fatos: fatos.data ?? [], historico: historico.data ?? [],
+      notas_da_conversa: (notasDaConversa.data ?? []).map((n) => ({
+        id: n.id,
+        body: n.body,
+        created_at: n.created_at,
+        created_by_name: n.created_by_name,
+        conversation_id: n.conversation_id,
+      })),
     },
     { requestId },
   );
