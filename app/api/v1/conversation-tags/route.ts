@@ -101,13 +101,17 @@ async function tagsEmUso(
 ): Promise<{ tags: string[]; error: string | null }> {
   const vistas = new Set<string>();
   for (let inicio = 0; inicio < TETO_DE_LINHAS; inicio += PAGINA) {
-    const { data, error } = await supabase
+    let consulta = supabase
       .from(tabela)
       .select("tags")
       .eq("organization_id", orgId)
-      .not("tags", "eq", "{}")
-      .order("id")
-      .range(inicio, inicio + PAGINA - 1);
+      .not("tags", "eq", "{}");
+    // Contato absorvido por um merge é lápide, e o anonimizado não pode
+    // devolver nada do que era: nenhum dos dois empresta etiqueta ao vocabulário.
+    if (tabela === "contacts") {
+      consulta = consulta.is("is_merged_into", null).eq("is_anonymized", false);
+    }
+    const { data, error } = await consulta.order("id").range(inicio, inicio + PAGINA - 1);
     if (error) return { tags: [], error: error.message };
     for (const linha of (data ?? []) as Array<{ tags: string[] | null }>) {
       for (const tag of linha.tags ?? []) if (tag.trim()) vistas.add(tag);

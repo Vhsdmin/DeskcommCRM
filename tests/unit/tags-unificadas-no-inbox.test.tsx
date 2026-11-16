@@ -18,11 +18,17 @@ import { filtrarSugestoes } from "@/components/inbox/SugestoesDeTags";
 
 const linhasPorTabela: Record<string, Array<{ tags: string[] | null }>> = {};
 const tabelasLidas: string[] = [];
+const filtrosPorTabela: Record<string, string[]> = {};
 
 function consulta(tabela: string) {
   const resultado = { data: linhasPorTabela[tabela] ?? [], error: null };
   const chain: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "not", "order"]) chain[m] = () => chain;
+  for (const m of ["select", "eq", "not", "is", "order"]) {
+    chain[m] = (...args: unknown[]) => {
+      if (m === "eq" || m === "is") (filtrosPorTabela[tabela] ??= []).push(`${m}:${args.map(String).join("=")}`);
+      return chain;
+    };
+  }
   chain.range = () => {
     tabelasLidas.push(tabela);
     return Promise.resolve(resultado);
@@ -51,6 +57,7 @@ async function chamarRota(url: string): Promise<string[]> {
 
 beforeEach(() => {
   tabelasLidas.length = 0;
+  for (const k of Object.keys(filtrosPorTabela)) delete filtrosPorTabela[k];
   linhasPorTabela.contacts = [{ tags: ["vip", "seller-novo"] }, { tags: ["vip"] }];
   linhasPorTabela.crm_leads = [{ tags: ["indicacao"] }, { tags: null }];
 });
@@ -59,6 +66,13 @@ describe("GET /api/v1/conversation-tags", () => {
   it("com ?todas=1 soma as etiquetas de clientes e leads, sem repetir", async () => {
     const tags = await chamarRota("http://x/api/v1/conversation-tags?todas=1");
     expect(tags).toEqual(["indicacao", "seller-novo", "suporte", "urgente", "vip"]);
+  });
+
+  it("não empresta etiqueta de contato absorvido por merge nem de anonimizado", async () => {
+    await chamarRota("http://x/api/v1/conversation-tags?todas=1");
+    expect(filtrosPorTabela.contacts).toEqual(
+      expect.arrayContaining(["is:is_merged_into=null", "eq:is_anonymized=false"]),
+    );
   });
 
   it("sem o parâmetro, segue só com as de conversa (é o vocabulário do filtro)", async () => {
