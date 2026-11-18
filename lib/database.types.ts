@@ -5075,7 +5075,7 @@ export type Database = {
           last_received_at: string | null
           organization_id: string
           path_token: string
-          secret_encrypted: string
+          secret_encrypted: string | null
           updated_at: string
         }
         Insert: {
@@ -5086,7 +5086,7 @@ export type Database = {
           last_received_at?: string | null
           organization_id: string
           path_token: string
-          secret_encrypted: string
+          secret_encrypted?: string | null
           updated_at?: string
         }
         Update: {
@@ -5097,7 +5097,7 @@ export type Database = {
           last_received_at?: string | null
           organization_id?: string
           path_token?: string
-          secret_encrypted?: string
+          secret_encrypted?: string | null
           updated_at?: string
         }
         Relationships: [

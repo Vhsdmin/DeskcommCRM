@@ -264,3 +264,9 @@ Living System Checklist: entrada `NAV_CATALOG` + papel e seleção do vínculo; 
 CONFIRMADO: o layout autenticado limita a casca a `100dvh`. Avisos da instalação ficam no fluxo acima da casca; a faixa superior e o menu lateral ocupam espaço próprio. O `main` encolhe com `min-h-0` e concentra a rolagem, com isolamento de empilhamento e contenção do overscroll. A lateral acompanha a altura disponível, inclusive quando há avisos no topo. Não há mudança nos dados nem nas permissões.
 
 Prova em prévia local dos componentes reais com aviso de 48px: depois de rolar 1.440px no conteúdo, a faixa superior permaneceu entre 48 e 104px, o bloco branco começou em 104px e o documento permaneceu em scroll 0, com altura de 720px. A regressão de navegação E2E mede esses limites no aplicativo; execução completa com banco não foi feita localmente por ausência de Docker/Supabase.
+
+### Webhook no contrato do core da VendePay (17/11/2026)
+
+CONFIRMADO: o CRM passa a aceitar o envio que o core já faz (KAN-538), sem mudar o core. O core gera o segredo ao receber o endereço na Gestão e a pessoa o cola em **Receber dados**; até lá, o receptor responde 503 e o core tenta de novo. Assinatura `vendepay-signature` `t=<unix>,v1=<hex>` com janela de 5 minutos; evento `crm.user.updated` (`apiVersion` `2026-06-01`), cliente pelo `data.user.id`, ordem por `data.asOf`, e-mail como nome quando o nome vem vazio. Onboarding e KYC chegam e são ignorados: por ora só o contato. O contrato antigo (`account.created`, `account.updated`, `account.snapshot` com vendas) foi removido; as colunas de vendas continuam, sem nova fonte. Duplicado ainda em processamento passa de 409 para 503, porque o core trata 409 como definitivo.
+
+Migration 0283: `gestao_conexoes.secret_encrypted` aceita nulo e os segredos gerados pelo CRM são apagados uma vez (não coincidem com o do core). Contrato em `docs/vendepay-webhook-gestao.md`.

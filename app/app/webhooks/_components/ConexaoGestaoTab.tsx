@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
@@ -19,10 +20,10 @@ import { Copy, PlugsConnected } from "@/lib/ui/icons";
 /**
  * Webhooks › Receber dados: a conexão com o Gestão VendePay.
  *
- * Uma conexão por organização. O Gestão envia "conta cadastrada" e "conta
- * atualizada" para o endereço abaixo, assinando cada envio com o segredo; o CRM
- * cria ou atualiza o cliente pelo ID da conta. O contrato completo está em
- * `lib/gestao/contrato.ts`.
+ * Uma conexão por organização. O CRM gera o endereço; o core da VendePay gera o
+ * segredo ao receber esse endereço na Gestão, e a pessoa o cola aqui. O core
+ * envia a fotografia do vendedor a cada mudança e o CRM cria ou atualiza o
+ * cliente pelo ID do usuário. O contrato completo está em `lib/gestao/contrato.ts`.
  */
 
 type Conexao = {
@@ -31,6 +32,7 @@ type Conexao = {
   is_active: boolean;
   last_received_at: string | null;
   created_at: string;
+  tem_segredo: boolean;
 };
 
 type Envio = {
@@ -43,19 +45,23 @@ type Envio = {
 };
 
 type Estado = { conexao: Conexao | null; envios: Envio[] };
-type RespostaComSegredo = { conexao: Conexao; segredo: string | null };
+type Resposta = { conexao: Conexao };
 
 const CHAVE = ["integracoes", "gestao"];
 
 const EXEMPLO = `{
-  "event_id": "evt_123",
-  "event_type": "account.created",
-  "occurred_at": "2026-10-14T12:00:00Z",
-  "account": {
-    "id": "ID-do-usuario-no-Gestao",
-    "name": "Loja Exemplo",
-    "email": "contato@exemplo.com",
-    "phone": "+5511999998888"
+  "id": "crm:…",
+  "type": "crm.user.updated",
+  "apiVersion": "2026-06-01",
+  "createdAt": "2026-11-17T12:00:00.000Z",
+  "data": {
+    "asOf": "2026-11-17T12:00:05.000Z",
+    "user": {
+      "id": "ID-do-usuario-no-Gestao",
+      "name": "Loja Exemplo",
+      "email": "contato@exemplo.com",
+      "phone": "+5511999998888"
+    }
   }
 }`;
 
@@ -67,7 +73,7 @@ export function ConexaoGestaoTab() {
   const t = useT();
   const idioma = useTagDeIdioma();
   const cache = useQueryClient();
-  const [segredo, setSegredo] = React.useState<string | null>(null);
+  const [segredo, setSegredo] = React.useState("");
 
   const query = useQuery({
     queryKey: CHAVE,
@@ -79,20 +85,19 @@ export function ConexaoGestaoTab() {
     toast.error(err instanceof ApiError ? err.message : t("Não foi possível salvar. Tente de novo."));
 
   const criar = useMutation({
-    mutationFn: async () =>
-      (await apiClient.post<{ data: RespostaComSegredo }>("/api/v1/integracoes/gestao", {})).data,
-    onSuccess: (r) => {
-      setSegredo(r.segredo);
-      void cache.invalidateQueries({ queryKey: CHAVE });
-    },
+    mutationFn: async () => (await apiClient.post<{ data: Resposta }>("/api/v1/integracoes/gestao", {})).data,
+    onSuccess: () => void cache.invalidateQueries({ queryKey: CHAVE }),
     onError: aoFalhar,
   });
 
   const alterar = useMutation({
-    mutationFn: async (body: { is_active: boolean } | { trocar_segredo: true }) =>
-      (await apiClient.patch<{ data: RespostaComSegredo }>("/api/v1/integracoes/gestao", body)).data,
-    onSuccess: (r) => {
-      if (r.segredo) setSegredo(r.segredo);
+    mutationFn: async (body: { is_active: boolean } | { segredo: string }) =>
+      (await apiClient.patch<{ data: Resposta }>("/api/v1/integracoes/gestao", body)).data,
+    onSuccess: (_r, body) => {
+      if ("segredo" in body) {
+        setSegredo("");
+        toast.success(t("Segredo salvo."));
+      }
       void cache.invalidateQueries({ queryKey: CHAVE });
     },
     onError: aoFalhar,
@@ -131,9 +136,9 @@ export function ConexaoGestaoTab() {
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             <ol className="space-y-2 text-left text-sm text-muted-foreground">
-              <li>{t("1. Crie a conexão: o CRM gera um endereço e um segredo de assinatura.")}</li>
-              <li>{t("2. Configure o Gestão para enviar os eventos de conta para esse endereço, assinados com o segredo.")}</li>
-              <li>{t("3. Cada conta cadastrada vira um cliente na fase Entrada; atualizações chegam pelo ID da conta.")}</li>
+              <li>{t("1. Crie a conexão: o CRM gera o endereço do webhook.")}</li>
+              <li>{t("2. Na Gestão, em Integração CRM, informe esse endereço: o core gera o segredo de assinatura e o mostra uma vez.")}</li>
+              <li>{t("3. Cole o segredo aqui. Cada vendedor vira um cliente na fase Entrada; atualizações chegam pelo ID do usuário.")}</li>
             </ol>
             <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
               {t("Criar conexão com o Gestão")}
@@ -186,53 +191,48 @@ export function ConexaoGestaoTab() {
 
           <div className="space-y-1">
             <p className="text-sm font-medium">{t("Segredo de assinatura")}</p>
-            {segredo ? (
-              <div className="space-y-2 rounded-md border border-warning/40 bg-warning-bg p-3">
-                <p className="text-xs text-warning-fg">
-                  {t("Copie agora: o segredo não é exibido de novo. Se perder, troque por outro.")}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <code className="min-w-0 flex-1 break-all rounded-md border bg-background px-3 py-2 text-xs">
-                    {segredo}
-                  </code>
-                  <Button variant="outline" size="sm" onClick={() => void copiar(segredo, t("Segredo copiado."))}>
-                    <Copy /> {t("Copiar")}
-                  </Button>
-                </div>
-              </div>
-            ) : (
+            {conexao.tem_segredo ? (
               <p className="text-xs text-muted-foreground">
-                {t("Guardado cifrado. Por segurança, só é exibido ao criar ou trocar.")}
+                {t("Guardado cifrado. Para trocar, informe o endereço de novo na Gestão e cole aqui o segredo novo.")}
+              </p>
+            ) : (
+              <p className="rounded-md border border-warning/40 bg-warning-bg p-3 text-xs text-warning-fg">
+                {t("Falta o segredo gerado na Gestão. Até colá-lo, o CRM pede ao core que tente de novo mais tarde.")}
               </p>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={alterar.isPending}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    t("Trocar o segredo? O Gestão passa a ser recusado até receber o segredo novo."),
-                  )
-                )
-                  alterar.mutate({ trocar_segredo: true });
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (segredo.trim()) alterar.mutate({ segredo: segredo.trim() });
               }}
             >
-              {t("Trocar segredo")}
-            </Button>
+              <Input
+                type="password"
+                autoComplete="off"
+                aria-label={t("Segredo gerado na Gestão")}
+                placeholder={t("Cole o segredo gerado na Gestão")}
+                className="min-w-0 flex-1"
+                value={segredo}
+                onChange={(e) => setSegredo(e.target.value)}
+              />
+              <Button type="submit" variant="outline" size="sm" disabled={alterar.isPending || !segredo.trim()}>
+                {conexao.tem_segredo ? t("Trocar segredo") : t("Salvar segredo")}
+              </Button>
+            </form>
           </div>
 
           <details className="rounded-md border p-3 text-sm">
-            <summary className="cursor-pointer font-medium">{t("Como o Gestão deve enviar")}</summary>
+            <summary className="cursor-pointer font-medium">{t("Como o core envia")}</summary>
             <div className="mt-3 space-y-2 text-xs text-muted-foreground">
               <p>
                 {t(
-                  "Assine cada envio com HMAC SHA-256 do corpo exato, usando o segredo, e mande o resultado em hexadecimal no cabeçalho X-VendePay-Signature.",
+                  "Cada envio vem assinado no cabeçalho vendepay-signature (t=<unix>,v1=<hex>): HMAC SHA-256 de \"<unix>.<corpo>\" com o segredo gerado na Gestão.",
                 )}
               </p>
               <p>
                 {t(
-                  "Tipos aceitos: account.created e account.updated. O cliente é encontrado pelo account.id; e-mail e telefone nunca juntam contas. Reenviar o mesmo event_id não duplica.",
+                  "Tipo aceito: crm.user.updated. O cliente é encontrado pelo data.user.id; e-mail e telefone nunca juntam contas. Sem nome, o e-mail vira o nome. Reenviar o mesmo id não duplica.",
                 )}
               </p>
               <pre className="overflow-x-auto rounded-md border bg-muted p-3 text-[11px] text-foreground">

@@ -1,12 +1,14 @@
 /**
- * POST /api/v1/webhooks/gestao/[token] — eventos de conta do Gestão VendePay.
+ * POST /api/v1/webhooks/gestao/[token] — fotografias de vendedor do core da VendePay.
  *
  * O token da URL resolve a organização (fonte confiável — nunca o corpo); a
- * assinatura HMAC SHA-256 do corpo cru (`X-VendePay-Signature`) prova que quem
- * envia conhece o segredo. Sem assinatura válida, nada é processado.
+ * assinatura `t=<unix>,v1=<hex>` (`vendepay-signature`) prova que quem envia
+ * conhece o segredo gerado pelo core. Sem assinatura válida, nada é processado.
+ * Enquanto o segredo não foi colado, responde 503: o core trata como falha
+ * temporária e tenta de novo (401 seria definitivo).
  *
  * Todo envio autenticado fica em `webhook_events_log` (provider `gestao`), e o
- * `event_id` é único por organização: reenvio do mesmo evento responde 200 sem
+ * `id` do evento é único por organização: reenvio do mesmo evento responde 200 sem
  * reprocessar. O contrato está em `lib/gestao/contrato.ts`.
  */
 import { randomUUID } from "node:crypto";
@@ -50,6 +52,13 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   if (!conexao || !conexao.is_active) return fail("not_found", "unknown webhook token", 404, { requestId });
   const organizationId = conexao.organization_id as string;
 
+  if (conexao.secret_encrypted === null) {
+    return fail("unavailable", "signature secret not configured", 503, {
+      requestId,
+      headers: { "Retry-After": "300" },
+    });
+  }
+
   const corpoCru = await req.text();
   const assinatura = req.headers.get(HEADER_DE_ASSINATURA);
   const segredo = await decryptWebhookSecret(admin, conexao.secret_encrypted as unknown as string);
@@ -78,8 +87,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   }
   const parsed = eventoDoGestaoSchema.safeParse(json);
   const eventId =
-    parsed.success ? parsed.data.event_id : typeof (json as { event_id?: unknown })?.event_id === "string"
-      ? ((json as { event_id: string }).event_id).slice(0, 200)
+    parsed.success ? parsed.data.id : typeof (json as { id?: unknown })?.id === "string"
+      ? ((json as { id: string }).id).slice(0, 200)
       : null;
 
   const { data: registro, error: erroRegistro } = await admin
@@ -93,7 +102,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       payload_parsed: json as Record<string, unknown>,
       signature_header: assinatura,
       valid_signature: true,
-      event_type: parsed.success ? parsed.data.event_type : "invalido",
+      event_type: parsed.success ? parsed.data.type : "invalido",
       // Evento inválido não reserva o id: o Gestão pode corrigir e reenviar.
       external_id: parsed.success ? eventId : null,
       status: "received",
@@ -103,9 +112,10 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     .single();
   if (erroRegistro) {
     if (erroRegistro.code === "23505") {
-      // Mesmo event_id já registrado. Só é "duplicado" se o original TERMINOU:
-      // com ele ainda em processamento, responder 200 faria o Gestão dar o
+      // Mesmo id já registrado. Só é "duplicado" se o original TERMINOU:
+      // com ele ainda em processamento, responder 200 faria o core dar o
       // evento por entregue — e se o original falhar, o evento se perde.
+      // 503, não 409: o core trata 409 como definitivo e desistiria do envio.
       const { data: original } = await admin
         .from("webhook_events_log")
         .select("status")
@@ -114,7 +124,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
         .eq("external_id", eventId)
         .maybeSingle();
       if (original?.status === "received") {
-        return fail("state_conflict", "event still processing", 409, {
+        return fail("unavailable", "event still processing", 503, {
           requestId,
           headers: { "Retry-After": "30" },
         });
@@ -179,7 +189,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       organizationId,
       resourceType: "contact",
       resourceId: desfecho.contactId,
-      metadata: { event_id: eventId, event_type: parsed.data.event_type },
+      metadata: { event_id: eventId, event_type: parsed.data.type },
       requestId,
     });
     return ok({ status: desfecho.status, contact_id: desfecho.contactId }, { requestId });

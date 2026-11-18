@@ -358,3 +358,5 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20261027120000` | `0281_exclusao_atomica_cliente` | Exclusão transacional com RLS; limpa atividades sem negócio antes da FK SET NULL e preserva agenda/histórico em falhas. |
 
 | `20261027130000` | `0282_exclusao_cliente_exige_papel` | DELETE direto de contacts exige agent+ por policy restritiva; viewer não pode acionar a limpeza privilegiada do histórico CS. |
+
+| `20261117120000` | `0283_conexao_gestao_segredo_do_core` | Segredo da conexão com o Gestão passa a vir do core da VendePay (colado no CRM): coluna aceita nulo até a colagem e os segredos gerados pelo CRM são apagados. |
