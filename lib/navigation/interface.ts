@@ -20,7 +20,6 @@ export const INTERFACE_COMPLETA: InterfaceSettings = { preset: "completa" };
 /** Itens ocultos na navegação da VendePay, inclusive em seleções já salvas.
  * As rotas e suas permissões continuam disponíveis por acesso direto. */
 const DESTINOS_OCULTOS = new Set<string>([
-  "/app/inbox",
   "/app/radar",
   "/app/templates",
   "/app/ai/followups",

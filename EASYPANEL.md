@@ -2,14 +2,15 @@
 
 > **VendePay.** Este repositório é o CRM de Atendimento e CS da VendePay
 > (base: `filipefagundes/VendePayCRM`), não o DeskcommCRM 1.50.0. O Compose usa as imagens publicadas pelo
-> CI de `filipefagundes/VendePayCRM`, fixadas por digest, e o schema sai da
-> mesma imagem do worker. Diferenças em relação ao texto abaixo:
+> fluxo `publish-image.yml` deste repositório em `ghcr.io/vhsdmin`, fixadas por
+> digest, e o schema sai da mesma imagem do worker. Diferenças em relação ao texto abaixo:
 >
 > - **Branch do Deskcomm:** `main` (não `easypanel`). O Supabase
->   segue na branch `easypanel` do fork `Vhsdmin/supabase`.
-> - **Imagens privadas no GHCR:** antes do deploy, a VPS precisa de
->   `docker login ghcr.io` com um token do GitHub de quem publica as imagens
->   (escopo `read:packages`), ou as imagens precisam ser tornadas públicas.
+>   segue na branch `easypanel` do repositório `Vhsdmin/supabase-vendepay`.
+> - **Imagens no GHCR:** os pacotes `ghcr.io/vhsdmin/{deskcommcrm,deskcomm-worker,deskcomm-scheduler}`
+>   são públicos, então a VPS baixa sem `docker login`. Este repositório é privado;
+>   o fluxo `publish-image.yml` só consegue gravar neles porque cada pacote lista
+>   `DeskcommCRM-vendepay` em *Manage Actions access* com papel *Write*.
 > - **E-mails do app:** com `SMTP_HOST` e `SMTP_FROM_EMAIL` preenchidos no
 >   ambiente do CRM, convites e avisos saem pelo SMTP (ex.: Google Workspace:
 >   `smtp.gmail.com`, 587, `starttls`, senha de app). Sem eles, saem pelo Resend
@@ -402,3 +403,19 @@ Esta atualização mantém o mesmo baseline de banco da versão até 0282. Para 
 instalação já atualizada até 0282, basta implantar o serviço CRM no EasyPanel
 com a `main` atualizada e o ambiente existente; não é necessário executar a
 tarefa de manutenção do banco por causa desta atualização de interface.
+
+## Imagens próprias e configuração pela MCP
+
+O Compose fixa as três imagens do commit `dd4d643f8` (PR #1 deste repositório,
+capacidades de configuração pela MCP), construídas pelo fluxo `publish-image.yml`
+e publicadas em `ghcr.io/vhsdmin`. Para gerar os digests de um commit já publicado
+na `main`, usar `python3 docker/easypanel/preparar-imagens.py --commit <sha>`; o
+dono padrão é `vhsdmin` e a tag consultada é `main` (`--owner` e `--ref` mudam
+isso). O script confere o rótulo de procedência das três imagens antes de editar
+os dois arquivos Compose e falha se a tag já apontar para outro commit.
+
+As ferramentas de configuração ficam em `/api/mcp` e exigem um token emitido em
+Configurações › API Tokens com o escopo "configurar". Nenhuma variável nova no
+ambiente. Mesmo baseline de banco da versão até 0282: basta implantar o serviço
+CRM no EasyPanel com a `main` atualizada; a tarefa `schema-init` reconhece o
+baseline e não refaz nada.

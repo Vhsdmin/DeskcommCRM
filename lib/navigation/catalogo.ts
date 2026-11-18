@@ -106,6 +106,8 @@ export const NAV_CATALOG = [
   // ---- Atendimento — onde o operador passa o dia ----
   {
     href: "/app/inbox",
+    // Logo abaixo da Central: é onde as conversas do WhatsApp viram ação no CRM.
+    sidebarOrder: 0.5,
     label: "Inbox",
     description: "As conversas de WhatsApp, com você e a IA atendendo lado a lado.",
     icon: "Inbox",

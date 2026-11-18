@@ -68,7 +68,8 @@ vi.mock("@/lib/impersonate/support", async (importOriginal) => ({
 }));
 
 const RAIZ = join(__dirname, "..", "..");
-const ROTA_TIPOS = join(RAIZ, "app", "api", "v1", "agenda", "tipos", "route.ts");
+/** Os campos do tipo saíram da rota para cá; a rota e a MCP de configuração importam daqui. */
+const CAMPOS_DO_TIPO = join(RAIZ, "lib", "agenda", "tipos-de-atendimento.ts");
 const ROTA_REATIVAR = join(RAIZ, "app", "api", "v1", "agenda", "tipos", "reativar", "route.ts");
 const TELA = join(RAIZ, "app", "app", "settings", "tenant", "agenda", "_client.tsx");
 
@@ -308,9 +309,10 @@ function chavesEnviadas(arquivo: ts.SourceFile, metodo: string, caminho: string)
 }
 
 describe("travessia tela → rota: a tela não manda campo que a rota descarta", () => {
-  const rota = ast(ROTA_TIPOS);
   const tela = ast(TELA);
-  const camposDoTipo = chavesDaConstante(rota, "camposDoTipo");
+  // `camposDoTipo` vive em lib/agenda/tipos-de-atendimento.ts desde que a MCP de
+  // configuração passou a usar o MESMO schema da rota; o leitor de AST lê de lá.
+  const camposDoTipo = chavesDaConstante(ast(CAMPOS_DO_TIPO), "camposDoTipo");
 
   it("CONTROLE: as duas pontas foram realmente lidas", () => {
     // Sem isto, um `camposDoTipo` que o leitor não achasse viraria lista vazia e

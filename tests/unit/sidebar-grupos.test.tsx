@@ -52,12 +52,13 @@ afterEach(() => {
 });
 
 describe("Sidebar com lista principal", () => {
-  it("mostra apenas os dez menus na ordem pedida, sem grupos", () => {
+  it("mostra apenas os onze menus na ordem pedida, sem grupos", () => {
     comoPapel("admin");
     render(<Sidebar collapsed={false} />);
     expect(screen.queryAllByRole("heading")).toHaveLength(0);
     expect(screen.getAllByRole("link").map((link) => link.textContent?.trim())).toEqual([
       "Central de Prioridades",
+      "Inbox",
       "Agenda",
       "Funil",
       "Clientes",

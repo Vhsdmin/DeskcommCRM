@@ -271,6 +271,58 @@ outputSchema: z.object({
 5. **Marcar o run com `status='handoff'`** (em vez de 'completed') — runtime do Spec 10 §6.2 detecta e finaliza apropriadamente
 6. Resposta `next_action` é uma string sugerindo ao agente o que dizer ao usuário ("Vou conectar você com um atendente humano agora") — agente integra na resposta final
 
+### 3.4 Configuração operada por pessoa (escopo `mcp:config`)
+
+Capacidades para quem opera o CRM por fora da tela (um operador com Claude Code,
+um script de implantação), NUNCA para o agente de IA. Três travas redundantes:
+`requiresScope: "mcp:config"` (o token efêmero do agente nasce só com
+`mcp:read`/`mcp:write`), `requiresRole` de `manager` ou `admin` (acima de
+`ai_operator`) e `apenasHumano: true` no catálogo (a ponte do turno não monta).
+Handlers em `lib/mcp/tools/configuracao.ts`; catálogo em
+`lib/mcp/tools/catalogo/configuracao.ts`; gate em
+`tests/unit/configuracao-por-mcp.test.ts`.
+
+| Área | Tools | Regra única em |
+|---|---|---|
+| Funis | `crm_create_pipeline`, `crm_update_pipeline`, `crm_get_pipeline_config`, `crm_set_pipeline_fields` | `lib/operacao/funis.ts` |
+| Regras automáticas | `crm_get_automation_rule`, `crm_create_automation_rule`, `crm_update_automation_rule` | `lib/operacao/regras-automaticas.ts` |
+| Entradas automáticas | `crm_update_webhook_source` | `lib/operacao/entradas-automaticas.ts` |
+| Dados da empresa | `crm_get_org_settings`, `crm_update_org_settings` (admin), `crm_set_canonical_tags` | `lib/operacao/organizacao.ts` |
+| Agenda | `crm_create_event_type` | `lib/agenda/tipos-de-atendimento.ts` |
+| Equipe | `crm_set_member_role` (admin) | `lib/team/papel-do-membro.ts` |
+| Produtos | `crm_create_product`, `crm_update_product` | `lib/catalogo/produtos-operacao.ts` |
+| Leituras de gestão | `crm_get_performance`, `crm_list_activities`, `crm_list_audit` | `lib/operacao/leituras-de-gestao.ts` |
+
+O que ficou de fora, e por quê: prazos da agenda e marca da organização passam
+por um portão de MFA da sessão da pessoa (`fn_agenda_settings` exige
+`auth.uid()` e `fn_session_mfa_proven()`; `updateMarcaDaOrganizacao` chama
+`mfaEmDivida()`), e um token não tem sessão para provar; convidar está desligado
+no produto e criar usuário recebe senha, que cairia nos argumentos auditados da
+chamada; o painel de CS (`fn_cs_performance`) exige `auth.uid()`.
+
+Dois defeitos corrigidos no caminho: `updateAutomationRuleSchema` e
+`produtoPatchSchema` eram `.partial()` do schema de criação, e no Zod 4 isso
+reaplica os `.default()` — um PATCH sem o campo zerava as condições da regra e o
+estoque do produto. Os dois schemas são escritos campo a campo, sem default. E o
+audit da MCP (`lib/mcp/audit.ts`) passou a redigir `secret`/`secret_enc` em
+qualquer profundidade dos argumentos.
+
+Living System Checklist da peça (`lib/mcp/tools/configuracao.ts`): **quem alimenta** —
+um token com `mcp:config` emitido em `/app/settings/api-tokens` por um admin; **quem é
+alimentado** — `lib/operacao/*`, `lib/agenda/tipos-de-atendimento.ts`,
+`lib/team/papel-do-membro.ts`, `lib/catalogo/produtos-operacao.ts` (as mesmas regras das
+telas); **registro** — `api_audit_log` (`mcp.tool_called` por chamada, mais a ação de
+domínio de cada escrita, com `actor_api_token_id`); **tela** — o efeito aparece nas telas
+que já existem (funil, Webhooks › Automações, Configurações › Funis/Organização, Agenda,
+Produtos) e a chamada na tela de auditoria; **porta** — nenhuma tela nova; **anti-morte** —
+nenhum, por ser configuração operada por pessoa (justificativa: não há demanda esperando
+resposta aqui); **configuração** — escopos na tela de tokens, falha visível como erro da
+chamada (`Token missing required scope`); **continuidade IA↔humano** — deliberadamente
+nula: o agente nunca chega a estas capacidades; **laço de retorno** — a auditoria é o
+retorno: quem revisa vê o que o operador mudou e por qual token, e revoga o token na mesma
+tela; **mapa** — `docs/architecture/ia-360-organizar.architecture.json` (nós `tokens` e
+`mcpConfig`, arestas e33–e36).
+
 ---
 
 ## 4. Tool selection (per agent)

@@ -29,6 +29,8 @@ vi.mock("@/hooks/channels/useChannelSessions", () => ({
 }));
 vi.mock("@/hooks/inbox/useConversationTags", () => ({
   useConversationTagVocabulary: () => ({ data: [] }),
+  useTodasAsTags: () => ({ data: [] }),
+  CHAVE_DE_TODAS_AS_TAGS: "tag-vocabulary-todas",
 }));
 vi.mock("@/hooks/inbox/useConversationCounts", () => ({
   useConversationCounts: () => ({ data: { unassigned: 3, mine: 2, all: 5, closed: 1 } }),

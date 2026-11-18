@@ -78,6 +78,7 @@ describe("sidebarItems", () => {
   it("segue exatamente a hierarquia solicitada", () => {
     expect(sidebarItems(true, null).map((d) => d.label)).toEqual([
       "Central de Prioridades",
+      "Inbox",
       "Agenda",
       "Funil",
       "Clientes",
@@ -179,7 +180,7 @@ describe("searchable", () => {
   it("expõe todo destino visível, do sidebar ou não", () => {
     const hrefs = searchable(ADMIN.platform, ADMIN.role).map((d) => d.href);
     expect(hrefs).toContain("/app/ai/knowledge/sources");
-    expect(hrefs).not.toContain("/app/inbox");
+    expect(hrefs).toContain("/app/inbox");
   });
 
   it("respeita o papel", () => {

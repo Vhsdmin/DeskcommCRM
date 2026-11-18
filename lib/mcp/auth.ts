@@ -46,14 +46,20 @@ function parseScopes(raw: unknown): string[] {
   return raw.filter((s): s is string => typeof s === "string");
 }
 
+/**
+ * O MAIOR papel entre os escopos `role:*`. A tela de tokens deixa marcar mais de
+ * um (gerente e administrador); antes valia o primeiro na ordem dos cliques, e um
+ * token marcado como administrador podia nascer gerente.
+ */
 function scopesRole(scopes: string[]): Role {
+  let melhor: Role | null = null;
   for (const s of scopes) {
-    if (s.startsWith("role:")) {
-      const r = s.slice("role:".length) as Role;
-      if (VALID_ROLES.has(r)) return r;
-    }
+    if (!s.startsWith("role:")) continue;
+    const r = s.slice("role:".length) as Role;
+    if (!VALID_ROLES.has(r)) continue;
+    if (melhor === null || ROLE_RANK[r] > ROLE_RANK[melhor]) melhor = r;
   }
-  return "agent";
+  return melhor ?? "agent";
 }
 
 /**
