@@ -12,13 +12,13 @@
  *    juntamos sozinhos — quem resolve é uma pessoa, na ficha (mesclar ou
  *    corrigir). O evento fica registrado com o motivo;
  *  - `anonimizado`: a conta vinculada foi anonimizada (LGPD) e não é reaberta;
- *  - `antigo`: o evento é mais antigo (`occurred_at`) que o último já aplicado
+ *  - `antigo`: a fotografia é mais antiga (`data.asOf`) que a última já aplicada
  *    a este cliente. Entrega fora de ordem — um reenvio atrasado — não pode
  *    sobrescrever dado mais novo, então é registrado e ignorado.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { camposDoCliente, vendasDoEvento, type EventoDoGestao } from "./contrato";
+import { camposDoCliente, type EventoDoGestao } from "./contrato";
 
 export type DesfechoDoEvento =
   | { status: "criado"; contactId: string; telefoneRecusado: boolean }
@@ -40,15 +40,7 @@ export async function processarEventoDoGestao(
   evento: EventoDoGestao,
 ): Promise<DesfechoDoEvento> {
   const campos = camposDoCliente(evento);
-  const contaId = evento.account.id;
-  const vendas = vendasDoEvento(evento);
-  const dadosDeVendas = vendas
-    ? {
-        gestao_gmv_30d_centavos: vendas.gmv30dCentavos,
-        gestao_gmv_30d_em: vendas.gmvEm,
-        gestao_ultima_venda_em: vendas.ultimaVendaEm,
-      }
-    : {};
+  const contaId = evento.data.user.id;
 
   const { data: existente, error: erroBusca } = await admin
     .from("contacts")
@@ -61,8 +53,9 @@ export async function processarEventoDoGestao(
 
   const metadata = {
     gestao_account_id: contaId,
-    gestao_event_id: evento.event_id,
-    gestao_occurred_at: evento.occurred_at,
+    gestao_event_id: evento.id,
+    // Mesma chave de antes: o que já foi aplicado continua ordenando os próximos envios.
+    gestao_occurred_at: evento.data.asOf,
   };
 
   if (existente) {
@@ -71,12 +64,11 @@ export async function processarEventoDoGestao(
       ?.gestao_occurred_at;
     if (
       typeof aplicadoEm === "string" &&
-      Date.parse(evento.occurred_at) < Date.parse(aplicadoEm)
+      Date.parse(evento.data.asOf) < Date.parse(aplicadoEm)
     ) {
       return { status: "antigo", contactId: existente.id as string };
     }
-    const patch: Record<string, unknown> = { name: campos.name, source_metadata: metadata, ...dadosDeVendas };
-    if (campos.email !== null) patch.email = campos.email;
+    const patch: Record<string, unknown> = { name: campos.name, email: campos.email, source_metadata: metadata };
     if (campos.phone_number !== null) patch.phone_number = campos.phone_number;
     const { error } = await admin
       .from("contacts")
@@ -102,7 +94,6 @@ export async function processarEventoDoGestao(
       source_metadata: metadata,
       gestao_account_id: contaId,
       cs_phase: "entrada",
-      ...dadosDeVendas,
     })
     .select("id")
     .single();

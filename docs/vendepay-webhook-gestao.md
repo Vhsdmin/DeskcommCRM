@@ -1,77 +1,72 @@
-# Webhook Gestão VendePay → CRM
+# Webhook do core da VendePay → CRM
 
-Contrato para o time do Gestão implementar o envio de eventos de conta ao CRM. A fonte da verdade do formato é `lib/gestao/contrato.ts`.
+O CRM recebe do core da VendePay a fotografia de cada vendedor, no formato que o core já envia (`crm.user.updated`). O CRM se adapta ao core, não o contrário. A fonte da verdade do formato aceito é `lib/gestao/contrato.ts`.
 
 ## Endereço e segredo
 
-No CRM, em **Canais › Webhooks › Receber dados**, quem tem papel de gestor cria a conexão. A tela mostra:
+O endereço é do CRM; o segredo é do core.
 
-- o **endereço** `https://<domínio-do-crm>/api/v1/webhooks/gestao/<token>`;
-- o **segredo de assinatura**, exibido uma única vez. Se for perdido, use **Trocar segredo**: o anterior deixa de valer na hora.
+1. No CRM, em **Canais › Webhooks › Receber dados**, quem tem papel de gestor cria a conexão. A tela mostra o **endereço** `https://<domínio-do-crm>/api/v1/webhooks/gestao/<token>`.
+2. Na Gestão, um superadministrador informa esse endereço em **Integração CRM**. O core gera o **segredo de assinatura** e o exibe uma única vez.
+3. No CRM, cole o segredo na mesma tela. Ele fica guardado cifrado e nunca volta ao navegador.
+
+Enquanto o segredo não é colado (ou o colado não confere), o CRM responde `503` e o core tenta de novo por cerca de 1 hora (8 tentativas, espera crescente a partir de 30 s). Depois disso o envio fica como falho na Gestão e volta pelo reenvio manual. Para trocar o segredo, informe o endereço de novo na Gestão (o core gera outro) e cole o novo no CRM logo em seguida.
 
 Cada ambiente (homologação, produção) tem a sua conexão, com endereço e segredo próprios.
 
 ## Requisição
 
 - `POST`, `Content-Type: application/json`, um evento por requisição.
-- Cabeçalho `X-VendePay-Signature`: HMAC SHA-256 do **corpo exato enviado**, com o segredo, em hexadecimal. O prefixo `sha256=` é opcional.
+- Cabeçalho `vendepay-signature`: `t=<unix>,v1=<hex>`, com `<hex>` = HMAC SHA-256 de `"<unix>.<corpo exato enviado>"`, usando o segredo. O `t` precisa estar a até 5 minutos do relógio do CRM; o core assina de novo a cada tentativa.
 
 ```json
 {
-  "event_id": "evt_01J9...",
-  "event_type": "account.created",
-  "occurred_at": "2026-10-14T12:00:00Z",
-  "account": {
-    "id": "UUID-do-usuario-no-Gestao",
-    "name": "Loja Exemplo",
-    "email": "contato@exemplo.com",
-    "phone": "+5511999998888"
+  "id": "crm:…",
+  "type": "crm.user.updated",
+  "apiVersion": "2026-06-01",
+  "createdAt": "2026-11-17T12:00:00.000Z",
+  "data": {
+    "asOf": "2026-11-17T12:00:05.000Z",
+    "user": {
+      "id": "ID-do-usuario-no-Gestao",
+      "name": "Loja Exemplo",
+      "email": "contato@exemplo.com",
+      "phone": "+5511999998888"
+    },
+    "onboarding": { "…": "…" },
+    "verification": { "…": "…" }
   }
 }
 ```
 
 | Campo | Regra |
 |---|---|
-| `event_id` | Único por evento. Reenviar o mesmo id não processa de novo. |
-| `event_type` | `account.created`, `account.updated` ou `account.snapshot` (fotografia completa da conta; ver abaixo). |
-| `occurred_at` | ISO-8601 com fuso. Evento mais antigo que o último aplicado ao cliente é ignorado. |
-| `account.id` | ID do usuário no Gestão. É a chave do vínculo com o cliente no CRM. |
-| `account.name` | Obrigatório. |
-| `account.email`, `account.phone` | Opcionais. Telefone em E.164 ou formato brasileiro. |
+| `id` | Único por entrega. Reenviar o mesmo id não processa de novo. |
+| `type` | Só `crm.user.updated`. |
+| `apiVersion` | Só `2026-06-01`. |
+| `data.asOf` | ISO-8601 com fuso: quando a fotografia foi tirada. Fotografia mais antiga que a última aplicada ao cliente é ignorada. |
+| `data.user.id` | ID do usuário no Gestão. É a chave do vínculo com o cliente no CRM. |
+| `data.user.email` | Obrigatório. Também é o nome do cliente quando `name` vem vazio. |
+| `data.user.name`, `data.user.phone` | Opcionais. Telefone em E.164 ou formato brasileiro. |
+| `data.onboarding`, `data.verification` | Aceitos e ignorados: por ora o CRM guarda só o contato. |
 
-O cliente é encontrado **somente** pelo `account.id`. E-mail e telefone nunca juntam contas.
-
-### Vendas (`account.snapshot`)
-
-O snapshot segue o contrato publicado em "Contrato de dados Gestão → CRM". Por ora o CRM lê dele o bloco `vendas`; os demais blocos são aceitos e ignorados até o Customer 360.
-
-```json
-"vendas": {
-  "calculado_em": "2026-10-16T03:00:00Z",
-  "ultima_venda_em": "2026-10-15T20:14:00Z",
-  "por_moeda": [
-    { "moeda": "BRL", "ultimos_30_dias": { "quantidade": 120, "volume_centavos": 1500000 } }
-  ]
-}
-```
-
-- `volume_centavos` de BRL nos últimos 30 dias define a **faixa da carteira**; outras moedas não somam. Sem entrada BRL = R$ 0; BRL com `ultimos_30_dias` nulo = indisponível (não zera).
-- `ultima_venda_em` alimenta os alertas de 7/15/30 dias sem vender.
-- Evento sem o bloco `vendas` não altera o que está gravado.
+O cliente é encontrado **somente** pelo `data.user.id`. E-mail e telefone nunca juntam contas.
 
 ## Respostas
 
-| Status | Significado | Reenviar? |
+O core trata `2xx` como entregue; `408`, `425`, `429` e `5xx` como temporários (tenta de novo, até 8 vezes, com espera crescente); os demais `3xx`/`4xx` como definitivos (reenvio manual pela Gestão).
+
+| Status | Significado | O core |
 |---|---|---|
-| `200` `criado` / `atualizado` | Cliente criado (fase Entrada da jornada) ou atualizado. | Não |
-| `200` `duplicado` | `event_id` já processado. | Não |
-| `200` `ignorado` | Evento mais antigo que o último aplicado a este cliente (entrega fora de ordem). | Não |
-| `400` | JSON inválido ou fora do contrato (`details` diz o campo). | Depois de corrigir |
-| `401` | Assinatura ausente ou inválida. | Depois de corrigir o segredo |
-| `404` | Endereço desconhecido ou conexão pausada. | Não |
-| `409` | E-mail ou telefone já pertence a outro cliente do CRM (resolve-se na ficha), ou o mesmo `event_id` ainda está em processamento (`Retry-After`). | Sim |
-| `410` | O cliente vinculado foi anonimizado (LGPD). | Não |
-| `429` | Mais de 120 envios por minuto no mesmo endereço. | Sim, após `Retry-After` |
-| `500` / `503` | Falha do CRM. | Sim, com espera crescente |
+| `200` `criado` / `atualizado` | Cliente criado (fase Entrada da jornada) ou atualizado. | Entregue |
+| `200` `duplicado` | `id` já processado. | Entregue |
+| `200` `ignorado` | Fotografia mais antiga que a última aplicada a este cliente (entrega fora de ordem). | Entregue |
+| `400` | JSON inválido ou fora do contrato (`details` diz o campo). | Desiste |
+| `404` | Endereço desconhecido ou conexão pausada. | Desiste |
+| `409` | E-mail ou telefone já pertence a outro cliente do CRM (resolve-se na ficha; depois, reenvio manual). | Desiste |
+| `410` | O cliente vinculado foi anonimizado (LGPD). | Desiste |
+| `429` | Mais de 120 envios por minuto no mesmo endereço. | Tenta de novo |
+| `503` | Segredo ainda não colado; assinatura ausente, de outro segredo ou fora da janela de 5 minutos; o mesmo `id` ainda em processamento; ou chave de cifra indisponível. Nada é processado. | Tenta de novo |
+| `500` | Falha do CRM. | Tenta de novo |
 
 Todo envio autenticado aparece em **Últimos envios**, com o resultado e o motivo da recusa.

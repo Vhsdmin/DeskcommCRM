@@ -26884,6 +26884,23 @@ as restrictive for delete to authenticated
 using ((select public.fn_is_platform_admin()) or public.fn_role_at_least(organization_id, 'agent'));
 notify pgrst, 'reload schema';
 
+-- ---- segredo da conexão com o Gestão vem do core (migration 0283) ----
+-- O core gera o segredo e a pessoa o cola no CRM; a conexão fica sem segredo até
+-- lá. Segredos antigos foram gerados pelo CRM e não valem mais: limpa só uma vez,
+-- enquanto a coluna ainda é NOT NULL (re-aplicar não apaga segredos colados).
+do $$ begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'gestao_conexoes'
+      and column_name = 'secret_encrypted' and is_nullable = 'NO'
+  ) then
+    alter table public.gestao_conexoes alter column secret_encrypted drop not null;
+    update public.gestao_conexoes set secret_encrypted = null where secret_encrypted is not null;
+  end if;
+end $$;
+comment on column public.gestao_conexoes.secret_encrypted is
+  'Segredo do HMAC SHA-256 gerado pelo core da VendePay e colado no CRM, cifrado por fn_encrypt_oauth. Nulo até a colagem (receptor responde 503). Nunca volta ao navegador.';
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES
