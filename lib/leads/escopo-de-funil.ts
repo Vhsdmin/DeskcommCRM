@@ -134,6 +134,22 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_create_webhook_source: "sem_funil",
   crm_set_webhook_source_active: "sem_funil",
   crm_set_automation_rule_active: "sem_funil",
+  // Configuração operada por PESSOA (escopo mcp:config, apenasHumano): a barreira
+  // é a mesma das três acima, o papel de gestor e a marca no catálogo, e o escopo de
+  // funil do agente nunca chega a ser perguntado. O funil que elas tocam vem do
+  // input e é validado contra a organização dentro de lib/operacao/funis.ts.
+  crm_create_pipeline: "sem_funil",
+  crm_update_pipeline: "sem_funil",
+  crm_set_pipeline_fields: "sem_funil",
+  crm_create_automation_rule: "sem_funil",
+  crm_update_automation_rule: "sem_funil",
+  crm_update_webhook_source: "sem_funil",
+  crm_update_org_settings: "sem_funil",
+  crm_set_canonical_tags: "sem_funil",
+  crm_create_event_type: "sem_funil",
+  crm_set_member_role: "sem_funil",
+  crm_create_product: "sem_funil",
+  crm_update_product: "sem_funil",
 };
 
 /**

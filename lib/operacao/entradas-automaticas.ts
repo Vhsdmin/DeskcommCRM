@@ -23,7 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ApiError } from "@/lib/api/types";
 import type { Actor } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
-import { autoriaDaMudanca } from "@/lib/operacao/autoria";
+import { atorParaAuditoria, autoriaDaMudanca } from "@/lib/operacao/autoria";
 
 type SB = SupabaseClient;
 
@@ -333,4 +333,89 @@ export async function recebimentosDaEntrada(
 function chavesDo(payload: unknown): string[] {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return [];
   return Object.keys(payload as Record<string, unknown>);
+}
+
+export interface AlteracaoDaEntrada {
+  id: string;
+  name?: string;
+  default_pipeline_id?: string;
+  default_stage_id?: string;
+  redirect_to?: string | null;
+  field_map?: Record<string, string[]>;
+  is_active?: boolean;
+  /** `undefined` = não mexer; `null` = remover; string = já CIFRADO pelo chamador. */
+  secret_encrypted?: string | null;
+}
+
+/**
+ * Altera a entrada: nome, destino (funil e etapa, validados contra a organização
+ * como na criação), redirecionamento, mapeamento de campos, assinatura e estado.
+ * OPERADO POR PESSOA (escopo `mcp:config`); o agente só liga e desliga.
+ */
+export async function atualizarEntradaAutomatica(
+  deps: DepsDaOperacao,
+  input: AlteracaoDaEntrada,
+): Promise<FonteVisivel> {
+  const { data: atual, error: readErr } = await deps.supabase
+    .from("webhook_sources")
+    .select(COLUNAS)
+    .eq("id", input.id)
+    .eq("organization_id", deps.organizationId)
+    .maybeSingle();
+  if (readErr) throw new ApiError(500, "internal_error", undefined, deps.requestId, readErr.message);
+  if (!atual) {
+    throw new ApiError(
+      404,
+      "not_found",
+      undefined,
+      deps.requestId,
+      "Essa entrada automática de contatos não existe aqui.",
+    );
+  }
+  const antes = atual as unknown as Record<string, unknown>;
+  const { id, secret_encrypted, ...campos } = input;
+  const patch: Record<string, unknown> = {};
+  for (const [chave, valor] of Object.entries(campos)) if (valor !== undefined) patch[chave] = valor;
+  if (secret_encrypted !== undefined) patch.secret_encrypted = secret_encrypted;
+  if (Object.keys(patch).length === 0) {
+    throw new ApiError(422, "unprocessable_entity", undefined, deps.requestId, "Nada para alterar.");
+  }
+  if (patch.default_pipeline_id !== undefined || patch.default_stage_id !== undefined) {
+    await destinoValido(
+      deps,
+      (patch.default_pipeline_id as string | undefined) ?? (antes.default_pipeline_id as string),
+      (patch.default_stage_id as string | undefined) ?? (antes.default_stage_id as string),
+    );
+  }
+  const { data: updated, error } = await deps.supabase
+    .from("webhook_sources")
+    .update({ ...patch, updated_at: new Date().toISOString(), ...autoriaDaMudanca(deps.actor) })
+    .eq("id", id)
+    .eq("organization_id", deps.organizationId)
+    .select(COLUNAS)
+    .single();
+  if (error || !updated) {
+    throw new ApiError(
+      500,
+      "internal_error",
+      undefined,
+      deps.requestId,
+      error?.message ?? "webhook_source_update_failed",
+    );
+  }
+  await audit({
+    action: "webhook.source_updated",
+    ...atorParaAuditoria(deps.actor),
+    organizationId: deps.organizationId,
+    resourceType: "webhook_source",
+    resourceId: id,
+    requestId: deps.requestId,
+    metadata: {
+      campos: Object.keys(patch).filter((k) => k !== "secret_encrypted"),
+      secret_changed: secret_encrypted !== undefined,
+      name: antes.name,
+      actor_type: deps.actor.type,
+    },
+  });
+  return semSegredo(updated as unknown as Record<string, unknown>);
 }

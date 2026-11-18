@@ -37,7 +37,8 @@ export interface McpToolDefinition<TInput extends z.ZodRawShape = z.ZodRawShape>
    * Scope obrigatório no `api_tokens.scopes` (ex: `mcp:read`, `mcp:write`).
    * Ausência → -32002 forbidden.
    */
-  requiresScope: "mcp:read" | "mcp:write";
+  /** `mcp:config` é só de capacidade operada por pessoa (`apenasHumano`); o token do agente nunca o carrega. */
+  requiresScope: "mcp:read" | "mcp:write" | "mcp:config";
   handler: (
     input: z.infer<z.ZodObject<TInput>>,
     ctx: McpContext,

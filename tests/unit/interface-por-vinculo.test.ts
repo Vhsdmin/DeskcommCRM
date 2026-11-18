@@ -15,7 +15,6 @@ const granular = { preset: "completa", destinos: ["/app/products"] } as const;
 const hrefs = (settings: unknown, role: "agent" | "admin" = "admin", platform = false) =>
   destinosDaInterface(settings, platform, role).map((d) => d.href);
 const hidden = [
-  "/app/inbox",
   "/app/radar",
   "/app/templates",
   "/app/ai/followups",
@@ -62,7 +61,13 @@ describe("interface por vínculo é apresentação", () => {
     expect(hrefs(simplified, "agent")).not.toContain("/app/connections");
     expect(hrefs(simplified)).not.toContain("/app/ai/credentials");
     expect(hrefs(simplified)).toEqual(
-      expect.arrayContaining(["/app/agenda", "/app/contacts", "/app/kanban", "/app/tasks"]),
+      expect.arrayContaining([
+        "/app/inbox",
+        "/app/agenda",
+        "/app/contacts",
+        "/app/kanban",
+        "/app/tasks",
+      ]),
     );
   });
   it("admin plataforma também respeita seleção; completa não promove atendente", () => {

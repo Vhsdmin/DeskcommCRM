@@ -1,14 +1,17 @@
 "use client";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useT } from "@/hooks/i18n/useT";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Plus } from "@/lib/ui/icons";
 import {
+  CHAVE_DE_TODAS_AS_TAGS,
+  useTodasAsTags,
   useUpdateConversationTags,
-  useConversationTagVocabulary,
 } from "@/hooks/inbox/useConversationTags";
+import { SugestoesDeTags } from "./SugestoesDeTags";
 
 interface Props {
   conversationId: string;
@@ -16,16 +19,22 @@ interface Props {
   tags: string[];
 }
 
-/** G3-05: aplica/remove tags de atendimento na conversa, com sugestão canônica. */
+/** G3-05: aplica/remove tags de atendimento na conversa. Sugere as etiquetas que
+ * já existem em conversas, clientes e leads (`useTodasAsTags`). */
 export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
   const t = useT();
   const [draft, setDraft] = useState("");
   const mutation = useUpdateConversationTags();
-  const { data: vocabulary } = useConversationTagVocabulary(orgId);
+  const { data: vocabulary } = useTodasAsTags(orgId);
+  const qc = useQueryClient();
 
   // Normalização espelha o Zod do PATCH (trim+lowercase); dedup no set.
   function apply(next: string[]) {
-    mutation.mutate({ conversation_id: conversationId, tags: next });
+    mutation.mutate(
+      { conversation_id: conversationId, tags: next },
+      // Etiqueta nova passa a ser sugestão nos outros editores na hora.
+      { onSuccess: () => void qc.invalidateQueries({ queryKey: [CHAVE_DE_TODAS_AS_TAGS] }) },
+    );
   }
 
   function add(raw: string) {
@@ -38,8 +47,6 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
   function remove(tag: string) {
     apply(tags.filter((v) => v !== tag));
   }
-
-  const suggestions = (vocabulary ?? []).filter((v) => !tags.includes(v)).slice(0, 8);
 
   return (
     <section>
@@ -96,21 +103,13 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
         </Button>
       </div>
 
-      {suggestions.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {suggestions.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => add(tag)}
-              disabled={mutation.isPending || tags.length >= 20}
-              className="rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:border-solid hover:text-foreground disabled:opacity-50"
-            >
-              + {tag}
-            </button>
-          ))}
-        </div>
-      )}
+      <SugestoesDeTags
+        vocabulario={vocabulary ?? []}
+        atuais={tags}
+        rascunho={draft}
+        desabilitado={mutation.isPending || tags.length >= 20}
+        onEscolher={add}
+      />
     </section>
   );
 }

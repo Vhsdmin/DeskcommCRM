@@ -22,8 +22,11 @@
  */
 import { ApiError } from "@/lib/api/types";
 import { audit } from "@/lib/audit";
-import { autoriaDaMudanca } from "@/lib/operacao/autoria";
+import { atorParaAuditoria, autoriaDaMudanca } from "@/lib/operacao/autoria";
 import type { DepsDaOperacao } from "@/lib/operacao/entradas-automaticas";
+import { createAutomationRuleSchema, updateAutomationRuleSchema } from "@/lib/schemas/webhooks";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { encryptRuleActionSecrets, type RuleActionInput } from "@/lib/webhooks/secrets";
 
 export interface RegraVisivel {
   id: string;
@@ -207,4 +210,244 @@ function nomeDaRegra(join: unknown): string | null {
   if (Array.isArray(join)) return (join[0] as { name?: string } | undefined)?.name ?? null;
   if (join && typeof join === "object") return (join as { name?: string }).name ?? null;
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// ESCREVER regras: OPERADO POR PESSOA. O aviso do topo continua valendo para o
+// agente de IA, que não chega aqui: as capacidades que chamam estas funções
+// exigem o escopo `mcp:config` (o token efêmero do agente não o carrega) e são
+// `apenasHumano` no catálogo (a ponte do turno não as monta). Quem escreve a
+// regra por aqui é quem opera o CRM por fora da tela, com um token de gestor.
+// ---------------------------------------------------------------------------
+
+export interface AcaoVisivel {
+  type: string;
+  /** A configuração SEM `secret` e sem `secret_enc`; `has_secret` diz se havia um. */
+  config: Record<string, unknown>;
+  has_secret: boolean;
+}
+
+export interface RegraDetalhada extends RegraVisivel {
+  conditions: Array<{ field: string; op: string; value: string }>;
+  actions: AcaoVisivel[];
+}
+
+function acaoVisivel(a: unknown): AcaoVisivel {
+  const acao = (a ?? {}) as { type?: unknown; config?: Record<string, unknown> };
+  const { secret: _plain, secret_enc, ...config } = acao.config ?? {};
+  return {
+    type: String(acao.type ?? "desconhecida"),
+    config,
+    has_secret: typeof secret_enc === "string" && secret_enc.length > 0,
+  };
+}
+
+function detalhada(linha: Record<string, unknown>): RegraDetalhada {
+  return {
+    ...semConfig(linha),
+    conditions: Array.isArray(linha.conditions)
+      ? (linha.conditions as RegraDetalhada["conditions"])
+      : [],
+    actions: Array.isArray(linha.actions) ? (linha.actions as unknown[]).map(acaoVisivel) : [],
+  };
+}
+
+/** Troca `secret` em texto por `secret_enc`; `null` quando a chave de cifra da instalação não está ativa. */
+export type CifradorDeAcoes = (acoes: RuleActionInput[]) => Promise<RuleActionInput[] | null>;
+const cifradorPadrao: CifradorDeAcoes = (acoes) =>
+  encryptRuleActionSecrets(createAdminClient(), acoes);
+
+function recusaDeCifra(deps: DepsDaOperacao): ApiError {
+  return new ApiError(
+    422,
+    "encryption_unavailable",
+    undefined,
+    deps.requestId,
+    "Não foi possível guardar o segredo com segurança: a chave de cifra desta instalação não está ativa. Quem administra o servidor resolve rodando o update.sh, que gera e ativa a chave.",
+  );
+}
+
+/** A linha inteira, com `actions` como estão no banco (secret_enc incluso). Só para uso interno. */
+async function regraCompletaDaOrg(
+  deps: DepsDaOperacao,
+  id: string,
+): Promise<{ actions: RuleActionInput[] }> {
+  const { data, error } = await deps.supabase
+    .from("automation_rules")
+    .select("id, actions")
+    .eq("id", id)
+    .eq("organization_id", deps.organizationId)
+    .maybeSingle();
+  if (error) throw new ApiError(500, "internal_error", undefined, deps.requestId, error.message);
+  if (!data) {
+    throw new ApiError(404, "not_found", undefined, deps.requestId, "Essa regra não existe aqui.");
+  }
+  const linha = data as unknown as { actions?: unknown };
+  return { actions: Array.isArray(linha.actions) ? (linha.actions as RuleActionInput[]) : [] };
+}
+
+/**
+ * Quem altera as ações pela leitura de `crm_get_automation_rule` não tem o segredo
+ * (a leitura devolve só `has_secret`). Sem isto, mandar as ações de volta sem
+ * `secret` apagaria a assinatura do `call_webhook` em silêncio. A assinatura
+ * antiga é preservada pela URL quando a nova ação não traz segredo nenhum.
+ */
+export function preservaAssinaturas(
+  novas: RuleActionInput[],
+  antigas: RuleActionInput[],
+): RuleActionInput[] {
+  return novas.map((acao) => {
+    if (acao.type !== "call_webhook") return acao;
+    const config = (acao.config ?? {}) as Record<string, unknown>;
+    if (typeof config.secret === "string" || typeof config.secret_enc === "string") return acao;
+    const antiga = antigas.find(
+      (a) => a.type === "call_webhook" && (a.config as Record<string, unknown> | undefined)?.url === config.url,
+    );
+    const herdado = (antiga?.config as Record<string, unknown> | undefined)?.secret_enc;
+    if (typeof herdado !== "string") return acao;
+    return { ...acao, config: { ...config, secret_enc: herdado } };
+  });
+}
+
+export async function lerRegraAutomatica(deps: DepsDaOperacao, id: string): Promise<RegraDetalhada> {
+  const { data, error } = await deps.supabase
+    .from("automation_rules")
+    .select(COLUNAS)
+    .eq("id", id)
+    .eq("organization_id", deps.organizationId)
+    .maybeSingle();
+  if (error) throw new ApiError(500, "internal_error", undefined, deps.requestId, error.message);
+  if (!data) {
+    throw new ApiError(404, "not_found", undefined, deps.requestId, "Essa regra não existe aqui.");
+  }
+  return detalhada(data as unknown as Record<string, unknown>);
+}
+
+export async function criarRegraAutomatica(
+  deps: DepsDaOperacao,
+  input: unknown,
+  cifrar: CifradorDeAcoes = cifradorPadrao,
+): Promise<RegraDetalhada> {
+  const { is_active, ...resto } = ((input ?? {}) as { is_active?: unknown } & Record<string, unknown>);
+  const parsed = createAutomationRuleSchema.safeParse(resto);
+  if (!parsed.success) {
+    throw new ApiError(
+      400,
+      "invalid_request",
+      parsed.error.flatten() as unknown as Record<string, unknown>,
+      deps.requestId,
+      "Confira o nome, o gatilho, as condições e as ações da regra.",
+    );
+  }
+  const ativa = is_active === true;
+  const safeActions = await cifrar(parsed.data.actions as RuleActionInput[]);
+  if (safeActions === null) throw recusaDeCifra(deps);
+  const { data: created, error } = await deps.supabase
+    .from("automation_rules")
+    .insert({
+      organization_id: deps.organizationId,
+      created_by_user_id: deps.actor.type === "user" ? deps.actor.id : null,
+      name: parsed.data.name,
+      trigger_event: parsed.data.trigger_event,
+      conditions: parsed.data.conditions,
+      actions: safeActions,
+      is_active: ativa,
+      ...autoriaDaMudanca(deps.actor),
+    })
+    .select(COLUNAS)
+    .single();
+  if (error || !created) {
+    throw new ApiError(
+      500,
+      "internal_error",
+      undefined,
+      deps.requestId,
+      error?.message ?? "automation_rule_insert_failed",
+    );
+  }
+  const linha = created as unknown as Record<string, unknown>;
+  await audit({
+    action: "automation.rule_created",
+    ...atorParaAuditoria(deps.actor),
+    organizationId: deps.organizationId,
+    resourceType: "automation_rule",
+    resourceId: linha.id as string,
+    requestId: deps.requestId,
+    metadata: {
+      name: parsed.data.name,
+      trigger_event: parsed.data.trigger_event,
+      is_active: ativa,
+      conditions: parsed.data.conditions.length,
+      actor_type: deps.actor.type,
+    },
+  });
+  return detalhada(linha);
+}
+
+/**
+ * O que não vier fica como está, inclusive as condições: o schema de alteração
+ * não tem `default([])` de propósito (ver `lib/schemas/webhooks.ts`).
+ */
+export async function atualizarRegraAutomatica(
+  deps: DepsDaOperacao,
+  input: { id: string; patch: unknown },
+  cifrar: CifradorDeAcoes = cifradorPadrao,
+): Promise<RegraDetalhada> {
+  const parsed = updateAutomationRuleSchema.safeParse(input.patch ?? {});
+  if (!parsed.success) {
+    throw new ApiError(
+      400,
+      "invalid_request",
+      parsed.error.flatten() as unknown as Record<string, unknown>,
+      deps.requestId,
+      "Confira o que você quer alterar na regra.",
+    );
+  }
+  const campos = Object.entries(parsed.data).filter(([, v]) => v !== undefined);
+  if (campos.length === 0) {
+    throw new ApiError(422, "unprocessable_entity", undefined, deps.requestId, "Nada para alterar.");
+  }
+  const atual = await regraCompletaDaOrg(deps, input.id);
+  const patch: Record<string, unknown> = {
+    ...Object.fromEntries(campos),
+    updated_at: new Date().toISOString(),
+    ...autoriaDaMudanca(deps.actor),
+  };
+  if (parsed.data.actions !== undefined) {
+    const comAssinaturas = preservaAssinaturas(parsed.data.actions as RuleActionInput[], atual.actions);
+    const safeActions = await cifrar(comAssinaturas);
+    if (safeActions === null) throw recusaDeCifra(deps);
+    patch.actions = safeActions;
+  }
+  const { data: updated, error } = await deps.supabase
+    .from("automation_rules")
+    .update(patch)
+    .eq("id", input.id)
+    .eq("organization_id", deps.organizationId)
+    .select(COLUNAS)
+    .single();
+  if (error || !updated) {
+    throw new ApiError(
+      500,
+      "internal_error",
+      undefined,
+      deps.requestId,
+      error?.message ?? "automation_rule_update_failed",
+    );
+  }
+  const { actions: _acoesComSegredo, ...auditavel } = parsed.data;
+  await audit({
+    action: "automation.rule_updated",
+    ...atorParaAuditoria(deps.actor),
+    organizationId: deps.organizationId,
+    resourceType: "automation_rule",
+    resourceId: input.id,
+    requestId: deps.requestId,
+    metadata: {
+      ...auditavel,
+      ...(parsed.data.actions !== undefined ? { actions_changed: true } : {}),
+      actor_type: deps.actor.type,
+    },
+  });
+  return detalhada(updated as unknown as Record<string, unknown>);
 }

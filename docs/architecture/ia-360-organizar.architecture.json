@@ -220,6 +220,22 @@
       "type": "service",
       "label": "desfecho-do-envio.ts",
       "sublabel": "o run conta o ESTADO REAL da mensagem — sendMessageHandler não lança quando falha"
+    },
+    {
+      "id": "tokens",
+      "lane": "humano",
+      "col": 5,
+      "type": "frontend",
+      "label": "/app/settings/api-tokens",
+      "sublabel": "escopos mcp:read · mcp:write · mcp:config · role:manager/admin"
+    },
+    {
+      "id": "mcpConfig",
+      "lane": "borda",
+      "col": 6,
+      "type": "api",
+      "label": "lib/mcp/tools/configuracao.ts",
+      "sublabel": "18 capacidades operadas por PESSOA — escopo mcp:config, apenasHumano; o agente nunca as vê"
     }
   ],
   "edges": [
@@ -414,6 +430,30 @@
       "from": "telaCapturas",
       "to": "telas",
       "label": "'Ver no funil' — /app/leads/[id] resolve o funil do lead e redireciona para o card"
+    },
+    {
+      "id": "e33",
+      "from": "tokens",
+      "to": "mcpConfig",
+      "label": "token com mcp:config — o token efêmero do agente nunca o carrega"
+    },
+    {
+      "id": "e34",
+      "from": "mcpConfig",
+      "to": "operacao",
+      "label": "funis · campos · regras (criar/alterar) · entradas (alterar) · organização · produtos"
+    },
+    {
+      "id": "e35",
+      "from": "mcpConfig",
+      "to": "catalogo",
+      "label": "catalogo/configuracao.ts — apenasHumano: a ponte do turno não monta"
+    },
+    {
+      "id": "e36",
+      "from": "mcpConfig",
+      "to": "audit",
+      "label": "mcp.tool_called com secret/secret_enc redigidos em profundidade"
     }
   ],
   "cards": [

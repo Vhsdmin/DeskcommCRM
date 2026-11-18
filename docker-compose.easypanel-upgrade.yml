@@ -3,7 +3,7 @@
 # Mesma release revisada do docker-compose.easypanel.yml (PR #14 / 5424a75b7).
 services:
   schema-export:
-    image: ghcr.io/filipefagundes/deskcomm-worker@sha256:0a0864fdf7b9090233e0ff4b152bdd9e7cbcc7cf2a1fe0b0b5a681ee0dadd1d8
+    image: ghcr.io/vhsdmin/deskcomm-worker@sha256:887d5be014b88cba6a9607c6a307e2f540be5f160a874152cb92c9316272b0c6
     pull_policy: missing
     restart: 'no'
     network_mode: none

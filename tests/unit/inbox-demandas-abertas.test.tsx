@@ -114,6 +114,8 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/hooks/inbox/useConversationTags", () => ({
   useUpdateConversationTags: () => ({ mutate: vi.fn(), isPending: false }),
   useConversationTagVocabulary: () => ({ data: [] }),
+  useTodasAsTags: () => ({ data: [] }),
+  CHAVE_DE_TODAS_AS_TAGS: "tag-vocabulary-todas",
 }));
 vi.mock("@/hooks/contacts/useUpdateContact", () => ({
   useUpdateContact: () => ({ mutate: vi.fn(), isPending: false }),
@@ -235,7 +237,10 @@ describe("painel do inbox — demandas abertas", () => {
   });
 });
 
-vi.mock("@/hooks/auth/AuthProvider", () => ({ useAuth: () => ({ user: { support: null } }) }));
+vi.mock("@/hooks/auth/AuthProvider", () => ({
+  useAuth: () => ({ user: { support: null } }),
+  usePermission: () => false,
+}));
 
 
 describe("desfecho — rascunho atravessa somente lacuna transitória do mesmo contexto", () => {

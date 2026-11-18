@@ -17,7 +17,7 @@ import { useTasks } from "@/hooks/tasks/useTasks";
 import type { NovaTarefa, SituacaoDaTarefa, Tarefa } from "@/lib/tarefas/tipos";
 
 import { CalendarioDeTarefas } from "./CalendarioDeTarefas";
-import { FormularioDeTarefa } from "./FormularioDeTarefa";
+import { FormularioDeTarefa } from "@/components/tasks/FormularioDeTarefa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
 
 /** "aberto" não é uma situação do banco: é o filtro que a tela abre por padrão. */

@@ -20,26 +20,44 @@ interface AuditMcpToolCallInput {
   resultSummary?: string;
 }
 
+/**
+ * Chaves que nunca entram no audit em texto. `secret` e `secret_enc` entraram
+ * aqui porque `crm_create_webhook_source` já recebia `secret` em texto e o
+ * gravava inteiro em `metadata.args`; com as capacidades de configuração
+ * (assinatura de entrada, segredo de `call_webhook` dentro de `actions[]`) o
+ * vazamento ganharia profundidade, por isso a redação desce em objetos e listas.
+ */
 const ARGS_REDACT_KEYS = new Set([
   "authorization",
   "api_key",
   "token",
   "password",
+  "senha",
   "cpf",
+  "secret",
+  "secret_enc",
+  "client_secret",
+  "access_token",
+  "refresh_token",
 ]);
 
-function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
+const PROFUNDIDADE_MAXIMA = 6;
+
+function redactValue(valor: unknown, profundidade: number): unknown {
+  if (typeof valor === "string") {
+    return valor.length > 500 ? `${valor.slice(0, 500)}...[truncated]` : valor;
+  }
+  if (valor === null || typeof valor !== "object" || profundidade >= PROFUNDIDADE_MAXIMA) return valor;
+  if (Array.isArray(valor)) return valor.map((item) => redactValue(item, profundidade + 1));
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(args)) {
-    if (ARGS_REDACT_KEYS.has(k.toLowerCase())) {
-      out[k] = "[redacted]";
-    } else if (typeof v === "string" && v.length > 500) {
-      out[k] = `${v.slice(0, 500)}...[truncated]`;
-    } else {
-      out[k] = v;
-    }
+  for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
+    out[k] = ARGS_REDACT_KEYS.has(k.toLowerCase()) ? "[redacted]" : redactValue(v, profundidade + 1);
   }
   return out;
+}
+
+export function redactArgs(args: Record<string, unknown>): Record<string, unknown> {
+  return redactValue(args, 0) as Record<string, unknown>;
 }
 
 export async function auditMcpToolCall(input: AuditMcpToolCallInput): Promise<void> {
