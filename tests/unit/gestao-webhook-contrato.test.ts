@@ -93,6 +93,14 @@ describe("contrato do evento", () => {
     }
   });
 
+  it("nome longo é cortado, não recusa o envio", () => {
+    const parsed = eventoDoGestaoSchema.parse({
+      ...EVENTO,
+      data: { ...EVENTO.data, user: { ...EVENTO.data.user, name: "x".repeat(1000) } },
+    });
+    expect(camposDoCliente(parsed).name).toHaveLength(200);
+  });
+
   it("telefone ausente vira ausência; o que não normaliza é ignorado e sinalizado", () => {
     const comTelefone = (phone: string | null) =>
       camposDoCliente(eventoDoGestaoSchema.parse({ ...EVENTO, data: { ...EVENTO.data, user: { ...EVENTO.data.user, phone } } }));

@@ -40,12 +40,12 @@ export const VERSAO_DA_API = "2026-06-01";
 /** Janela aceita entre o `t` da assinatura e o relógio do CRM. O core assina de novo a cada tentativa. */
 export const TOLERANCIA_DA_ASSINATURA_SEGUNDOS = 300;
 
+// Corta em vez de recusar: um nome longo no core não pode travar o envio do contato.
 const textoOpcional = z
   .string()
   .trim()
-  .max(320)
   .nullish()
-  .transform((v) => (v ? v : null));
+  .transform((v) => (v ? v.slice(0, 320) : null));
 
 // Sem `.strict()`: o core pode acrescentar blocos (onboarding, KYC) sem quebrar o CRM.
 export const eventoDoGestaoSchema = z.object({

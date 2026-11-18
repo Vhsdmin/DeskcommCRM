@@ -10,7 +10,7 @@ O endereço é do CRM; o segredo é do core.
 2. Na Gestão, um superadministrador informa esse endereço em **Integração CRM**. O core gera o **segredo de assinatura** e o exibe uma única vez.
 3. No CRM, cole o segredo na mesma tela. Ele fica guardado cifrado e nunca volta ao navegador.
 
-Enquanto o segredo não é colado, o CRM responde `503` e o core tenta de novo mais tarde, sem perder o envio. Para trocar o segredo, informe o endereço de novo na Gestão (o core gera outro) e cole o novo no CRM.
+Enquanto o segredo não é colado (ou o colado não confere), o CRM responde `503` e o core tenta de novo por cerca de 1 hora (8 tentativas, espera crescente a partir de 30 s). Depois disso o envio fica como falho na Gestão e volta pelo reenvio manual. Para trocar o segredo, informe o endereço de novo na Gestão (o core gera outro) e cole o novo no CRM logo em seguida.
 
 Cada ambiente (homologação, produção) tem a sua conexão, com endereço e segredo próprios.
 
@@ -62,12 +62,11 @@ O core trata `2xx` como entregue; `408`, `425`, `429` e `5xx` como temporários 
 | `200` `duplicado` | `id` já processado. | Entregue |
 | `200` `ignorado` | Fotografia mais antiga que a última aplicada a este cliente (entrega fora de ordem). | Entregue |
 | `400` | JSON inválido ou fora do contrato (`details` diz o campo). | Desiste |
-| `401` | Assinatura ausente, inválida ou fora da janela de 5 minutos. | Desiste |
 | `404` | Endereço desconhecido ou conexão pausada. | Desiste |
 | `409` | E-mail ou telefone já pertence a outro cliente do CRM (resolve-se na ficha; depois, reenvio manual). | Desiste |
 | `410` | O cliente vinculado foi anonimizado (LGPD). | Desiste |
 | `429` | Mais de 120 envios por minuto no mesmo endereço. | Tenta de novo |
-| `503` | Segredo ainda não colado, o mesmo `id` ainda em processamento ou chave de cifra indisponível. | Tenta de novo |
+| `503` | Segredo ainda não colado; assinatura ausente, de outro segredo ou fora da janela de 5 minutos; o mesmo `id` ainda em processamento; ou chave de cifra indisponível. Nada é processado. | Tenta de novo |
 | `500` | Falha do CRM. | Tenta de novo |
 
 Todo envio autenticado aparece em **Últimos envios**, com o resultado e o motivo da recusa.

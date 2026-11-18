@@ -4,8 +4,10 @@
  * O token da URL resolve a organização (fonte confiável — nunca o corpo); a
  * assinatura `t=<unix>,v1=<hex>` (`vendepay-signature`) prova que quem envia
  * conhece o segredo gerado pelo core. Sem assinatura válida, nada é processado.
- * Enquanto o segredo não foi colado, responde 503: o core trata como falha
- * temporária e tenta de novo (401 seria definitivo).
+ * Sem segredo colado ou com assinatura que não confere, responde 503: o core
+ * trata como falha temporária e tenta de novo por cerca de 1 hora (401 seria
+ * definitivo). É o que cobre a troca de segredo: o core assina com o novo logo
+ * que é reconfigurado, antes de alguém colá-lo aqui. Nada é processado.
  *
  * Todo envio autenticado fica em `webhook_events_log` (provider `gestao`), e o
  * `id` do evento é único por organização: reenvio do mesmo evento responde 200 sem
@@ -27,6 +29,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const LIMITE_POR_MINUTO = 120;
+/** Registro ainda `received` depois disso foi interrompido (queda, timeout) e não vai terminar. */
+const PROCESSAMENTO_ABANDONADO_APOS_MS = 120_000;
 
 interface RouteCtx {
   params: Promise<{ token: string }>;
@@ -76,7 +80,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       metadata: { motivo: "assinatura_invalida" },
       requestId,
     });
-    return fail("unauthenticated", "invalid_signature", 401, { requestId });
+    return fail("unavailable", "invalid_signature", 503, { requestId, headers: { "Retry-After": "300" } });
   }
 
   let json: unknown;
@@ -118,12 +122,20 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       // 503, não 409: o core trata 409 como definitivo e desistiria do envio.
       const { data: original } = await admin
         .from("webhook_events_log")
-        .select("status")
+        .select("id, status, received_at")
         .eq("organization_id", organizationId)
         .eq("provider", "gestao")
         .eq("external_id", eventId)
         .maybeSingle();
       if (original?.status === "received") {
+        if (Date.now() - Date.parse(original.received_at as string) > PROCESSAMENTO_ABANDONADO_APOS_MS) {
+          // Interrompido no meio: libera o id para a próxima tentativa do core processar.
+          await admin
+            .from("webhook_events_log")
+            .update({ status: "error", error_message: "processamento interrompido", external_id: null })
+            .eq("id", original.id)
+            .eq("status", "received");
+        }
         return fail("unavailable", "event still processing", 503, {
           requestId,
           headers: { "Retry-After": "30" },
